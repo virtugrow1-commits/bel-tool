@@ -1,5 +1,5 @@
-import CallerDashboard from './CallerDashboard';
+import BelTool from './BelTool';
 
-const Index = () => <CallerDashboard />;
+const Index = () => <BelTool />;
 
 export default Index;
