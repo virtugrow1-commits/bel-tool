@@ -341,7 +341,7 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
           {scores.log.map((e, i) => (
             <button
               key={i}
-              onClick={() => onSelectFromLog?.(e.contact)}
+              onClick={() => onSelectFromLog?.(e)}
               className="flex items-center gap-1.5 py-0.5 text-[10px] w-full text-left hover:bg-muted/50 rounded px-1 transition-colors cursor-pointer bg-transparent border-none"
               title={`Klik om ${e.contact} te selecteren`}
             >
