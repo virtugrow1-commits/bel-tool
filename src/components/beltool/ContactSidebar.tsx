@@ -26,9 +26,12 @@ interface ContactSidebarProps {
   onShowSettings: () => void;
   dueCallbackCount: number;
   appointmentCount: number;
+  hasMoreLeads?: boolean;
+  loadingMore?: boolean;
+  onLoadMore?: () => void;
 }
 
-export function ContactSidebar({ companies, activeCompId, activeContactId, expandedComp, setExpandedComp, search, onSearchChange, onSelectContact, phase, onBusy, scores, convRate, user, onLogout, onShowAgenda, onShowCallbackQueue, onShowLeaderboard, onShowSettings, dueCallbackCount, appointmentCount }: ContactSidebarProps) {
+export function ContactSidebar({ companies, activeCompId, activeContactId, expandedComp, setExpandedComp, search, onSearchChange, onSelectContact, phase, onBusy, scores, convRate, user, onLogout, onShowAgenda, onShowCallbackQueue, onShowLeaderboard, onShowSettings, dueCallbackCount, appointmentCount, hasMoreLeads, loadingMore, onLoadMore }: ContactSidebarProps) {
   const { t } = useBelTool();
   const filtered = companies.filter(c => (c.name + ' ' + c.contacts.map(ct => ct.firstName + ' ' + ct.lastName).join(' ')).toLowerCase().includes(search.toLowerCase()));
 
@@ -97,8 +100,17 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
                         </div>
                       </button>
                     );
-                  })}
-                </div>
+        })}
+        {hasMoreLeads && onLoadMore && (
+          <button
+            onClick={onLoadMore}
+            disabled={loadingMore}
+            className="w-full py-2.5 mt-2 rounded-lg border border-primary/20 bg-primary/[0.06] text-primary text-[12px] font-semibold hover:bg-primary/10 active:scale-[0.97] transition-all disabled:opacity-40"
+          >
+            {loadingMore ? 'Laden...' : 'Volgende 25 leads laden →'}
+          </button>
+        )}
+      </div>
               )}
             </div>
           );
