@@ -170,6 +170,24 @@ export default function BelTool() {
           companyId: matchedComp?.id,
         });
       })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'incoming_calls' }, (payload: any) => {
+        const row = payload.new;
+        // If the active outgoing call's status changed (matched by call_id)
+        if (row.status === 'answered' && activeCallId && row.call_id === activeCallId) {
+          setCallState('active');
+          flash('📞 Gesprek opgenomen', 'info');
+        }
+        if (row.status === 'ended' && activeCallId && row.call_id === activeCallId) {
+          setCallState('ended');
+          flash('📞 Gesprek beëindigd door klant');
+          setTimeout(() => setCallState('idle'), 2000);
+        }
+        // If incoming call popup is showing and call ended
+        if (row.status === 'ended' && incomingCall && row.id === incomingCall.id) {
+          setIncomingCall(null);
+          flash('📞 Inkomend gesprek beëindigd');
+        }
+      })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
