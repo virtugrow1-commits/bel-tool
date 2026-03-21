@@ -115,10 +115,7 @@ interface ContactSidebarProps {
 
 export function ContactSidebar({ companies, activeCompId, activeContactId, expandedComp, setExpandedComp, search, onSearchChange, onSelectContact, phase, onBusy, scores, convRate, user, onLogout, onShowAgenda, onShowCallbackQueue, onShowLeaderboard, onShowSettings, dueCallbackCount, appointmentCount, hasMoreLeads, loadingMore, onLoadMore, stageFilter, onStageFilterChange, onSelectFromLog, onInsertNote }: ContactSidebarProps) {
   const { t } = useBelTool();
-  const [filterOpen, setFilterOpen] = useState(false);
-  const [showTargetEdit, setShowTargetEdit] = useState(false);
   const filterRef = useRef<HTMLDivElement>(null);
-  const [targets, setTargets] = useState<DailyTargets>(() => store.get('dailyTargets', { calls: 50, appointments: 5, surveys: 10 }));
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
