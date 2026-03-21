@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import type { Company, CompanyContact, CallPhase, CallState, SurveyAnswers, Appointment, CallbackEntry, Webhook } from '@/types/beltool';
+import type { Company, CompanyContact, CallPhase, CallState, SurveyAnswers, Appointment, CallbackEntry, Webhook, GhlConfig } from '@/types/beltool';
 import { COMPANIES_INIT, defaultSurvey } from '@/lib/beltool-data';
 import { USERS, type User } from '@/lib/beltool-data';
 import { store } from '@/lib/beltool-store';
