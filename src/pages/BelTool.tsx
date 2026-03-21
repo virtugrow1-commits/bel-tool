@@ -20,6 +20,7 @@ import { AgendaView } from '@/components/beltool/AgendaView';
 import { CallbackScheduler } from '@/components/beltool/CallbackScheduler';
 import { Modal } from '@/components/beltool/Modal';
 import { ContactDetailPanel } from '@/components/beltool/ContactDetailPanel';
+import { CrmNavSidebar } from '@/components/beltool/CrmNavSidebar';
 
 export default function BelTool() {
   const [user, setUser] = useState<User | null>(() => store.get('user', null));
@@ -464,7 +465,8 @@ export default function BelTool() {
 
   return (
     <BelToolContext.Provider value={ctx}>
-      <div className="flex h-screen overflow-hidden bg-background text-foreground">
+        <div className="flex h-screen overflow-hidden bg-background text-foreground">
+          <CrmNavSidebar onShowSettings={() => setShowSettings(true)} />
         {toast && (
           <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[999] px-6 py-2.5 rounded-xl text-[13px] font-semibold shadow-xl border"
             style={{
@@ -639,7 +641,7 @@ export default function BelTool() {
           }}
         />
 
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 flex flex-col overflow-hidden" style={{ background: 'hsl(222 28% 12%)' }}>
           {(phase === 'idle' || phase === 'precall' || curStep >= 0 || ['sent','done','lost','noanswer'].includes(phase)) && activeContact && activeComp ? (
             <>
               <div className="flex flex-1 overflow-hidden">
