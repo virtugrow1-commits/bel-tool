@@ -329,7 +329,6 @@ export function CallContent({
               <ActionBtn onClick={() => { setPhase('q1'); updateStage(activeCompId, 'enqueteGestart'); }}>{t.agree}</ActionBtn>
               <ActionBtn variant="warning" onClick={() => { onEndCall('sent', 'enqueteVerstuurd'); addScore('verstuurd'); showToast(t.surveyDigitalSent, 'info'); }}>{t.noTime}</ActionBtn>
               <ActionBtn variant="warning" onClick={onShowCallback}>{t.callback}</ActionBtn>
-              <ActionBtn variant="muted" onClick={() => { onEndCall('noanswer', 'anderMoment' as any); showToast('Ander moment genoteerd'); }}>⏳ Niet op dit moment</ActionBtn>
               <ActionBtn variant="muted" onClick={() => { onEndCall('noanswer', 'geenGehoor'); addScore('geenGehoor'); showToast(t.noAnswerNoted); }}>{t.noAnswerAction}</ActionBtn>
               <ActionBtn variant="danger" onClick={() => { onEndCall('lost', 'nietInteressant'); addScore('afgevallen'); }}>{t.notInterested}</ActionBtn>
               {user?.role === 'admin' && (
@@ -489,6 +488,7 @@ export function CallContent({
               <div className="flex flex-wrap gap-1.5">
                 <ActionBtn variant="ghost" onClick={() => setPhase('q4')}>{t.back}</ActionBtn>
                 <ActionBtn variant="warning" onClick={() => { onEndCall('sent', 'enqueteVerstuurd'); addScore('verstuurd'); showToast(t.bookingSent, 'info'); }}>{t.sendBookingDigital}</ActionBtn>
+                <ActionBtn variant="muted" onClick={() => { onEndCall('noanswer', 'anderMoment' as any); showToast('Ander moment genoteerd'); }}>⏳ Niet op dit moment</ActionBtn>
                 <ActionBtn variant="danger" onClick={() => { onEndCall('lost', 'nietInteressant'); addScore('afgevallen'); }}>{t.notInterested}</ActionBtn>
               </div>
             </StepLayout>
