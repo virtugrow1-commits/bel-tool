@@ -220,23 +220,23 @@ export function CallContent({
   // Active call content
   return (
     <>
-      {/* Top bar */}
-      <div className="flex items-center gap-3 px-5 py-2.5 bg-foreground/[0.02] border-b border-border/40">
-        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-info to-primary flex items-center justify-center font-bold text-[13px] flex-shrink-0">
+      {/* CRM-style top bar */}
+      <div className="flex items-center gap-3 px-5 py-2 border-b border-border/30" style={{ background: 'hsl(222 30% 11%)' }}>
+        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-info to-primary flex items-center justify-center font-bold text-[11px] flex-shrink-0">
           {activeContact.firstName[0]}{activeContact.lastName[0]}
         </div>
-        <div className="flex-1">
-          <div className="font-bold text-sm">
-            {contactName} <span className="font-normal text-muted-foreground text-xs">({activeContact.role})</span>
+        <div className="flex-1 min-w-0">
+          <div className="font-bold text-[13px] text-foreground/90">
+            {contactName} {activeContact.role && <span className="font-normal text-muted-foreground/40 text-[11px]">• {activeContact.role}</span>}
           </div>
-          <div className="text-xs text-muted-foreground/40">{activeComp.name}</div>
+          <div className="text-[11px] text-muted-foreground/35">{activeComp.name}</div>
         </div>
-        <div className="text-right mr-2">
-          <div className="text-xs text-foreground/50">{activeContact.phone}</div>
-          <div className="text-[10px] text-muted-foreground/30">{activeContact.email}</div>
+        <div className="text-right mr-1.5 hidden sm:block">
+          <div className="text-[11px] text-foreground/40 font-mono">{activeContact.phone}</div>
+          <div className="text-[10px] text-muted-foreground/25">{activeContact.email}</div>
         </div>
         {onShowDetail && (
-          <button onClick={onShowDetail} className="p-2 rounded-lg bg-foreground/[0.04] text-muted-foreground hover:text-foreground transition-colors">ℹ️</button>
+          <button onClick={onShowDetail} className="w-8 h-8 rounded-md bg-foreground/[0.04] text-muted-foreground/40 hover:text-foreground/70 flex items-center justify-center transition-colors text-[13px]">ℹ️</button>
         )}
         {callState === 'idle' && (
           <CallButton
@@ -251,10 +251,10 @@ export function CallContent({
         )}
         {callState !== 'idle' && callState !== 'ended' && (
           <div className={cn(
-            'flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold',
-            callState === 'active' ? 'bg-success/10 text-success border border-success/20' : 'bg-warning/10 text-warning border border-warning/20'
+            'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold',
+            callState === 'active' ? 'bg-success/10 text-success border border-success/15' : 'bg-warning/10 text-warning border border-warning/15'
           )}>
-            <div className={cn('w-2 h-2 rounded-full animate-pulse', callState === 'active' ? 'bg-success' : 'bg-warning')} />
+            <div className={cn('w-1.5 h-1.5 rounded-full animate-pulse', callState === 'active' ? 'bg-success' : 'bg-warning')} />
             {callState === 'dialing' ? 'Verbinden...' : callState === 'ringing' ? 'Gaat over...' : 'In gesprek'}
           </div>
         )}
