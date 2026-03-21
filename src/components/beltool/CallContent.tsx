@@ -248,7 +248,15 @@ export function CallContent({
             }}
           />
         )}
-        <CallStateBar callState={callState} onHangup={() => { onEndCall('lost', 'nietInteressant'); addScore('afgevallen'); }} />
+        {callState !== 'idle' && callState !== 'ended' && (
+          <div className={cn(
+            'flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold',
+            callState === 'active' ? 'bg-success/10 text-success border border-success/20' : 'bg-warning/10 text-warning border border-warning/20'
+          )}>
+            <div className={cn('w-2 h-2 rounded-full animate-pulse', callState === 'active' ? 'bg-success' : 'bg-warning')} />
+            {callState === 'dialing' ? 'Verbinden...' : callState === 'ringing' ? 'Gaat over...' : 'In gesprek'}
+          </div>
+        )}
       </div>
 
       {/* Content */}
