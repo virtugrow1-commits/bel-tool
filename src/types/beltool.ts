@@ -42,7 +42,8 @@ export type CompanyStage =
   | 'terugbellenGepland'
   | 'afspraak'
   | 'nietInteressant'
-  | 'geenGehoor';
+  | 'geenGehoor'
+  | 'anderMoment';
 
 export interface StageMeta {
   label: string;
