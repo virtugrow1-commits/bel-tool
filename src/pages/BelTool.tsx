@@ -118,6 +118,41 @@ export default function BelTool() {
     })();
   }, [user]);
 
+  const reloadLeads = useCallback(async () => {
+    setGhlLoading(true);
+    setGhlError(null);
+    try {
+      const pipelineData = await ghl.getPipelines();
+      const pipelines = pipelineData?.pipelines || [];
+      const bellenPipeline = pipelines.find((p: { name: string }) =>
+        p.name.toLowerCase().includes('bellen')
+      );
+      if (!bellenPipeline) throw new Error('Geen "Bellen" pipeline gevonden');
+
+      const nieuweLeadsStage = bellenPipeline.stages?.find((s: { name: string }) =>
+        s.name.toLowerCase().includes('nieuwe')
+      );
+      setPipelineInfo({ pipelineId: bellenPipeline.id, stageId: nieuweLeadsStage?.id || '' });
+
+      const oppData = await ghl.searchOpportunities(bellenPipeline.id, nieuweLeadsStage?.id, 25);
+      const opportunities = oppData?.opportunities || [];
+      const meta = oppData?.meta;
+
+      setCompanies(mapOpportunitiesToCompanies(opportunities));
+      setHasMoreLeads(!!meta?.nextPage);
+      if (meta?.startAfter && meta?.startAfterId) {
+        setPageCursor({ startAfter: meta.startAfter, startAfterId: meta.startAfterId });
+      } else {
+        setPageCursor(null);
+      }
+    } catch (err: any) {
+      setGhlError(err.message);
+      throw err;
+    } finally {
+      setGhlLoading(false);
+    }
+  }, []);
+
   const loadMoreLeads = useCallback(async () => {
     if (!pipelineInfo || !pageCursor || !hasMoreLeads || ghlLoading) return;
     setGhlLoading(true);
@@ -324,7 +359,7 @@ export default function BelTool() {
           >{toast.msg}</div>
         )}
 
-        <SettingsPanel open={showSettings} onClose={() => setShowSettings(false)} />
+        <SettingsPanel open={showSettings} onClose={() => setShowSettings(false)} onSyncLeads={reloadLeads} />
         <Leaderboard open={showLeaderboard} onClose={() => setShowLeaderboard(false)} />
         <AgendaView open={showAgenda} onClose={() => setShowAgenda(false)} appointments={appts} />
         {showCallback && activeContact && activeComp && (
