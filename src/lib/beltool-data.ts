@@ -7,6 +7,7 @@ export interface User {
   password: string;
   role: 'admin' | 'caller' | 'manager';
   avatar: string;
+  deviceId?: string;
 }
 
 export interface Advisor {
