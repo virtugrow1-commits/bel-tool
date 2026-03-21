@@ -302,8 +302,6 @@ export default function BelTool() {
   };
 
   const endCall = (ph: CallPhase, stage: Company['stage']) => {
-    setPhase(ph);
-    setCallState('ended');
     if (activeCompId) {
       updateCompStage(activeCompId, stage);
       ghl.updateContactStage(activeContactId || '', stage);
@@ -329,6 +327,13 @@ export default function BelTool() {
         ghl.saveSurveyAnswers(activeContactId || '', answers).catch(console.error);
       }
     }
+
+    // Reset state so user can select the next contact immediately
+    setPhase('idle');
+    setCallState('idle');
+    setActiveCompId(null);
+    setActiveContactId(null);
+    setShowDetail(false);
   };
 
   const nextContact = () => { setPhase('idle'); setCallState('idle'); setActiveCompId(null); setActiveContactId(null); setShowDetail(false); };
