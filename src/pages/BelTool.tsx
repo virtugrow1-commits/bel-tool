@@ -352,6 +352,9 @@ export default function BelTool() {
           onShowSettings={() => setShowSettings(true)}
           dueCallbackCount={dueCallbacks.length}
           appointmentCount={appts.length}
+          hasMoreLeads={hasMoreLeads}
+          loadingMore={ghlLoading}
+          onLoadMore={loadMoreLeads}
         />
 
         <div className="flex-1 flex flex-col overflow-hidden">
