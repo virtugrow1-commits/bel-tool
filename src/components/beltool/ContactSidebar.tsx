@@ -103,39 +103,50 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
         </div>
         <input placeholder={t.search} value={search} onChange={e => onSearchChange(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-border bg-foreground/[0.04] text-foreground text-[13px] outline-none placeholder:text-muted-foreground/40 focus:ring-1 focus:ring-primary mb-2" />
 
-        {/* Stage filter tabs */}
-        <div className="flex gap-1 overflow-x-auto pb-1 scrollbar-none">
-          {FILTER_TABS.map(tab => {
-            const count = stageCounts[tab.key];
-            const isActive = stageFilter === tab.key;
-            const meta = tab.key !== 'all' ? STAGE_META[tab.key] : null;
-            return (
-              <button
-                key={tab.key}
-                onClick={() => onStageFilterChange(tab.key)}
-                className={cn(
-                  'flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold whitespace-nowrap transition-all border flex-shrink-0',
-                  isActive
-                    ? 'border-primary/40 bg-primary/[0.12] text-primary'
-                    : 'border-transparent bg-foreground/[0.03] text-muted-foreground/40 hover:bg-foreground/[0.06]'
-                )}
-              >
-                <span>{tab.icon}</span>
-                <span>{tab.label}</span>
-                {count > 0 && (
-                  <span
-                    className="ml-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold"
-                    style={{
-                      background: isActive ? 'hsl(var(--primary) / 0.2)' : meta ? meta.color + '20' : 'rgba(255,255,255,0.06)',
-                      color: isActive ? 'hsl(var(--primary))' : meta ? meta.color : 'rgba(255,255,255,0.3)',
-                    }}
+        {/* Stage filter dropdown */}
+        <div className="relative" ref={filterRef}>
+          <button
+            onClick={() => setFilterOpen(!filterOpen)}
+            className="w-full flex items-center justify-between px-3 py-2 rounded-lg border border-border/40 bg-foreground/[0.04] text-[12px] font-semibold transition-colors hover:bg-foreground/[0.06]"
+          >
+            <span className="flex items-center gap-1.5">
+              <span>{FILTER_TABS.find(f => f.key === stageFilter)?.icon}</span>
+              <span>{FILTER_TABS.find(f => f.key === stageFilter)?.label}</span>
+              <span className="text-[10px] text-muted-foreground/40">({stageCounts[stageFilter]})</span>
+            </span>
+            <span className={cn('text-muted-foreground/30 text-[10px] transition-transform', filterOpen && 'rotate-180')}>▼</span>
+          </button>
+          {filterOpen && (
+            <div className="absolute left-0 right-0 top-full mt-1 z-50 rounded-xl border border-border/40 bg-[hsl(222_32%_10%)] shadow-xl overflow-hidden">
+              {FILTER_TABS.map(tab => {
+                const count = stageCounts[tab.key];
+                const isActive = stageFilter === tab.key;
+                const meta = tab.key !== 'all' ? STAGE_META[tab.key] : null;
+                return (
+                  <button
+                    key={tab.key}
+                    onClick={() => { onStageFilterChange(tab.key); setFilterOpen(false); }}
+                    className={cn(
+                      'flex items-center gap-2 w-full text-left px-3 py-2 text-[12px] font-medium transition-colors',
+                      isActive ? 'bg-primary/[0.1] text-primary' : 'text-foreground/60 hover:bg-foreground/[0.05]'
+                    )}
                   >
-                    {count}
-                  </span>
-                )}
-              </button>
-            );
-          })}
+                    <span>{tab.icon}</span>
+                    <span className="flex-1">{tab.label}</span>
+                    {count > 0 && (
+                      <span
+                        className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold"
+                        style={{
+                          background: meta ? meta.color + '20' : 'rgba(255,255,255,0.06)',
+                          color: meta ? meta.color : 'rgba(255,255,255,0.4)',
+                        }}
+                      >{count}</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
       <div className="flex-1 overflow-y-auto px-2.5 pb-2.5">
