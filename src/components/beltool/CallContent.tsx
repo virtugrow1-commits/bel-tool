@@ -86,7 +86,7 @@ export function CallContent({
   if (phase === 'idle') {
     return (
       <div className="flex-1 flex flex-col items-center justify-center text-center gap-3">
-        <Logo size={64} />
+        <div className="text-5xl">📞</div>
         <div className="text-lg font-bold text-foreground/40 mt-4">{t.selectContact}</div>
         <div className="text-[13px] text-foreground/20 mt-1.5">{t.clickName}</div>
         {scores.gebeld > 0 && (
