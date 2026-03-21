@@ -35,12 +35,15 @@ Deno.serve(async (req) => {
 
     if (!voysEmail || !voysToken || !voysDevice) {
       return new Response(
-        JSON.stringify({ success: false, error: 'Voys configuratie ontbreekt' }),
+        JSON.stringify({ success: false, error: 'Voys configuratie ontbreekt', missing: { email: !voysEmail, token: !voysToken, device: !voysDevice } }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Call Voys Click-to-Dial API
+    // Voys/VoIPGRID Click-to-Dial API
+    // a_number = internal extension (e.g. "202") or the full phone number of your device
+    // b_number = destination phone number
+    // b_cli = outbound caller ID shown to b_number (optional)
     const voysBody: Record<string, string> = {
       a_number: voysDevice,
       b_number: normalizedPhone,
@@ -49,10 +52,16 @@ Deno.serve(async (req) => {
       voysBody.b_cli = voysOutbound;
     }
 
+    // Auth: Basic auth with email:token (base64 encoded)
+    // VoIPGRID API uses HTTP Basic Authentication, not Token auth
+    const basicAuth = btoa(`${voysEmail}:${voysToken}`);
+
+    console.log('Voys request:', JSON.stringify({ ...voysBody, auth: `Basic ${voysEmail}:***` }));
+
     const voysResponse = await fetch('https://api.voipgrid.nl/api/clicktodial/', {
       method: 'POST',
       headers: {
-        'Authorization': `Token ${voysEmail}:${voysToken}`,
+        'Authorization': `Basic ${basicAuth}`,
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
@@ -60,11 +69,13 @@ Deno.serve(async (req) => {
     });
 
     let voysData: Record<string, unknown> = {};
+    const responseText = await voysResponse.text();
+    console.log('Voys response:', voysResponse.status, responseText);
+    
     try {
-      voysData = await voysResponse.json();
+      voysData = JSON.parse(responseText);
     } catch {
-      const text = await voysResponse.text();
-      voysData = { raw: text };
+      voysData = { raw: responseText };
     }
 
     // Log to GHL webhook if configured
@@ -97,6 +108,7 @@ Deno.serve(async (req) => {
       );
     }
   } catch (error) {
+    console.error('Voys call error:', error);
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
