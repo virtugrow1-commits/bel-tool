@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils';
 import type { CompanyContact, Company, CallPhase, CallState, SurveyAnswers, SelectOption, SurveyConfig } from '@/types/beltool';
+import { CallButton } from './CallButton';
 import { useState, useEffect } from 'react';
 import { StepLayout } from './StepLayout';
 import { EndView } from './EndView';
@@ -238,12 +239,14 @@ export function CallContent({
           <button onClick={onShowDetail} className="p-2 rounded-lg bg-foreground/[0.04] text-muted-foreground hover:text-foreground transition-colors">ℹ️</button>
         )}
         {callState === 'idle' && (
-          <button
-            onClick={onStartDialing}
-            className="px-4 py-1.5 rounded-full bg-gradient-to-r from-info to-primary text-white text-xs font-bold active:scale-[0.97] transition-transform flex items-center gap-1.5"
-          >
-            📞 Bellen
-          </button>
+          <CallButton
+            phoneNumber={activeContact.phone}
+            leadId={activeContact.id}
+            leadName={`${activeContact.firstName} ${activeContact.lastName}`}
+            onCallStarted={() => {
+              onStartDialing();
+            }}
+          />
         )}
         <CallStateBar callState={callState} onHangup={() => { onEndCall('lost', 'nietInteressant'); addScore('afgevallen'); }} />
       </div>
