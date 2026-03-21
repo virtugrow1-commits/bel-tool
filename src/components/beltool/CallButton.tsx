@@ -41,6 +41,7 @@ export function CallButton({ phoneNumber, leadId, leadName, deviceId, onCallStar
 
   return (
     <button
+      data-call-button
       onClick={handleCall}
       disabled={state === 'loading' || !phoneNumber}
       className={cn(
