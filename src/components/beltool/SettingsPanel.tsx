@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Modal } from './Modal';
 import { useBelTool } from '@/contexts/BelToolContext';
-import { USERS, defaultSurvey } from '@/lib/beltool-data';
+import { USERS, defaultSurvey, type User } from '@/lib/beltool-data';
 import { initScores } from '@/lib/beltool-scoring';
 import { store } from '@/lib/beltool-store';
 import { ghl } from '@/lib/beltool-ghl';
