@@ -1,4 +1,4 @@
-import BelTool from './BelTool';
+import BelTool from "./BelTool";
 
 const Index = () => <BelTool />;
 
