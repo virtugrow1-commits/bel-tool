@@ -29,7 +29,7 @@ export function CallButton({ phoneNumber, leadId, leadName, onCallStarted, class
       if (!data?.success) throw new Error(data?.error || 'Onbekende fout');
 
       setState('success');
-      onCallStarted?.();
+      onCallStarted?.(data?.callId || '');
       setTimeout(() => setState('idle'), 2500);
     } catch (err: any) {
       setState('error');
