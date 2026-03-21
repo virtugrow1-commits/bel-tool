@@ -268,25 +268,12 @@ export default function BelTool() {
 
   const startDialing = async () => {
     setCallState('dialing');
-    
-    // Trigger outbound call via GHL workflow
-    try {
-      if (activeContactId) {
-        await ghl.triggerCall(activeContactId);
-      }
-    } catch (err) {
-      console.warn('GHL call trigger failed:', err);
-      flash('GHL bel-trigger mislukt – controleer je workflow', 'err');
-    }
+    addScore('gebeld');
 
-    // Transition to ringing state
+    // Transition to ringing — Voys handles the actual call via edge function
     setTimeout(() => {
       setCallState('ringing');
-      addScore('gebeld');
     }, 800);
-
-    // User confirms they're connected by clicking "In gesprek" or we auto-transition
-    // We keep a longer timeout as GHL needs to ring the user's phone first
   };
 
   const confirmConnected = () => {
