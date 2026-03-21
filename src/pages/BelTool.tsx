@@ -36,6 +36,7 @@ export default function BelTool() {
   const [search, setSearch] = useState('');
   const [phase, setPhase] = useState<CallPhase>('idle');
   const [callState, setCallState] = useState<CallState>('idle');
+  const [activeCallId, setActiveCallId] = useState<string | null>(null);
   const [answers, setAnswers] = useState<SurveyAnswers>({ hours: '', tasks: [], tasksOther: '', growth: '', ai: '' });
   const [notes, setNotes] = useState('');
   const [bookDate, setBookDate] = useState('');
