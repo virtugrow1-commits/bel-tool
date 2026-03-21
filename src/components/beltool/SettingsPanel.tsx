@@ -244,6 +244,7 @@ export function SettingsPanel({ open, onClose }: { open: boolean; onClose: () =>
             </div>
           )}
         </div>
+      )}
 
       {/* PIPELINE TAB */}
       {tab === 'pipeline' && (
