@@ -308,7 +308,7 @@ export default function BelTool() {
 
   if (!user) return <LoginScreen onLogin={handleLogin} />;
 
-  const ctx = { lang, setLang, user, t, allScores, setAllScores, webhooks, setWebhooks, apiKey, setApiKey, surveyConfig, setSurveyConfig };
+  const ctx = { lang, setLang, user, t, allScores, setAllScores, webhooks, setWebhooks, apiKey, setApiKey, surveyConfig, setSurveyConfig, ghlConfig, setGhlConfig };
 
   return (
     <BelToolContext.Provider value={ctx}>
