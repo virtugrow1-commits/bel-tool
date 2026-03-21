@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils';
 import type { CompanyContact, Company, CallPhase, CallState, SurveyAnswers, SelectOption, SurveyConfig } from '@/types/beltool';
+import { useState, useEffect } from 'react';
 import { StepLayout } from './StepLayout';
 import { EndView } from './EndView';
 import { CallStateBar } from './CallStateBar';
@@ -311,23 +312,7 @@ export function CallContent({
               <div className="bg-primary/[0.05] border border-primary/15 rounded-xl p-4 mb-3.5">
                 <div className="text-xs font-bold text-primary tracking-wide mb-3">{t.bookAppointment}</div>
                 <div className="flex gap-2.5 mb-2.5">
-                  <div className="flex-1">
-                    <div className="text-[11px] text-muted-foreground mb-1">{t.chooseDate}</div>
-                    <select value={bookDate} onChange={e => setBookDate(e.target.value)} className="w-full px-3 py-2.5 rounded-lg border border-border bg-foreground/[0.05] text-foreground text-[13px] outline-none">
-                      <option value="">{t.pickDate}</option>
-                      {getWorkdays(10).map(d => {
-                        const v = d.toISOString().split('T')[0];
-                        return <option key={v} value={v} className="text-foreground bg-card">{fmtDate(v)}</option>;
-                      })}
-                    </select>
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-[11px] text-muted-foreground mb-1">{t.chooseTime}</div>
-                    <select value={bookTime} onChange={e => setBookTime(e.target.value)} className="w-full px-3 py-2.5 rounded-lg border border-border bg-foreground/[0.05] text-foreground text-[13px] outline-none">
-                      <option value="">{t.pickTime}</option>
-                      {TIMES.map(tm => <option key={tm} value={tm} className="text-foreground bg-card">{tm}</option>)}
-                    </select>
-                  </div>
+                  <CalendarPicker bookDate={bookDate} setBookDate={setBookDate} bookTime={bookTime} setBookTime={setBookTime} />
                 </div>
                 <div className="mb-3">
                   <div className="text-[11px] text-muted-foreground mb-1">{t.advisor}</div>
@@ -336,11 +321,17 @@ export function CallContent({
                     {ADVISORS.map(a => <option key={a.id} value={a.id} className="text-foreground bg-card">{a.name} — {a.specialty}</option>)}
                   </select>
                 </div>
+                <GhlCalendarSelect />
                 <ActionBtn wide onClick={() => {
                   if (!bookDate || !bookTime) { showToast(t.pickDateTime, 'err'); return; }
                   if (!bookAdvisor) { showToast(t.selectAdvisor, 'err'); return; }
+                  const calId = (document.getElementById('ghl-calendar-select') as HTMLSelectElement)?.value;
+                  if (!calId) { showToast('Selecteer een kalender', 'err'); return; }
                   // Book in GHL
-                  ghl.bookAppointment(activeContact.id, bookDate, bookTime, bookAdvisor).catch(console.error);
+                  ghl.bookAppointment(activeContact.id, bookDate, bookTime, bookAdvisor, calId).catch(err => {
+                    console.error('Appointment error:', err);
+                    showToast('Fout bij inplannen: ' + err.message, 'err');
+                  });
                   // Create task in GHL
                   ghl.createTask(activeContact.id, `Adviesgesprek ${activeContact.firstName} ${activeContact.lastName}`, {
                     body: `Afspraak op ${fmtDate(bookDate)} om ${bookTime}`,
