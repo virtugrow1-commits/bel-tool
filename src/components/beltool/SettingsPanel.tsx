@@ -28,7 +28,7 @@ const DEFAULT_PIPELINE_STAGES = [
   { name: 'Geen Gehoor', key: 'geenGehoor', color: '#6B7280' },
 ];
 
-export function SettingsPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function SettingsPanel({ open, onClose, onSyncLeads }: { open: boolean; onClose: () => void; onSyncLeads: () => Promise<void> }) {
   const { lang, setLang, user, allScores, setAllScores, webhooks, setWebhooks, apiKey, setApiKey, t, surveyConfig, setSurveyConfig, ghlConfig, setGhlConfig } = useBelTool();
   const [tab, setTab] = useState('ghl');
   const [confirmReset, setConfirmReset] = useState<string | null>(null);
