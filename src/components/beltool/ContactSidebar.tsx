@@ -1,9 +1,19 @@
 import { cn } from '@/lib/utils';
-import type { Company, CompanyContact, CallPhase } from '@/types/beltool';
+import type { Company, CompanyContact, CallPhase, CompanyStage } from '@/types/beltool';
 import { STAGE_META } from '@/types/beltool';
 import { useBelTool } from '@/contexts/BelToolContext';
 import type { Scores } from '@/lib/beltool-scoring';
 import type { User } from '@/lib/beltool-data';
+
+const FILTER_TABS: { key: CompanyStage | 'all'; label: string; icon: string }[] = [
+  { key: 'all', label: 'Alles', icon: '📋' },
+  { key: 'nieuw', label: 'Nieuw', icon: '🆕' },
+  { key: 'terugbellenGepland', label: 'Terugbellen', icon: '🔔' },
+  { key: 'geenGehoor', label: 'Geen gehoor', icon: '📵' },
+  { key: 'enqueteVerstuurd', label: 'Verstuurd', icon: '📨' },
+  { key: 'afspraak', label: 'Afspraak', icon: '📅' },
+  { key: 'nietInteressant', label: 'Afgevallen', icon: '🚫' },
+];
 
 interface ContactSidebarProps {
   companies: Company[];
@@ -29,11 +39,22 @@ interface ContactSidebarProps {
   hasMoreLeads?: boolean;
   loadingMore?: boolean;
   onLoadMore?: () => void;
+  stageFilter: CompanyStage | 'all';
+  onStageFilterChange: (f: CompanyStage | 'all') => void;
+  onSelectFromLog?: (contactName: string) => void;
 }
 
-export function ContactSidebar({ companies, activeCompId, activeContactId, expandedComp, setExpandedComp, search, onSearchChange, onSelectContact, phase, onBusy, scores, convRate, user, onLogout, onShowAgenda, onShowCallbackQueue, onShowLeaderboard, onShowSettings, dueCallbackCount, appointmentCount, hasMoreLeads, loadingMore, onLoadMore }: ContactSidebarProps) {
+export function ContactSidebar({ companies, activeCompId, activeContactId, expandedComp, setExpandedComp, search, onSearchChange, onSelectContact, phase, onBusy, scores, convRate, user, onLogout, onShowAgenda, onShowCallbackQueue, onShowLeaderboard, onShowSettings, dueCallbackCount, appointmentCount, hasMoreLeads, loadingMore, onLoadMore, stageFilter, onStageFilterChange, onSelectFromLog }: ContactSidebarProps) {
   const { t } = useBelTool();
-  const filtered = companies.filter(c => (c.name + ' ' + c.contacts.map(ct => ct.firstName + ' ' + ct.lastName).join(' ')).toLowerCase().includes(search.toLowerCase()));
+
+  const stageFiltered = stageFilter === 'all' ? companies : companies.filter(c => c.stage === stageFilter);
+  const filtered = stageFiltered.filter(c => (c.name + ' ' + c.contacts.map(ct => ct.firstName + ' ' + ct.lastName).join(' ')).toLowerCase().includes(search.toLowerCase()));
+
+  // Count per stage for badge
+  const stageCounts: Record<string, number> = {};
+  for (const tab of FILTER_TABS) {
+    stageCounts[tab.key] = tab.key === 'all' ? companies.length : companies.filter(c => c.stage === tab.key).length;
+  }
 
   return (
     <div className="w-[290px] border-r border-border flex flex-col flex-shrink-0" style={{ background: 'hsl(222 32% 8%)' }}>
@@ -69,9 +90,47 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
           </div>
           {scores.gebeld > 0 && <div className="mt-1.5 flex items-center gap-1.5"><div className="flex-1 h-[3px] rounded-full bg-foreground/[0.05] overflow-hidden"><div className="h-full rounded-full bg-gradient-to-r from-info to-primary transition-[width] duration-500" style={{ width: `${convRate}%` }} /></div><span className="text-[10px] font-bold" style={{ color: convRate >= 50 ? 'hsl(152 56% 42%)' : 'hsl(38 92% 50%)' }}>{convRate}%</span></div>}
         </div>
-        <input placeholder={t.search} value={search} onChange={e => onSearchChange(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-border bg-foreground/[0.04] text-foreground text-[13px] outline-none placeholder:text-muted-foreground/40 focus:ring-1 focus:ring-primary" />
+        <input placeholder={t.search} value={search} onChange={e => onSearchChange(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-border bg-foreground/[0.04] text-foreground text-[13px] outline-none placeholder:text-muted-foreground/40 focus:ring-1 focus:ring-primary mb-2" />
+
+        {/* Stage filter tabs */}
+        <div className="flex gap-1 overflow-x-auto pb-1 scrollbar-none">
+          {FILTER_TABS.map(tab => {
+            const count = stageCounts[tab.key];
+            const isActive = stageFilter === tab.key;
+            const meta = tab.key !== 'all' ? STAGE_META[tab.key] : null;
+            return (
+              <button
+                key={tab.key}
+                onClick={() => onStageFilterChange(tab.key)}
+                className={cn(
+                  'flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold whitespace-nowrap transition-all border flex-shrink-0',
+                  isActive
+                    ? 'border-primary/40 bg-primary/[0.12] text-primary'
+                    : 'border-transparent bg-foreground/[0.03] text-muted-foreground/40 hover:bg-foreground/[0.06]'
+                )}
+              >
+                <span>{tab.icon}</span>
+                <span>{tab.label}</span>
+                {count > 0 && (
+                  <span
+                    className="ml-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold"
+                    style={{
+                      background: isActive ? 'hsl(var(--primary) / 0.2)' : meta ? meta.color + '20' : 'rgba(255,255,255,0.06)',
+                      color: isActive ? 'hsl(var(--primary))' : meta ? meta.color : 'rgba(255,255,255,0.3)',
+                    }}
+                  >
+                    {count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
       <div className="flex-1 overflow-y-auto px-2.5 pb-2.5">
+        {filtered.length === 0 && (
+          <div className="text-center text-muted-foreground/30 text-[12px] py-6">Geen contacten in deze lijst</div>
+        )}
         {filtered.map(comp => {
           const s = STAGE_META[comp.stage] || STAGE_META.nieuw;
           const isExpanded = expandedComp === comp.id;
@@ -121,7 +180,22 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
           ) : null;
         })()}
       </div>
-      {scores.log.length > 0 && <div className="border-t border-border/30 max-h-[100px] overflow-y-auto px-3 py-1.5"><div className="text-[9px] font-bold text-muted-foreground/20 tracking-[1.5px] mb-1">{t.activity}</div>{scores.log.slice(0, 5).map((e, i) => <div key={i} className="flex items-center gap-1 py-0.5 text-[10px]"><span className="text-muted-foreground/20 w-8">{e.time}</span><span>{{ afspraak: '📅', enquete: '✅', verstuurd: '📨', afgevallen: '🚫', geenGehoor: '📵', callback: '🔔', gebeld: '📞' }[e.result]}</span><span className="text-muted-foreground/40 truncate">{e.contact}</span></div>)}</div>}
+      {scores.log.length > 0 && (
+        <div className="border-t border-border/30 max-h-[100px] overflow-y-auto px-3 py-1.5">
+          <div className="text-[9px] font-bold text-muted-foreground/20 tracking-[1.5px] mb-1">{t.activity}</div>
+          {scores.log.slice(0, 5).map((e, i) => (
+            <button
+              key={i}
+              onClick={() => onSelectFromLog?.(e.contact)}
+              className="flex items-center gap-1 py-0.5 text-[10px] w-full text-left hover:bg-foreground/[0.04] rounded px-1 transition-colors cursor-pointer bg-transparent border-none"
+            >
+              <span className="text-muted-foreground/20 w-8">{e.time}</span>
+              <span>{{ afspraak: '📅', enquete: '✅', verstuurd: '📨', afgevallen: '🚫', geenGehoor: '📵', callback: '🔔', gebeld: '📞' }[e.result]}</span>
+              <span className="text-muted-foreground/40 truncate">{e.contact}</span>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
