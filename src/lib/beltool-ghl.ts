@@ -93,6 +93,14 @@ export const ghl = {
     return callGHL('getPipelines');
   },
 
+  async triggerCall(contactId: string) {
+    return callGHL('triggerCall', { contactId });
+  },
+
+  async removeTag(contactId: string, tags: string[]) {
+    return callGHL('removeTag', { contactId, tags });
+  },
+
   async sendEmail(contactId: string, _template: string) {
     // Trigger via GHL workflow/automation - add tag to trigger
     await callGHL('addTag', { contactId, tags: ['beltool-send-survey'] });

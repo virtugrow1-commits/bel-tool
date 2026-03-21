@@ -33,6 +33,7 @@ interface CallContentProps {
   onShowCallback: () => void;
   onStartDialing: () => void;
   onHangup: () => void;
+  onConfirmConnected: () => void;
   activeCompId: string;
 }
 
@@ -75,7 +76,7 @@ export function CallContent({
   activeContact, activeComp, phase, callState, setPhase, answers, setAnswers, taskString,
   onEndCall, onNextContact, showToast, updateStage, addScore,
   bookDate, setBookDate, bookTime, setBookTime, bookAdvisor, setBookAdvisor,
-  scores, onShowCallback, onStartDialing, onHangup, activeCompId,
+  scores, onShowCallback, onStartDialing, onHangup, onConfirmConnected, activeCompId,
 }: CallContentProps) {
   const { t, surveyConfig } = useBelTool();
   const stepIndex: Record<string, number> = { intro: 0, q1: 1, q2: 2, q3: 3, q4: 4, bridge: 5 };
@@ -134,8 +135,24 @@ export function CallContent({
             </button>
           )}
           {(callState === 'dialing' || callState === 'ringing') && (
-            <div className="mt-6 flex justify-center">
+            <div className="mt-6 flex flex-col items-center gap-3">
               <CallStateBar callState={callState} />
+              {callState === 'ringing' && (
+                <div className="flex gap-2">
+                  <button
+                    onClick={onConfirmConnected}
+                    className="px-6 py-2 rounded-full bg-success text-white text-sm font-bold active:scale-[0.97] transition-transform"
+                  >
+                    ✅ Verbonden
+                  </button>
+                  <button
+                    onClick={() => { onHangup(); onEndCall('noanswer', 'geenGehoor'); addScore('geenGehoor'); showToast('Geen gehoor'); }}
+                    className="px-6 py-2 rounded-full bg-destructive text-white text-sm font-bold active:scale-[0.97] transition-transform"
+                  >
+                    📵 Geen gehoor
+                  </button>
+                </div>
+              )}
             </div>
           )}
           <div className="flex gap-1.5 justify-center mt-4">

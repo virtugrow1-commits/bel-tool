@@ -150,17 +150,44 @@ export default function BelTool() {
     setNotes(''); setBookDate(''); setBookTime(''); setBookAdvisor('');
   };
 
-  const startDialing = () => {
+  const startDialing = async () => {
     setCallState('dialing');
+    
+    // Trigger outbound call via GHL workflow
+    try {
+      if (activeContactId) {
+        await ghl.triggerCall(activeContactId);
+      }
+    } catch (err) {
+      console.warn('GHL call trigger failed:', err);
+      flash('GHL bel-trigger mislukt – controleer je workflow', 'err');
+    }
+
+    // Transition to ringing state
     setTimeout(() => {
       setCallState('ringing');
       addScore('gebeld');
-      setTimeout(() => {
-        setCallState('active');
-        setPhase('intro');
-        if (activeCompId) { updateCompStage(activeCompId, 'bellen'); ghl.logCall(activeContactId || '', 'started'); }
-      }, 1200);
     }, 800);
+
+    // User confirms they're connected by clicking "In gesprek" or we auto-transition
+    // We keep a longer timeout as GHL needs to ring the user's phone first
+  };
+
+  const confirmConnected = () => {
+    setCallState('active');
+    setPhase('intro');
+    if (activeCompId) {
+      updateCompStage(activeCompId, 'bellen');
+      ghl.logCall(activeContactId || '', 'started');
+    }
+  };
+
+  const hangup = () => {
+    setCallState('ended');
+    if (activeContactId) {
+      // Clean up the call tag
+      ghl.removeTag(activeContactId, ['beltool-call-now']).catch(console.error);
+    }
   };
 
   const endCall = (ph: CallPhase, stage: Company['stage']) => {
@@ -282,7 +309,8 @@ export default function BelTool() {
                     bookAdvisor={bookAdvisor} setBookAdvisor={setBookAdvisor}
                     scores={scores} onShowCallback={() => setShowCallback(true)}
                     onStartDialing={startDialing}
-                    onHangup={() => { endCall('lost', 'nietInteressant'); addScore('afgevallen'); }}
+                    onHangup={hangup}
+                    onConfirmConnected={confirmConnected}
                     activeCompId={activeCompId}
                   />
                 </div>

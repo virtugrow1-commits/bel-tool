@@ -199,6 +199,30 @@ serve(async (req) => {
         break;
       }
 
+      // ─── TRIGGER OUTBOUND CALL via workflow tag ───
+      case 'triggerCall': {
+        // Add a tag that triggers an outbound call workflow in GHL
+        const callTag = `beltool-call-now`;
+        const tagRes = await fetch(`${GHL_BASE}/contacts/${params.contactId}/tags`, {
+          method: 'POST', headers: ghlHeaders,
+          body: JSON.stringify({ tags: [callTag] }),
+        });
+        if (!tagRes.ok) throw new Error(`GHL trigger call error [${tagRes.status}]: ${await tagRes.text()}`);
+        result = await tagRes.json();
+        break;
+      }
+
+      // ─── REMOVE TAG (cleanup after call trigger) ───
+      case 'removeTag': {
+        const res = await fetch(`${GHL_BASE}/contacts/${params.contactId}/tags`, {
+          method: 'DELETE', headers: ghlHeaders,
+          body: JSON.stringify({ tags: params.tags }),
+        });
+        if (!res.ok) throw new Error(`GHL remove tag error [${res.status}]: ${await res.text()}`);
+        result = await res.json();
+        break;
+      }
+
       // ─── GET USERS (for assignedTo) ───
       case 'getUsers': {
         const res = await fetch(`${GHL_BASE}/users/search?companyId=${GHL_LOCATION_ID}`, { headers: ghlHeaders });
