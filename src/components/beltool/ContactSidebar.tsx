@@ -80,7 +80,7 @@ function DailyTargetBar({ scores, targets }: { scores: Scores; targets: DailyTar
   );
 }
 
-function PauseTimer({ onPauseChange }: { onPauseChange?: (paused: boolean) => void }) {
+function PauseTimerInline() {
   const [paused, setPaused] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [sessionSeconds, setSessionSeconds] = useState(0);
@@ -96,28 +96,20 @@ function PauseTimer({ onPauseChange }: { onPauseChange?: (paused: boolean) => vo
   const fmt = (s: number) => `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
 
   return (
-    <div className={cn(
-      'flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-[11px] mb-2.5 transition-colors',
-      paused ? 'bg-warning/10 border-warning/20' : 'bg-muted/30 border-border'
-    )}>
+    <div className="flex items-center gap-1.5">
       <button
-        onClick={() => { setPaused(!paused); onPauseChange?.(!paused); }}
+        onClick={() => setPaused(!paused)}
         className={cn(
-          'w-6 h-6 rounded-md flex items-center justify-center text-[12px] transition-colors',
-          paused ? 'bg-primary text-white' : 'bg-muted text-muted-foreground hover:bg-muted/80'
+          'w-5 h-5 rounded flex items-center justify-center text-[10px] transition-colors',
+          paused ? 'bg-primary text-white' : 'bg-muted text-muted-foreground'
         )}
       >
         {paused ? '▶' : '⏸'}
       </button>
-      <div className="flex-1">
-        <span className="text-muted-foreground font-medium">
-          {paused ? '⏸ Pauze' : '🟢 Actief'}
-        </span>
-      </div>
-      <span className="font-mono tabular-nums text-muted-foreground">{fmt(sessionSeconds)}</span>
-      {elapsed > 0 && (
-        <span className="font-mono tabular-nums text-warning text-[10px]">({fmt(elapsed)} pauze)</span>
-      )}
+      <span className={cn('text-[10px] font-mono tabular-nums', paused ? 'text-warning' : 'text-muted-foreground')}>
+        {fmt(sessionSeconds)}
+      </span>
+      {elapsed > 0 && <span className="text-[9px] font-mono text-warning/60">({fmt(elapsed)})</span>}
     </div>
   );
 }
