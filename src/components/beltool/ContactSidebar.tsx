@@ -3,7 +3,6 @@ import type { Company, CompanyContact, CallPhase } from '@/types/beltool';
 import { STAGE_META } from '@/types/beltool';
 import { useBelTool } from '@/contexts/BelToolContext';
 import type { Scores } from '@/lib/beltool-scoring';
-import { Logo } from './Logo';
 import type { User } from '@/lib/beltool-data';
 
 interface ContactSidebarProps {
