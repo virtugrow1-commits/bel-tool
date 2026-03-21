@@ -108,6 +108,21 @@ function LocationSelect({ value, onChange, customAddress, onCustomChange, compan
   );
 }
 
+interface DailyTargets {
+  calls: number;
+  appointments: number;
+  surveys: number;
+}
+
+const QUICK_NOTES = [
+  { label: 'VM ingesproken', icon: '📩' },
+  { label: 'Terugbellen na vakantie', icon: '🏖️' },
+  { label: 'Interesse maar druk', icon: '⏳' },
+  { label: 'Doorverbonden secretaresse', icon: '👩‍💼' },
+  { label: 'Voicemail vol', icon: '📵' },
+  { label: 'Verkeerd nummer', icon: '❌' },
+];
+
 interface CallContentProps {
   activeContact: CompanyContact;
   activeComp: Company;
@@ -135,6 +150,9 @@ interface CallContentProps {
   onConfirmConnected: () => void;
   activeCompId: string;
   onShowDetail?: () => void;
+  notes: string;
+  onNotesChange: (v: string) => void;
+  dailyTargets: DailyTargets;
 }
 
 function ActionBtn({ children, variant = 'primary', wide, onClick }: { children: React.ReactNode; variant?: 'primary' | 'ghost' | 'warning' | 'danger' | 'muted'; wide?: boolean; onClick: () => void }) {
