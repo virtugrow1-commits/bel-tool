@@ -60,7 +60,7 @@ Deno.serve(async (req) => {
     const voysResponse = await fetch('https://api.voipgrid.nl/api/clicktodial/', {
       method: 'POST',
       headers: {
-        'Authorization': `Basic ${basicAuth}`,
+        'Authorization': authHeader,
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
