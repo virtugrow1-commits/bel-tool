@@ -178,7 +178,7 @@ export function CallContent({
   bookDate, setBookDate, bookTime, setBookTime, bookAdvisor, setBookAdvisor,
   scores, onShowCallback, onStartDialing, onHangup, onConfirmConnected, activeCompId, onShowDetail,
 }: CallContentProps) {
-  const { t, surveyConfig } = useBelTool();
+  const { t, surveyConfig, user } = useBelTool();
   const [locationType, setLocationType] = useState<LocationType>('');
   const [customAddress, setCustomAddress] = useState('');
   const stepIndex: Record<string, number> = { intro: 0, q1: 1, q2: 2, q3: 3, q4: 4, bridge: 5 };
