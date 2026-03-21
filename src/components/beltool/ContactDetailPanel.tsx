@@ -21,25 +21,25 @@ export function ContactDetailPanel({ contact, company, onUpdateContact, onUpdate
     onClose();
   };
 
-  const inputCls = 'w-full px-2 py-1.5 rounded border border-border bg-foreground/[0.04] text-foreground text-sm outline-none focus:ring-1 focus:ring-primary';
+  const inputCls = 'w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20';
 
   return (
-    <div className="w-80 border-l border-border flex flex-col overflow-hidden" style={{ background: 'hsl(222 32% 7%)' }}>
+    <div className="w-80 border-l border-border flex flex-col overflow-hidden bg-card">
       <div className="p-4 border-b border-border">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-bold">Details bewerken</h3>
+          <h3 className="text-sm font-bold text-foreground">Details bewerken</h3>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground bg-transparent border-none text-lg cursor-pointer">×</button>
         </div>
         <div className="flex gap-1">
           <button
             onClick={() => setTab('contact')}
-            className={cn('flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors', tab === 'contact' ? 'bg-primary text-primary-foreground' : 'bg-foreground/[0.04] text-muted-foreground')}
+            className={cn('flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors border', tab === 'contact' ? 'bg-primary text-white border-primary' : 'bg-muted text-muted-foreground border-border')}
           >
             Contact
           </button>
           <button
             onClick={() => setTab('company')}
-            className={cn('flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors', tab === 'company' ? 'bg-primary text-primary-foreground' : 'bg-foreground/[0.04] text-muted-foreground')}
+            className={cn('flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors border', tab === 'company' ? 'bg-primary text-white border-primary' : 'bg-muted text-muted-foreground border-border')}
           >
             Bedrijf
           </button>
@@ -51,7 +51,7 @@ export function ContactDetailPanel({ contact, company, onUpdateContact, onUpdate
           <div className="space-y-3">
             {([['firstName', 'Voornaam'], ['lastName', 'Achternaam'], ['role', 'Functie'], ['phone', 'Telefoon'], ['email', 'Email'], ['linkedin', 'LinkedIn']] as const).map(([key, label]) => (
               <div key={key}>
-                <label className="text-[10px] text-muted-foreground/50 uppercase">{label}</label>
+                <label className="text-[10px] text-muted-foreground uppercase font-semibold">{label}</label>
                 <input
                   value={(editContact as any)[key] || ''}
                   onChange={e => setEditContact(p => ({ ...p, [key]: e.target.value }))}
@@ -60,7 +60,7 @@ export function ContactDetailPanel({ contact, company, onUpdateContact, onUpdate
               </div>
             ))}
             <div>
-              <label className="text-[10px] text-muted-foreground/50 uppercase">Notities</label>
+              <label className="text-[10px] text-muted-foreground uppercase font-semibold">Notities</label>
               <textarea
                 value={editContact.notes || ''}
                 onChange={e => setEditContact(p => ({ ...p, notes: e.target.value }))}
@@ -75,7 +75,7 @@ export function ContactDetailPanel({ contact, company, onUpdateContact, onUpdate
           <div className="space-y-3">
             {([['name', 'Bedrijfsnaam'], ['industry', 'Branche'], ['website', 'Website'], ['address', 'Adres']] as const).map(([key, label]) => (
               <div key={key}>
-                <label className="text-[10px] text-muted-foreground/50 uppercase">{label}</label>
+                <label className="text-[10px] text-muted-foreground uppercase font-semibold">{label}</label>
                 <input
                   value={(editCompany as any)[key] || ''}
                   onChange={e => setEditCompany(p => ({ ...p, [key]: e.target.value }))}
@@ -84,7 +84,7 @@ export function ContactDetailPanel({ contact, company, onUpdateContact, onUpdate
               </div>
             ))}
             <div>
-              <label className="text-[10px] text-muted-foreground/50 uppercase">Notities</label>
+              <label className="text-[10px] text-muted-foreground uppercase font-semibold">Notities</label>
               <textarea
                 value={editCompany.notes || ''}
                 onChange={e => setEditCompany(p => ({ ...p, notes: e.target.value }))}
@@ -97,7 +97,7 @@ export function ContactDetailPanel({ contact, company, onUpdateContact, onUpdate
       </div>
 
       <div className="p-4 border-t border-border">
-        <button onClick={save} className="w-full py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold active:scale-[0.97] transition-transform">
+        <button onClick={save} className="w-full py-2.5 rounded-lg bg-primary text-white text-sm font-semibold active:scale-[0.97] transition-transform shadow-sm">
           Opslaan
         </button>
       </div>

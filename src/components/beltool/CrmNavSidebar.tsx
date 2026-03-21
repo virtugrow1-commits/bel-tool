@@ -28,69 +28,78 @@ interface CrmNavSidebarProps {
 }
 
 export function CrmNavSidebar({ onShowSettings }: CrmNavSidebarProps) {
-  const [active] = useState('beltool');
-
   return (
-    <div className="w-[72px] flex flex-col items-center border-r border-border/50 flex-shrink-0 py-3 gap-0.5" style={{ background: 'hsl(222 34% 8%)' }}>
-      {/* Logo */}
-      <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center mb-3 cursor-pointer hover:bg-primary/30 transition-colors">
-        <span className="text-primary text-lg font-extrabold">V</span>
+    <nav className="w-[220px] flex flex-col flex-shrink-0 bg-sidebar text-sidebar-foreground">
+      {/* Logo area */}
+      <div className="px-4 py-4 border-b border-white/10">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
+            <span className="text-primary text-sm font-extrabold">C</span>
+          </div>
+          <span className="text-sm font-bold text-white tracking-tight">ClioCRM</span>
+        </div>
       </div>
 
-      {/* Top nav */}
-      <div className="flex flex-col gap-0.5 w-full px-1.5">
+      {/* Account selector */}
+      <div className="mx-3 mt-3 mb-2 px-3 py-2 rounded-lg bg-primary/15 border border-primary/25">
+        <div className="text-[11px] font-semibold text-primary">Cliqmakers</div>
+        <div className="text-[9px] text-white/40">Hilvarenbeek, Noord-Brabant</div>
+      </div>
+
+      {/* Search */}
+      <div className="px-3 mb-2">
+        <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white/[0.06] border border-white/10 text-[11px] text-white/30">
+          <span>🔍</span>
+          <span>Zoeken</span>
+          <span className="ml-auto text-[9px] px-1.5 py-0.5 rounded bg-white/10 text-white/25 font-mono">ctrl K</span>
+        </div>
+      </div>
+
+      {/* Top nav items */}
+      <div className="flex flex-col px-2 gap-px">
         {NAV_ITEMS.map(item => (
           <button
             key={item.id}
-            className={cn(
-              'flex flex-col items-center gap-0.5 py-1.5 px-1 rounded-lg text-center transition-colors w-full',
-              'text-muted-foreground/40 hover:text-muted-foreground/70 hover:bg-foreground/[0.04]'
-            )}
-            title={item.label}
+            className="flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-left transition-colors w-full text-white/50 hover:text-white/70 hover:bg-white/[0.05]"
           >
-            <span className="text-[14px] leading-none opacity-60">{item.icon}</span>
-            <span className="text-[8px] font-medium leading-tight truncate w-full">{item.label}</span>
+            <span className="text-[14px] w-5 text-center opacity-70">{item.icon}</span>
+            <span className="text-[12px] font-medium">{item.label}</span>
           </button>
         ))}
       </div>
 
       {/* Divider */}
-      <div className="w-8 h-px bg-border/30 my-1.5" />
+      <div className="mx-4 my-2 h-px bg-white/10" />
 
-      {/* Bottom nav */}
-      <div className="flex flex-col gap-0.5 w-full px-1.5 flex-1 overflow-y-auto">
+      {/* Bottom nav items */}
+      <div className="flex flex-col px-2 gap-px flex-1 overflow-y-auto">
         {NAV_ITEMS_BOTTOM.map(item => (
           <button
             key={item.id}
-            className={cn(
-              'flex flex-col items-center gap-0.5 py-1.5 px-1 rounded-lg text-center transition-colors w-full',
-              'text-muted-foreground/40 hover:text-muted-foreground/70 hover:bg-foreground/[0.04]'
-            )}
-            title={item.label}
+            className="flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-left transition-colors w-full text-white/50 hover:text-white/70 hover:bg-white/[0.05]"
           >
-            <span className="text-[14px] leading-none opacity-60">{item.icon}</span>
-            <span className="text-[8px] font-medium leading-tight truncate w-full">{item.label}</span>
+            <span className="text-[14px] w-5 text-center opacity-70">{item.icon}</span>
+            <span className="text-[12px] font-medium">{item.label}</span>
           </button>
         ))}
 
-        {/* Bel-Tool - active */}
-        <button
-          className="flex flex-col items-center gap-0.5 py-1.5 px-1 rounded-lg text-center w-full bg-primary/[0.12] text-primary"
-        >
-          <span className="text-[14px] leading-none">📞</span>
-          <span className="text-[8px] font-bold leading-tight">Bel-Tool</span>
+        {/* Bel-Tool — active */}
+        <button className="flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-left w-full bg-primary/[0.12] text-primary border border-primary/20">
+          <span className="text-[14px] w-5 text-center">📞</span>
+          <span className="text-[12px] font-semibold">Bel-Tool</span>
         </button>
       </div>
 
-      {/* Settings at bottom */}
-      <button
-        onClick={onShowSettings}
-        className="flex flex-col items-center gap-0.5 py-1.5 px-1 rounded-lg text-muted-foreground/30 hover:text-muted-foreground/60 hover:bg-foreground/[0.04] transition-colors w-[calc(100%-12px)]"
-        title="Instellingen"
-      >
-        <span className="text-[14px] leading-none">⚙️</span>
-        <span className="text-[8px] font-medium">Instellingen</span>
-      </button>
-    </div>
+      {/* Settings */}
+      <div className="px-2 pb-3 pt-2 border-t border-white/10 mt-auto">
+        <button
+          onClick={onShowSettings}
+          className="flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-left transition-colors w-full text-white/40 hover:text-white/60 hover:bg-white/[0.05]"
+        >
+          <span className="text-[14px] w-5 text-center">⚙️</span>
+          <span className="text-[12px] font-medium">Instellingen</span>
+        </button>
+      </div>
+    </nav>
   );
 }

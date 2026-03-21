@@ -15,20 +15,20 @@ function CalendarPicker({ bookDate, setBookDate, bookTime, setBookTime }: { book
   return (
     <>
       <div className="flex-1">
-        <div className="text-[11px] text-muted-foreground mb-1">Datum</div>
-        <select value={bookDate} onChange={e => setBookDate(e.target.value)} className="w-full px-3 py-2.5 rounded-lg border border-border bg-foreground/[0.05] text-foreground text-[13px] outline-none">
+        <div className="text-[11px] font-semibold text-muted-foreground mb-1">Datum</div>
+        <select value={bookDate} onChange={e => setBookDate(e.target.value)} className="w-full px-3 py-2.5 rounded-lg border border-border bg-card text-foreground text-[13px] outline-none focus:border-primary">
           <option value="">Kies datum...</option>
           {getWorkdays(10).map(d => {
             const v = d.toISOString().split('T')[0];
-            return <option key={v} value={v} className="text-foreground bg-card">{fmtDate(v)}</option>;
+            return <option key={v} value={v}>{fmtDate(v)}</option>;
           })}
         </select>
       </div>
       <div className="flex-1">
-        <div className="text-[11px] text-muted-foreground mb-1">Tijd</div>
-        <select value={bookTime} onChange={e => setBookTime(e.target.value)} className="w-full px-3 py-2.5 rounded-lg border border-border bg-foreground/[0.05] text-foreground text-[13px] outline-none">
+        <div className="text-[11px] font-semibold text-muted-foreground mb-1">Tijd</div>
+        <select value={bookTime} onChange={e => setBookTime(e.target.value)} className="w-full px-3 py-2.5 rounded-lg border border-border bg-card text-foreground text-[13px] outline-none focus:border-primary">
           <option value="">Kies tijd...</option>
-          {TIMES.map(tm => <option key={tm} value={tm} className="text-foreground bg-card">{tm}</option>)}
+          {TIMES.map(tm => <option key={tm} value={tm}>{tm}</option>)}
         </select>
       </div>
     </>
@@ -51,8 +51,8 @@ function GhlCalendarSelect() {
 
   return (
     <div className="mb-3">
-      <div className="text-[11px] text-muted-foreground mb-1">GHL Kalender</div>
-      <select id="ghl-calendar-select" className="w-full px-3 py-2.5 rounded-lg border border-border bg-foreground/[0.05] text-foreground text-[13px] outline-none">
+      <div className="text-[11px] font-semibold text-muted-foreground mb-1">GHL Kalender</div>
+      <select id="ghl-calendar-select" className="w-full px-3 py-2.5 rounded-lg border border-border bg-card text-foreground text-[13px] outline-none focus:border-primary">
         {loading ? (
           <option value="">Laden...</option>
         ) : calendars.length === 0 ? (
@@ -60,7 +60,7 @@ function GhlCalendarSelect() {
         ) : (
           <>
             <option value="">Selecteer kalender...</option>
-            {calendars.map(c => <option key={c.id} value={c.id} className="text-foreground bg-card">{c.name}</option>)}
+            {calendars.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </>
         )}
       </select>
@@ -79,19 +79,19 @@ function LocationSelect({ value, onChange, customAddress, onCustomChange, compan
 }) {
   return (
     <div className="mb-3">
-      <div className="text-[11px] text-muted-foreground mb-1">Locatie</div>
+      <div className="text-[11px] font-semibold text-muted-foreground mb-1">Locatie</div>
       <select
         value={value}
         onChange={e => onChange(e.target.value as LocationType)}
-        className="w-full px-3 py-2.5 rounded-lg border border-border bg-foreground/[0.05] text-foreground text-[13px] outline-none"
+        className="w-full px-3 py-2.5 rounded-lg border border-border bg-card text-foreground text-[13px] outline-none focus:border-primary"
       >
         <option value="">Selecteer locatie...</option>
-        <option value="google_meet" className="text-foreground bg-card">Google Meet</option>
-        <option value="bedrijf" className="text-foreground bg-card">Bedrijfslocatie</option>
-        <option value="op_locatie" className="text-foreground bg-card">Op locatie</option>
+        <option value="google_meet">Google Meet</option>
+        <option value="bedrijf">Bedrijfslocatie</option>
+        <option value="op_locatie">Op locatie</option>
       </select>
       {value === 'bedrijf' && companyAddress && (
-        <div className="mt-1.5 px-3 py-2 rounded-lg bg-foreground/[0.03] border border-border text-[12px] text-muted-foreground">
+        <div className="mt-1.5 px-3 py-2 rounded-lg bg-muted/50 border border-border text-[12px] text-muted-foreground">
           📍 {companyAddress}
         </div>
       )}
@@ -101,7 +101,7 @@ function LocationSelect({ value, onChange, customAddress, onCustomChange, compan
           value={customAddress}
           onChange={e => onCustomChange(e.target.value)}
           placeholder="Vul adres in (bijv. Van der Valk Eindhoven)"
-          className="mt-1.5 w-full px-3 py-2.5 rounded-lg border border-border bg-foreground/[0.03] text-foreground text-[13px] outline-none placeholder:text-muted-foreground/60"
+          className="mt-1.5 w-full px-3 py-2.5 rounded-lg border border-border bg-card text-foreground text-[13px] outline-none placeholder:text-muted-foreground/60 focus:border-primary"
         />
       )}
     </div>
@@ -140,11 +140,11 @@ interface CallContentProps {
 function ActionBtn({ children, variant = 'primary', wide, onClick }: { children: React.ReactNode; variant?: 'primary' | 'ghost' | 'warning' | 'danger' | 'muted'; wide?: boolean; onClick: () => void }) {
   const base = 'px-4 py-2.5 rounded-lg text-[13px] font-semibold transition-all duration-150 active:scale-[0.97]';
   const variants = {
-    primary: 'bg-primary text-primary-foreground hover:bg-primary/90',
-    ghost: 'bg-transparent border border-foreground/10 text-foreground/55 hover:bg-foreground/5',
-    warning: 'bg-warning text-warning-foreground hover:bg-warning/90',
-    danger: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
-    muted: 'bg-muted-foreground/20 text-muted-foreground hover:bg-muted-foreground/30',
+    primary: 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm',
+    ghost: 'bg-transparent border border-border text-foreground/70 hover:bg-muted/50',
+    warning: 'bg-warning/10 text-warning border border-warning/20 hover:bg-warning/20',
+    danger: 'bg-destructive/10 text-destructive border border-destructive/20 hover:bg-destructive/20',
+    muted: 'bg-muted text-muted-foreground hover:bg-muted/80 border border-border',
   };
   return (
     <button onClick={onClick} className={cn(base, variants[variant], wide && 'w-full')}>
@@ -158,16 +158,16 @@ function BigOption({ selected, icon, title, subtitle, onClick }: { selected: boo
     <button
       onClick={onClick}
       className={cn(
-        'flex items-center gap-3 p-3.5 rounded-lg text-left w-full text-sm border-2 transition-all duration-150',
-        selected ? 'border-primary bg-primary/10' : 'border-foreground/[0.06] hover:border-foreground/15'
+        'flex items-center gap-3 p-3.5 rounded-xl text-left w-full text-sm border-2 transition-all duration-150',
+        selected ? 'border-primary bg-primary/[0.06] shadow-sm' : 'border-border hover:border-primary/30'
       )}
     >
       <span className="text-[22px]">{icon}</span>
       <div className="flex-1">
-        <div className="font-semibold">{title}</div>
+        <div className="font-semibold text-foreground">{title}</div>
         <div className="text-xs text-muted-foreground mt-0.5">{subtitle}</div>
       </div>
-      {selected && <span className="text-primary font-bold">✓</span>}
+      {selected && <span className="text-primary font-bold text-lg">✓</span>}
     </button>
   );
 }
@@ -188,24 +188,24 @@ export function CallContent({
   // Idle screen
   if (phase === 'idle') {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center text-center gap-3">
+      <div className="flex-1 flex flex-col items-center justify-center text-center gap-3 bg-background">
         <div className="text-5xl">📞</div>
-        <div className="text-lg font-bold text-foreground/40 mt-4">{t.selectContact}</div>
-        <div className="text-[13px] text-foreground/20 mt-1.5">{t.clickName}</div>
+        <div className="text-lg font-bold text-foreground/50 mt-4">{t.selectContact}</div>
+        <div className="text-[13px] text-muted-foreground mt-1.5">{t.clickName}</div>
         {scores.gebeld > 0 && (
-          <div className="animate-fade-in mt-5 bg-foreground/[0.02] rounded-xl p-4 border border-border/40">
-            <div className="text-[10px] font-bold text-muted-foreground/30 mb-2.5 text-center tracking-[1.5px]">{t.sessionOverview}</div>
+          <div className="animate-fade-in mt-5 bg-card rounded-xl p-5 border border-border shadow-cliq">
+            <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-3 text-center">{t.sessionOverview}</div>
             <div className="flex gap-5 justify-center">
               {[
-                { l: t.called, v: scores.gebeld, c: 'rgba(255,255,255,0.4)' },
-                { l: t.surveys, v: scores.enquetes, c: 'hsl(174 100% 38%)' },
-                { l: t.appointments, v: scores.afspraken, c: 'hsl(152 56% 42%)' },
-                { l: t.conversion, v: scores.gebeld > 0 ? Math.round(((scores.enquetes + scores.afspraken) / scores.gebeld) * 100) + '%' : '0%', c: 'hsl(38 92% 50%)' },
-                { l: t.bestStreak, v: scores.bestReeks, c: 'hsl(38 92% 50%)' },
+                { l: t.called, v: scores.gebeld, c: 'hsl(var(--navy))' },
+                { l: t.surveys, v: scores.enquetes, c: 'hsl(var(--primary))' },
+                { l: t.appointments, v: scores.afspraken, c: 'hsl(var(--success))' },
+                { l: t.conversion, v: scores.gebeld > 0 ? Math.round(((scores.enquetes + scores.afspraken) / scores.gebeld) * 100) + '%' : '0%', c: 'hsl(var(--warning))' },
+                { l: t.bestStreak, v: scores.bestReeks, c: 'hsl(var(--warning))' },
               ].map(x => (
                 <div key={x.l} className="text-center">
                   <div className="text-[22px] font-extrabold" style={{ color: x.c }}>{x.v}</div>
-                  <div className="text-[11px] text-muted-foreground/30 mt-0.5">{x.l}</div>
+                  <div className="text-[11px] text-muted-foreground mt-0.5">{x.l}</div>
                 </div>
               ))}
             </div>
@@ -215,28 +215,25 @@ export function CallContent({
     );
   }
 
-  // Precall screen removed — we go directly to intro
-
-  // Active call content
   return (
     <>
-      {/* CRM-style top bar */}
-      <div className="flex items-center gap-3 px-5 py-2 border-b border-border/30" style={{ background: 'hsl(222 30% 11%)' }}>
-        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-info to-primary flex items-center justify-center font-bold text-[11px] flex-shrink-0">
+      {/* Top contact bar */}
+      <div className="flex items-center gap-3 px-5 py-3 border-b border-border bg-card">
+        <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center font-bold text-[12px] flex-shrink-0 text-white">
           {activeContact.firstName[0]}{activeContact.lastName[0]}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="font-bold text-[13px] text-foreground/90">
-            {contactName} {activeContact.role && <span className="font-normal text-muted-foreground/40 text-[11px]">• {activeContact.role}</span>}
+          <div className="font-bold text-[14px] text-foreground">
+            {contactName} {activeContact.role && <span className="font-normal text-muted-foreground text-[12px]">• {activeContact.role}</span>}
           </div>
-          <div className="text-[11px] text-muted-foreground/35">{activeComp.name}</div>
+          <div className="text-[12px] text-muted-foreground">{activeComp.name}</div>
         </div>
-        <div className="text-right mr-1.5 hidden sm:block">
-          <div className="text-[11px] text-foreground/40 font-mono">{activeContact.phone}</div>
-          <div className="text-[10px] text-muted-foreground/25">{activeContact.email}</div>
+        <div className="text-right mr-2 hidden sm:block">
+          <div className="text-[12px] text-foreground/70 font-mono tabular-nums">{activeContact.phone}</div>
+          <div className="text-[11px] text-muted-foreground">{activeContact.email}</div>
         </div>
         {onShowDetail && (
-          <button onClick={onShowDetail} className="w-8 h-8 rounded-md bg-foreground/[0.04] text-muted-foreground/40 hover:text-foreground/70 flex items-center justify-center transition-colors text-[13px]">ℹ️</button>
+          <button onClick={onShowDetail} className="w-8 h-8 rounded-lg bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors text-[13px] border border-border">ℹ️</button>
         )}
         {callState === 'idle' && (
           <CallButton
@@ -251,17 +248,17 @@ export function CallContent({
         )}
         {callState !== 'idle' && callState !== 'ended' && (
           <div className={cn(
-            'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold',
-            callState === 'active' ? 'bg-success/10 text-success border border-success/15' : 'bg-warning/10 text-warning border border-warning/15'
+            'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold border',
+            callState === 'active' ? 'bg-success/10 text-success border-success/20' : 'bg-warning/10 text-warning border-warning/20'
           )}>
-            <div className={cn('w-1.5 h-1.5 rounded-full animate-pulse', callState === 'active' ? 'bg-success' : 'bg-warning')} />
+            <div className={cn('w-2 h-2 rounded-full animate-pulse', callState === 'active' ? 'bg-success' : 'bg-warning')} />
             {callState === 'dialing' ? 'Verbinden...' : callState === 'ringing' ? 'Gaat over...' : 'In gesprek'}
           </div>
         )}
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-5 animate-fade-in" key={phase}>
+      <div className="flex-1 overflow-y-auto p-6 animate-fade-in bg-background" key={phase}>
         {phase === 'intro' && (
           <StepLayout step={1} total={6} icon={surveyConfig.intro.icon} title={surveyConfig.intro.title}
             script={renderScript(surveyConfig.intro.script, activeContact, answers)} tip={surveyConfig.intro.tip}>
@@ -278,12 +275,12 @@ export function CallContent({
         {phase === 'q1' && (
           <StepLayout step={2} total={6} icon={surveyConfig.q1.icon} title={surveyConfig.q1.title}
             script={renderScript(surveyConfig.q1.script, activeContact, answers)} tip={surveyConfig.q1.tip || undefined}>
-            <div className="text-[11px] font-bold text-primary tracking-wide mb-2">{surveyConfig.q1.fieldLabel}</div>
+            <div className="text-[11px] font-bold text-primary uppercase tracking-wider mb-2">{surveyConfig.q1.fieldLabel}</div>
             <div className="flex flex-wrap gap-1.5 mb-5">
               {((surveyConfig.q1.options || []) as string[]).map(h => (
                 <button key={h} onClick={() => setAnswers(a => ({ ...a, hours: h }))}
                   className={cn('px-3.5 py-1.5 rounded-lg text-[13px] font-semibold border-2 transition-all',
-                    answers.hours === h ? 'border-primary bg-primary/15 text-primary' : 'border-foreground/[0.06] text-foreground/50'
+                    answers.hours === h ? 'border-primary bg-primary/10 text-primary' : 'border-border text-foreground/60 hover:border-primary/30'
                   )}>{h}</button>
               ))}
             </div>
@@ -297,17 +294,17 @@ export function CallContent({
         {phase === 'q2' && (
           <StepLayout step={3} total={6} icon={surveyConfig.q2.icon} title={surveyConfig.q2.title}
             script={renderScript(surveyConfig.q2.script, activeContact, answers)} tip={surveyConfig.q2.tip || undefined}>
-            <div className="text-[11px] font-bold text-primary tracking-wide mb-2">{surveyConfig.q2.fieldLabel}</div>
+            <div className="text-[11px] font-bold text-primary uppercase tracking-wider mb-2">{surveyConfig.q2.fieldLabel}</div>
             <div className="space-y-1.5 mb-2.5">
               {((surveyConfig.q2.options || []) as string[]).map(tk => {
                 const sel = answers.tasks.includes(tk);
                 return (
                   <button key={tk} onClick={() => setAnswers(a => ({ ...a, tasks: sel ? a.tasks.filter(x => x !== tk) : [...a.tasks, tk] }))}
-                    className={cn('flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg text-left text-[13px] w-full border-[1.5px] transition-all',
-                      sel ? 'border-primary bg-primary/10 text-foreground' : 'border-foreground/[0.08] text-foreground/65 hover:border-foreground/20'
+                    className={cn('flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-left text-[13px] w-full border-2 transition-all',
+                      sel ? 'border-primary bg-primary/[0.06] text-foreground' : 'border-border text-foreground/70 hover:border-primary/30'
                     )}>
                     <span className={cn('w-[18px] h-[18px] rounded border-2 flex items-center justify-center text-[11px] shrink-0',
-                      sel ? 'bg-primary border-primary text-primary-foreground' : 'border-foreground/20'
+                      sel ? 'bg-primary border-primary text-white' : 'border-border'
                     )}>{sel ? '✓' : ''}</span>
                     {tk}
                   </button>
@@ -317,7 +314,7 @@ export function CallContent({
             {surveyConfig.q2.allowOther !== false && (
               <textarea placeholder={t.otherTasks} value={answers.tasksOther}
                 onChange={e => setAnswers(a => ({ ...a, tasksOther: e.target.value }))} rows={2}
-                className="w-full px-3 py-2.5 rounded-lg border border-foreground/[0.08] bg-foreground/[0.03] text-foreground text-[13px] outline-none resize-y leading-relaxed mb-5 placeholder:text-muted-foreground focus:ring-1 focus:ring-primary" />
+                className="w-full px-3 py-2.5 rounded-lg border border-border bg-card text-foreground text-[13px] outline-none resize-y leading-relaxed mb-5 placeholder:text-muted-foreground/60 focus:border-primary" />
             )}
             <div className="flex gap-2">
               <ActionBtn variant="ghost" onClick={() => setPhase('q1')}>{t.back}</ActionBtn>
@@ -329,7 +326,7 @@ export function CallContent({
         {phase === 'q3' && (
           <StepLayout step={4} total={6} icon={surveyConfig.q3.icon} title={surveyConfig.q3.title}
             script={renderScript(surveyConfig.q3.script, activeContact, answers)} tip={surveyConfig.q3.tip || undefined}>
-            <div className="text-[11px] font-bold text-primary tracking-wide mb-2">{surveyConfig.q3.fieldLabel}</div>
+            <div className="text-[11px] font-bold text-primary uppercase tracking-wider mb-2">{surveyConfig.q3.fieldLabel}</div>
             <div className="space-y-2 mb-5">
               {((surveyConfig.q3.options || []) as SelectOption[]).map(o => (
                 <BigOption key={o.value} selected={answers.growth === o.value} icon={o.icon} title={o.value} subtitle={o.label} onClick={() => setAnswers(a => ({ ...a, growth: o.value }))} />
@@ -345,7 +342,7 @@ export function CallContent({
         {phase === 'q4' && (
           <StepLayout step={5} total={6} icon={surveyConfig.q4.icon} title={surveyConfig.q4.title}
             script={renderScript(surveyConfig.q4.script, activeContact, answers)} tip={surveyConfig.q4.tip || undefined}>
-            <div className="text-[11px] font-bold text-primary tracking-wide mb-2">{surveyConfig.q4.fieldLabel}</div>
+            <div className="text-[11px] font-bold text-primary uppercase tracking-wider mb-2">{surveyConfig.q4.fieldLabel}</div>
             <div className="space-y-2 mb-5">
               {((surveyConfig.q4.options || []) as SelectOption[]).map(o => (
                 <BigOption key={o.value} selected={answers.ai === o.value} icon={o.icon} title={o.value} subtitle={o.label} onClick={() => setAnswers(a => ({ ...a, ai: o.value }))} />
@@ -371,21 +368,21 @@ export function CallContent({
           return (
             <StepLayout step={6} total={6} icon={surveyConfig.bridge.icon} title={surveyConfig.bridge.title}
               script={renderScript(surveyConfig.bridge.script, activeContact, answers)} tip={surveyConfig.bridge.tip || undefined}>
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg mb-3.5" style={{ background: leadC + '12', border: '1px solid ' + leadC + '25' }}>
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg mb-3.5 border" style={{ background: leadC + '10', border: '1px solid ' + leadC + '25' }}>
                 <span className="text-base">{ll === 'hot' ? '🔥' : ll === 'warm' ? '☀️' : '❄️'}</span>
                 <span className="font-bold text-[13px]" style={{ color: leadC }}>{t[ll]} LEAD — {ls}pts</span>
               </div>
 
-              <div className="bg-primary/[0.05] border border-primary/15 rounded-xl p-4 mb-3.5">
-                <div className="text-xs font-bold text-primary tracking-wide mb-3">{t.bookAppointment}</div>
+              <div className="bg-primary/[0.04] border border-primary/15 rounded-xl p-4 mb-3.5 shadow-sm">
+                <div className="text-xs font-bold text-primary uppercase tracking-wider mb-3">{t.bookAppointment}</div>
                 <div className="flex gap-2.5 mb-2.5">
                   <CalendarPicker bookDate={bookDate} setBookDate={setBookDate} bookTime={bookTime} setBookTime={setBookTime} />
                 </div>
                 <div className="mb-3">
-                  <div className="text-[11px] text-muted-foreground mb-1">{t.advisor}</div>
-                  <select value={bookAdvisor} onChange={e => setBookAdvisor(e.target.value)} className="w-full px-3 py-2.5 rounded-lg border border-border bg-foreground/[0.05] text-foreground text-[13px] outline-none">
+                  <div className="text-[11px] font-semibold text-muted-foreground mb-1">{t.advisor}</div>
+                  <select value={bookAdvisor} onChange={e => setBookAdvisor(e.target.value)} className="w-full px-3 py-2.5 rounded-lg border border-border bg-card text-foreground text-[13px] outline-none focus:border-primary">
                     <option value="">{t.selectAdvisor}</option>
-                    {ADVISORS.map(a => <option key={a.id} value={a.id} className="text-foreground bg-card">{a.name} — {a.specialty}</option>)}
+                    {ADVISORS.map(a => <option key={a.id} value={a.id}>{a.name} — {a.specialty}</option>)}
                   </select>
                 </div>
                 <LocationSelect
@@ -403,21 +400,17 @@ export function CallContent({
                   if (locationType === 'op_locatie' && !customAddress.trim()) { showToast('Vul een adres in', 'err'); return; }
                   const calId = (document.getElementById('ghl-calendar-select') as HTMLSelectElement)?.value;
                   if (!calId) { showToast('Selecteer een kalender', 'err'); return; }
-                  // Determine location string
                   const locationStr = locationType === 'google_meet' ? 'Google Meet'
                     : locationType === 'bedrijf' ? `Bedrijfslocatie: ${activeComp.address || 'Adres onbekend'}`
                     : `Op locatie: ${customAddress.trim()}`;
-                  // Book in GHL
                   ghl.bookAppointment(activeContact.id, bookDate, bookTime, bookAdvisor, calId, locationStr).catch(err => {
                     console.error('Appointment error:', err);
                     showToast('Fout bij inplannen: ' + err.message, 'err');
                   });
-                  // Create task in GHL
                   ghl.createTask(activeContact.id, `Adviesgesprek ${activeContact.firstName} ${activeContact.lastName}`, {
                     body: `Afspraak op ${fmtDate(bookDate)} om ${bookTime}\n📍 ${locationStr}`,
                     dueDate: `${bookDate}T${bookTime}:00`,
                   }).catch(console.error);
-                  // Update pipeline
                   ghl.upsertOpportunity(activeContact.id, '', '', `${activeComp.name} - Adviesgesprek`).catch(console.error);
                   onEndCall('done', 'afspraak');
                   addScore('afspraak');

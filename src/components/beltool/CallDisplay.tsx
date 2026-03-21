@@ -31,7 +31,6 @@ export function CallDisplay({ callState, contact, company, onHangup }: CallDispl
   const [dtmfInput, setDtmfInput] = useState('');
   const startRef = useRef<number | null>(null);
 
-  // Timer
   useEffect(() => {
     if (callState === 'active') {
       if (!startRef.current) startRef.current = Date.now();
@@ -55,10 +54,10 @@ export function CallDisplay({ callState, contact, company, onHangup }: CallDispl
   return (
     <div className="fixed bottom-4 right-4 z-50 w-[320px] animate-in slide-in-from-bottom-4 duration-300">
       <div className={cn(
-        'rounded-2xl border shadow-2xl overflow-hidden transition-colors duration-300',
-        isActive ? 'bg-card border-success/20 shadow-success/5' : 'bg-card border-warning/20 shadow-warning/5'
+        'rounded-2xl border shadow-xl overflow-hidden bg-card',
+        isActive ? 'border-success/25' : 'border-warning/25'
       )}>
-        {/* Header pulse bar */}
+        {/* Header pulse */}
         <div className={cn(
           'h-1 transition-colors',
           isActive ? 'bg-success' : 'bg-warning',
@@ -99,9 +98,9 @@ export function CallDisplay({ callState, contact, company, onHangup }: CallDispl
 
         {/* DTMF display */}
         {dtmfInput && (
-          <div className="mx-4 mb-1 px-3 py-1.5 rounded-lg bg-foreground/[0.04] border border-border/40 flex items-center justify-between">
+          <div className="mx-4 mb-1 px-3 py-1.5 rounded-lg bg-muted border border-border flex items-center justify-between">
             <span className="text-sm font-mono font-bold text-foreground tracking-widest">{dtmfInput}</span>
-            <button onClick={() => setDtmfInput('')} className="p-0.5 text-muted-foreground/40 hover:text-foreground transition-colors">
+            <button onClick={() => setDtmfInput('')} className="p-0.5 text-muted-foreground hover:text-foreground transition-colors">
               <X size={12} />
             </button>
           </div>
@@ -115,7 +114,7 @@ export function CallDisplay({ callState, contact, company, onHangup }: CallDispl
                 <button
                   key={key}
                   onClick={() => setDtmfInput(prev => prev + key)}
-                  className="h-11 rounded-lg bg-foreground/[0.05] hover:bg-foreground/[0.1] active:scale-95 text-foreground font-bold text-base transition-all duration-100"
+                  className="h-11 rounded-lg bg-muted hover:bg-muted/80 active:scale-95 text-foreground font-bold text-base transition-all duration-100 border border-border"
                 >
                   {key}
                 </button>
@@ -128,72 +127,66 @@ export function CallDisplay({ callState, contact, company, onHangup }: CallDispl
         <div className="px-4 pb-4 pt-1">
           {isActive ? (
             <div className="flex items-center justify-center gap-2">
-              {/* Mute */}
               <button
                 onClick={() => setMuted(!muted)}
                 title={muted ? 'Unmute' : 'Mute'}
                 className={cn(
-                  'w-11 h-11 rounded-full flex items-center justify-center transition-all duration-150 active:scale-95',
+                  'w-11 h-11 rounded-full flex items-center justify-center transition-all duration-150 active:scale-95 border',
                   muted
-                    ? 'bg-destructive/15 text-destructive border border-destructive/20'
-                    : 'bg-foreground/[0.06] text-muted-foreground hover:bg-foreground/[0.1] border border-transparent'
+                    ? 'bg-destructive/10 text-destructive border-destructive/20'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80 border-border'
                 )}
               >
                 {muted ? <MicOff size={17} /> : <Mic size={17} />}
               </button>
 
-              {/* Hold */}
               <button
                 onClick={() => setHeld(!held)}
                 title={held ? 'Hervatten' : 'Pauze'}
                 className={cn(
-                  'w-11 h-11 rounded-full flex items-center justify-center transition-all duration-150 active:scale-95',
+                  'w-11 h-11 rounded-full flex items-center justify-center transition-all duration-150 active:scale-95 border',
                   held
-                    ? 'bg-warning/15 text-warning border border-warning/20'
-                    : 'bg-foreground/[0.06] text-muted-foreground hover:bg-foreground/[0.1] border border-transparent'
+                    ? 'bg-warning/10 text-warning border-warning/20'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80 border-border'
                 )}
               >
                 {held ? <Play size={17} /> : <Pause size={17} />}
               </button>
 
-              {/* Keypad toggle */}
               <button
                 onClick={() => setShowKeypad(!showKeypad)}
                 title="Toetsen"
                 className={cn(
-                  'w-11 h-11 rounded-full flex items-center justify-center transition-all duration-150 active:scale-95',
+                  'w-11 h-11 rounded-full flex items-center justify-center transition-all duration-150 active:scale-95 border',
                   showKeypad
-                    ? 'bg-primary/15 text-primary border border-primary/20'
-                    : 'bg-foreground/[0.06] text-muted-foreground hover:bg-foreground/[0.1] border border-transparent'
+                    ? 'bg-primary/10 text-primary border-primary/20'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80 border-border'
                 )}
               >
                 <Hash size={17} />
               </button>
 
-              {/* Transfer */}
               <button
-                onClick={() => {/* Transfer is handled on softphone */}}
+                onClick={() => {}}
                 title="Doorschakelen"
-                className="w-11 h-11 rounded-full flex items-center justify-center bg-foreground/[0.06] text-muted-foreground hover:bg-foreground/[0.1] transition-all duration-150 active:scale-95 border border-transparent"
+                className="w-11 h-11 rounded-full flex items-center justify-center bg-muted text-muted-foreground hover:bg-muted/80 transition-all duration-150 active:scale-95 border border-border"
               >
                 <PhoneForwarded size={17} />
               </button>
 
-              {/* Hang up */}
               <button
                 onClick={onHangup}
                 title="Ophangen"
-                className="w-12 h-12 rounded-full flex items-center justify-center bg-destructive text-white hover:bg-destructive/90 transition-all duration-150 active:scale-95 shadow-lg shadow-destructive/20"
+                className="w-12 h-12 rounded-full flex items-center justify-center bg-destructive text-white hover:bg-destructive/90 transition-all duration-150 active:scale-95 shadow-lg"
               >
                 <PhoneOff size={19} />
               </button>
             </div>
           ) : (
-            /* Connecting state — just show cancel */
             <div className="flex items-center justify-center">
               <button
                 onClick={onHangup}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-destructive text-white text-sm font-semibold hover:bg-destructive/90 transition-all duration-150 active:scale-95 shadow-lg shadow-destructive/20"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-destructive text-white text-sm font-semibold hover:bg-destructive/90 transition-all duration-150 active:scale-95 shadow-lg"
               >
                 <PhoneOff size={15} />
                 Annuleren
@@ -206,12 +199,12 @@ export function CallDisplay({ callState, contact, company, onHangup }: CallDispl
         {(muted || held) && (
           <div className="px-4 pb-3 flex gap-2 justify-center">
             {muted && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-destructive/10 text-destructive text-[10px] font-bold">
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-destructive/10 text-destructive text-[10px] font-bold border border-destructive/15">
                 <MicOff size={10} /> Gedempt
               </span>
             )}
             {held && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-warning/10 text-warning text-[10px] font-bold">
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-warning/10 text-warning text-[10px] font-bold border border-warning/15">
                 <Pause size={10} /> In de wacht
               </span>
             )}
