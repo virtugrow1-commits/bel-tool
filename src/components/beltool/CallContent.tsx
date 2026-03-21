@@ -171,63 +171,7 @@ export function CallContent({
     );
   }
 
-  // Precall screen
-  if (phase === 'precall') {
-    return (
-      <div className="flex-1 flex items-center justify-center flex-col">
-        <div className="bg-foreground/[0.03] rounded-2xl p-10 border border-border/40 text-center max-w-[400px]">
-          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-info to-primary flex items-center justify-center text-xl font-bold mx-auto mb-4">
-            {activeContact.firstName[0]}{activeContact.lastName[0]}
-          </div>
-          <div className="text-lg font-bold">{contactName}</div>
-          <div className="text-[13px] text-muted-foreground mt-0.5">{activeContact.role} — {activeComp.name}</div>
-          <div className="mt-2 flex items-center justify-center gap-1.5">
-            <input
-              type="tel"
-              defaultValue={activeContact.phone}
-              onChange={e => { activeContact.phone = e.target.value; }}
-              className="bg-transparent border border-border/40 rounded-lg px-3 py-1.5 text-sm text-foreground tabular-nums text-center w-[200px] outline-none focus:ring-1 focus:ring-primary"
-            />
-          </div>
-          <div className="text-xs text-muted-foreground/30 mt-1">{activeContact.email}</div>
-
-          {callState === 'idle' && (
-            <button
-              onClick={onStartDialing}
-              className="mt-6 px-10 py-3.5 rounded-full border-none bg-gradient-to-r from-info to-primary text-white text-base font-bold cursor-pointer shadow-lg active:scale-[0.97] transition-transform"
-            >
-              📞 {t.callNow}
-            </button>
-          )}
-          {(callState === 'dialing' || callState === 'ringing') && (
-            <div className="mt-6 flex flex-col items-center gap-3">
-              <CallStateBar callState={callState} />
-              {callState === 'ringing' && (
-                <div className="flex gap-2">
-                  <button
-                    onClick={onConfirmConnected}
-                    className="px-6 py-2 rounded-full bg-success text-white text-sm font-bold active:scale-[0.97] transition-transform"
-                  >
-                    ✅ Verbonden
-                  </button>
-                  <button
-                    onClick={() => { onHangup(); onEndCall('noanswer', 'geenGehoor'); addScore('geenGehoor'); showToast('Geen gehoor'); }}
-                    className="px-6 py-2 rounded-full bg-destructive text-white text-sm font-bold active:scale-[0.97] transition-transform"
-                  >
-                    📵 Geen gehoor
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-          <div className="flex gap-1.5 justify-center mt-4">
-            <ActionBtn variant="ghost" onClick={onNextContact}>{t.back}</ActionBtn>
-            <ActionBtn variant="warning" onClick={() => { onEndCall('sent', 'enqueteVerstuurd'); addScore('gebeld'); addScore('verstuurd'); showToast(t.surveyDigitalSent, 'info'); }}>{t.noTime}</ActionBtn>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Precall screen removed — we go directly to intro
 
   // Active call content
   return (
