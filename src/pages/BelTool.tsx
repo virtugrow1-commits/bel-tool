@@ -447,6 +447,13 @@ export default function BelTool() {
           hasMoreLeads={hasMoreLeads}
           loadingMore={ghlLoading}
           onLoadMore={loadMoreLeads}
+          stageFilter={stageFilter}
+          onStageFilterChange={setStageFilter}
+          onSelectFromLog={(name) => {
+            const comp = companies.find(c => c.contacts.some(ct => `${ct.firstName} ${ct.lastName}` === name));
+            const ct = comp?.contacts.find(c => `${c.firstName} ${c.lastName}` === name);
+            if (comp && ct) selectContact(comp, ct);
+          }}
         />
 
         <div className="flex-1 flex flex-col overflow-hidden">
