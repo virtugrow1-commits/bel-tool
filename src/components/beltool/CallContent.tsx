@@ -1,10 +1,10 @@
 import { cn } from '@/lib/utils';
 import type { CompanyContact, Company, CallPhase, CallState, SurveyAnswers, SelectOption, SurveyConfig } from '@/types/beltool';
 import { CallButton } from './CallButton';
+import { CallDisplay } from './CallDisplay';
 import { useState, useEffect } from 'react';
 import { StepLayout } from './StepLayout';
 import { EndView } from './EndView';
-import { CallStateBar } from './CallStateBar';
 import { renderScript, getWorkdays, fmtDate, TIMES } from '@/lib/beltool-data';
 import { ADVISORS } from '@/lib/beltool-data';
 import { calcLeadScore, leadLabel, type Scores } from '@/lib/beltool-scoring';
