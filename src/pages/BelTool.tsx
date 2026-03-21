@@ -64,7 +64,7 @@ export default function BelTool() {
   const convRate = scores.gebeld > 0 ? Math.round(((scores.enquetes + scores.afspraken) / scores.gebeld) * 100) : 0;
   const todayStr = new Date().toISOString().split('T')[0];
   const dueCallbacks = callbacks.filter(cb => cb.date <= todayStr && cb.status === 'scheduled');
-  // Load leads from GHL "Bellen" pipeline → "Nieuwe leads" stage
+  // Load leads from GHL "Bellen" pipeline → "Nieuwe Lead" stage
   useEffect(() => {
     if (!user) return;
     setGhlLoading(true);
@@ -72,7 +72,7 @@ export default function BelTool() {
 
     (async () => {
       try {
-        // 1. Fetch pipelines to find "Bellen" pipeline and "Nieuwe leads" stage
+        // 1. Fetch pipelines to find "Bellen" pipeline and "Nieuwe Lead" stage
         const pipelineData = await ghl.getPipelines();
         const pipelines = pipelineData?.pipelines || [];
         const bellenPipeline = pipelines.find((p: { name: string }) =>
@@ -81,10 +81,9 @@ export default function BelTool() {
 
         if (!bellenPipeline) {
           console.warn('No "Bellen" pipeline found, falling back to all contacts');
-          // Fallback to all contacts
           const data = await ghl.getContacts();
           if (data?.contacts?.length) {
-            setCompanies(mapContactsToCompanies(data.contacts));
+            setCompanies(mapOpportunitiesToCompanies([]));
           }
           return;
         }
@@ -93,7 +92,7 @@ export default function BelTool() {
           s.name.toLowerCase().includes('nieuwe')
         );
 
-        // 2. Search opportunities in that pipeline + stage
+        // 2. Search opportunities — use contact data embedded in the response (no extra API calls)
         const oppData = await ghl.searchOpportunities(
           bellenPipeline.id,
           nieuweLeadsStage?.id
@@ -101,30 +100,13 @@ export default function BelTool() {
         const opportunities = oppData?.opportunities || [];
 
         if (opportunities.length === 0) {
-          console.warn('No opportunities found in Bellen → Nieuwe leads');
+          console.warn('No opportunities found in Bellen → Nieuwe Lead');
           setCompanies([]);
           return;
         }
 
-        // 3. Fetch contact details for each opportunity
-        const contactIds = opportunities
-          .map((o: { contact?: { id: string } }) => o.contact?.id)
-          .filter(Boolean) as string[];
-
-        const uniqueIds = [...new Set(contactIds)];
-        const contactPromises = uniqueIds.map(id => ghl.getContact(id).catch(() => null));
-        const contactResults = await Promise.all(contactPromises);
-
-        const contacts = contactResults
-          .filter(Boolean)
-          .map((r: any) => r?.contact || r)
-          .filter(Boolean);
-
-        if (contacts.length > 0) {
-          setCompanies(mapContactsToCompanies(contacts));
-        } else {
-          setCompanies([]);
-        }
+        // 3. Map opportunities directly to companies — contact data is already included
+        setCompanies(mapOpportunitiesToCompanies(opportunities));
       } catch (err: any) {
         console.warn('GHL pipeline load failed, using demo data:', err.message);
         setGhlError(err.message);
@@ -134,12 +116,23 @@ export default function BelTool() {
     })();
   }, [user]);
 
-  // Helper: map raw GHL contacts into Company[] structure
-  function mapContactsToCompanies(contacts: Array<{ id: string; firstName?: string; lastName?: string; companyName?: string; phone?: string; email?: string; tags?: string[] }>): Company[] {
+  // Helper: map GHL opportunities (with embedded contact) into Company[] structure
+  function mapOpportunitiesToCompanies(opportunities: Array<{
+    contact?: { id: string; name?: string; companyName?: string; phone?: string; email?: string; tags?: string[] };
+    contactId?: string;
+  }>): Company[] {
     const companyMap = new Map<string, Company>();
-    for (const c of contacts) {
-      const compName = c.companyName || `${c.firstName || ''} ${c.lastName || ''}`.trim();
+    for (const opp of opportunities) {
+      const c = opp.contact;
+      if (!c) continue;
+      const compName = c.companyName || c.name || 'Onbekend';
       const compKey = compName.toLowerCase().replace(/\s+/g, '-');
+
+      // Split "name" into first/last (GHL opportunities only have a combined name)
+      const nameParts = (c.name || compName).split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+
       if (!companyMap.has(compKey)) {
         companyMap.set(compKey, {
           id: `ghl-${compKey}`,
@@ -149,18 +142,13 @@ export default function BelTool() {
         });
       }
       companyMap.get(compKey)!.contacts.push({
-        id: c.id,
-        firstName: c.firstName || '',
-        lastName: c.lastName || '',
+        id: c.id || opp.contactId || '',
+        firstName,
+        lastName,
         role: '',
         phone: c.phone || '',
         email: c.email || '',
       });
-      // Map GHL tags to stages
-      if (c.tags?.includes('afspraak')) companyMap.get(compKey)!.stage = 'afspraak';
-      else if (c.tags?.includes('terugbellen')) companyMap.get(compKey)!.stage = 'terugbellen';
-      else if (c.tags?.includes('enqueteTel')) companyMap.get(compKey)!.stage = 'enqueteTel';
-      else if (c.tags?.includes('nietInteressant')) companyMap.get(compKey)!.stage = 'nietInteressant';
     }
     return Array.from(companyMap.values());
   }
