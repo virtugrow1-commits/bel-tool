@@ -147,6 +147,20 @@ serve(async (req) => {
         break;
       }
 
+      // ─── SEARCH OPPORTUNITIES (by pipeline + stage) ───
+      case 'searchOpportunities': {
+        const pipelineId = params.pipelineId || '';
+        const stageId = params.stageId || '';
+        const limit = params.limit || 100;
+        let url = `${GHL_BASE}/opportunities/search?location_id=${GHL_LOCATION_ID}&limit=${limit}`;
+        if (pipelineId) url += `&pipeline_id=${pipelineId}`;
+        if (stageId) url += `&pipeline_stage_id=${stageId}`;
+        const res = await fetch(url, { headers: ghlHeaders });
+        if (!res.ok) throw new Error(`GHL search opportunities error [${res.status}]: ${await res.text()}`);
+        result = await res.json();
+        break;
+      }
+
       // ─── CREATE/UPDATE OPPORTUNITY ───
       case 'upsertOpportunity': {
         // Search existing opportunity for this contact

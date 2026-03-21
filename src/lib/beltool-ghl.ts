@@ -93,6 +93,10 @@ export const ghl = {
     return callGHL('getPipelines');
   },
 
+  async searchOpportunities(pipelineId: string, stageId?: string) {
+    return callGHL('searchOpportunities', { pipelineId, stageId, limit: 100 });
+  },
+
   async triggerCall(contactId: string) {
     return callGHL('triggerCall', { contactId });
   },
