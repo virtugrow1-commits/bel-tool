@@ -90,7 +90,7 @@ Deno.serve(async (req) => {
     }
 
     const voysBody: Record<string, string> = {
-      a_number: voysDevice,
+      a_number: deviceId || voysDevice,
       b_number: normalizedPhone,
     };
     if (voysOutbound) {
