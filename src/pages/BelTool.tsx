@@ -56,6 +56,7 @@ export default function BelTool() {
   const [showCallbackQueue, setShowCallbackQueue] = useState(false);
   const [callbackPopup, setCallbackPopup] = useState<CallbackEntry | null>(null);
   const [dismissedCallbacks, setDismissedCallbacks] = useState<Set<number>>(new Set());
+  const [incomingCall, setIncomingCall] = useState<{ id: string; callerNumber: string; contactName?: string; companyName?: string; contactId?: string; companyId?: string } | null>(null);
   const [showAgenda, setShowAgenda] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
   const [appts, setAppts] = useState<Appointment[]>(() => store.get('appointments', []));
