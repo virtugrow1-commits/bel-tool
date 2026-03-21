@@ -76,7 +76,7 @@ export function CallContent({
   activeContact, activeComp, phase, callState, setPhase, answers, setAnswers, taskString,
   onEndCall, onNextContact, showToast, updateStage, addScore,
   bookDate, setBookDate, bookTime, setBookTime, bookAdvisor, setBookAdvisor,
-  scores, onShowCallback, onStartDialing, onHangup, activeCompId,
+  scores, onShowCallback, onStartDialing, onHangup, onConfirmConnected, activeCompId,
 }: CallContentProps) {
   const { t, surveyConfig } = useBelTool();
   const stepIndex: Record<string, number> = { intro: 0, q1: 1, q2: 2, q3: 3, q4: 4, bridge: 5 };
