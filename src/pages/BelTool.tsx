@@ -100,6 +100,49 @@ export default function BelTool() {
     return () => clearInterval(iv);
   }, [callbacks, dismissedCallbacks, callbackPopup]);
 
+  // Listen for incoming calls via realtime
+  useEffect(() => {
+    if (!user) return;
+    const { supabase } = require('@/integrations/supabase/client');
+    const channel = supabase
+      .channel('incoming-calls')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'incoming_calls' }, (payload: any) => {
+        const row = payload.new;
+        if (row.status !== 'ringing') return;
+
+        // Try to match caller number to a known contact
+        let normalized = (row.caller_number || '').replace(/[\s\-\(\)]/g, '');
+        if (normalized.startsWith('+31')) normalized = '0' + normalized.substring(3);
+
+        let matchedContact: CompanyContact | undefined;
+        let matchedComp: Company | undefined;
+        for (const comp of companies) {
+          for (const ct of comp.contacts) {
+            const ctPhone = ct.phone.replace(/[\s\-\(\)]/g, '');
+            const ctNorm = ctPhone.startsWith('+31') ? '0' + ctPhone.substring(3) : ctPhone;
+            if (ctNorm === normalized || ctPhone === row.caller_number) {
+              matchedContact = ct;
+              matchedComp = comp;
+              break;
+            }
+          }
+          if (matchedContact) break;
+        }
+
+        setIncomingCall({
+          id: row.id,
+          callerNumber: row.caller_number,
+          contactName: matchedContact ? `${matchedContact.firstName} ${matchedContact.lastName}` : undefined,
+          companyName: matchedComp?.name,
+          contactId: matchedContact?.id,
+          companyId: matchedComp?.id,
+        });
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [user, companies]);
+
   // Load leads from GHL "Bellen" pipeline → "Nieuwe Lead" stage
   useEffect(() => {
     if (!user) return;
