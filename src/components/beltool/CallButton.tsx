@@ -7,6 +7,7 @@ interface CallButtonProps {
   phoneNumber: string;
   leadId: string;
   leadName: string;
+  deviceId?: string;
   onCallStarted?: (callId: string) => void;
   className?: string;
 }
