@@ -67,6 +67,46 @@ function GhlCalendarSelect() {
   );
 }
 
+type LocationType = 'google_meet' | 'bedrijf' | 'op_locatie' | '';
+
+function LocationSelect({ value, onChange, customAddress, onCustomChange, companyAddress }: {
+  value: LocationType;
+  onChange: (v: LocationType) => void;
+  customAddress: string;
+  onCustomChange: (v: string) => void;
+  companyAddress: string;
+}) {
+  return (
+    <div className="mb-3">
+      <div className="text-[11px] text-muted-foreground mb-1">Locatie</div>
+      <select
+        value={value}
+        onChange={e => onChange(e.target.value as LocationType)}
+        className="w-full px-3 py-2.5 rounded-lg border border-border bg-foreground/[0.05] text-foreground text-[13px] outline-none"
+      >
+        <option value="">Selecteer locatie...</option>
+        <option value="google_meet" className="text-foreground bg-card">Google Meet</option>
+        <option value="bedrijf" className="text-foreground bg-card">Bedrijfslocatie</option>
+        <option value="op_locatie" className="text-foreground bg-card">Op locatie</option>
+      </select>
+      {value === 'bedrijf' && companyAddress && (
+        <div className="mt-1.5 px-3 py-2 rounded-lg bg-foreground/[0.03] border border-border text-[12px] text-muted-foreground">
+          📍 {companyAddress}
+        </div>
+      )}
+      {value === 'op_locatie' && (
+        <input
+          type="text"
+          value={customAddress}
+          onChange={e => onCustomChange(e.target.value)}
+          placeholder="Vul adres in (bijv. Van der Valk Eindhoven)"
+          className="mt-1.5 w-full px-3 py-2.5 rounded-lg border border-border bg-foreground/[0.03] text-foreground text-[13px] outline-none placeholder:text-muted-foreground/60"
+        />
+      )}
+    </div>
+  );
+}
+
 interface CallContentProps {
   activeContact: CompanyContact;
   activeComp: Company;
@@ -138,6 +178,8 @@ export function CallContent({
   scores, onShowCallback, onStartDialing, onHangup, onConfirmConnected, activeCompId, onShowDetail,
 }: CallContentProps) {
   const { t, surveyConfig } = useBelTool();
+  const [locationType, setLocationType] = useState<LocationType>('');
+  const [customAddress, setCustomAddress] = useState('');
   const stepIndex: Record<string, number> = { intro: 0, q1: 1, q2: 2, q3: 3, q4: 4, bridge: 5 };
   const currentStepNum = stepIndex[phase] ?? -1;
   const contactName = `${activeContact.firstName} ${activeContact.lastName}`;
@@ -334,20 +376,33 @@ export function CallContent({
                     {ADVISORS.map(a => <option key={a.id} value={a.id} className="text-foreground bg-card">{a.name} — {a.specialty}</option>)}
                   </select>
                 </div>
+                <LocationSelect
+                  value={locationType}
+                  onChange={setLocationType}
+                  customAddress={customAddress}
+                  onCustomChange={setCustomAddress}
+                  companyAddress={activeComp.address || ''}
+                />
                 <GhlCalendarSelect />
                 <ActionBtn wide onClick={() => {
                   if (!bookDate || !bookTime) { showToast(t.pickDateTime, 'err'); return; }
                   if (!bookAdvisor) { showToast(t.selectAdvisor, 'err'); return; }
+                  if (!locationType) { showToast('Selecteer een locatie', 'err'); return; }
+                  if (locationType === 'op_locatie' && !customAddress.trim()) { showToast('Vul een adres in', 'err'); return; }
                   const calId = (document.getElementById('ghl-calendar-select') as HTMLSelectElement)?.value;
                   if (!calId) { showToast('Selecteer een kalender', 'err'); return; }
+                  // Determine location string
+                  const locationStr = locationType === 'google_meet' ? 'Google Meet'
+                    : locationType === 'bedrijf' ? `Bedrijfslocatie: ${activeComp.address || 'Adres onbekend'}`
+                    : `Op locatie: ${customAddress.trim()}`;
                   // Book in GHL
-                  ghl.bookAppointment(activeContact.id, bookDate, bookTime, bookAdvisor, calId).catch(err => {
+                  ghl.bookAppointment(activeContact.id, bookDate, bookTime, bookAdvisor, calId, locationStr).catch(err => {
                     console.error('Appointment error:', err);
                     showToast('Fout bij inplannen: ' + err.message, 'err');
                   });
                   // Create task in GHL
                   ghl.createTask(activeContact.id, `Adviesgesprek ${activeContact.firstName} ${activeContact.lastName}`, {
-                    body: `Afspraak op ${fmtDate(bookDate)} om ${bookTime}`,
+                    body: `Afspraak op ${fmtDate(bookDate)} om ${bookTime}\n📍 ${locationStr}`,
                     dueDate: `${bookDate}T${bookTime}:00`,
                   }).catch(console.error);
                   // Update pipeline
