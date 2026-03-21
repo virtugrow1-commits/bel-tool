@@ -81,8 +81,8 @@ export const ghl = {
     });
   },
 
-  async upsertOpportunity(contactId: string, pipelineId: string, stageId: string, name: string) {
-    return callGHL('upsertOpportunity', { contactId, pipelineId, stageId, name });
+  async upsertOpportunity(contactId: string, pipelineId: string, stageId: string, name: string, opportunityId?: string) {
+    return callGHL('upsertOpportunity', { contactId, pipelineId, stageId, name, opportunityId });
   },
 
   async getCalendars() {
