@@ -579,7 +579,13 @@ export default function BelTool() {
           </div>
         )}
 
-        <SettingsPanel open={showSettings} onClose={() => setShowSettings(false)} onSyncLeads={reloadLeads} />
+        <SettingsPanel
+          open={showSettings}
+          onClose={() => setShowSettings(false)}
+          onSyncLeads={reloadLeads}
+          managedUsers={managedUsers}
+          onUpdateUsers={(users) => { setManagedUsers(users); store.set('managedUsers', users); }}
+        />
         <Leaderboard open={showLeaderboard} onClose={() => setShowLeaderboard(false)} />
         <AgendaView open={showAgenda} onClose={() => setShowAgenda(false)} appointments={appts} />
         {showCallback && activeContact && activeComp && (
