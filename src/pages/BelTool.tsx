@@ -308,11 +308,11 @@ export default function BelTool() {
 
   // Map BelTool stages to GHL pipeline stage names (lowercase for stageMap lookup)
   const STAGE_TO_GHL: Record<string, string> = {
-    nietInteressant: 'niet interessant',
-    geenGehoor: 'neemt niet op',
-    terugbellenGepland: 'later terug bellen',
-    afspraak: 'afspraak ingeplant',
-    enqueteVerstuurd: 'vraag om extra info (mail)',
+    nietInteressant: 'niet geïnteresseerd',
+    geenGehoor: 'geen gehoor',
+    terugbellenGepland: 'terugbellen gepland',
+    afspraak: 'afspraak gepland',
+    enqueteVerstuurd: 'digitaal verstuurd',
   };
 
   const endCall = (ph: CallPhase, stage: Company['stage']) => {
