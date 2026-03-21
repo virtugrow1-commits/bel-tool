@@ -114,7 +114,7 @@ export default function BelTool() {
       .finally(() => setGhlLoading(false));
   }, [user]);
 
-
+  const flash = useCallback((msg: string, type?: string) => {
     setToast({ msg, type: type || 'ok' });
     setTimeout(() => setToast(null), 3000);
   }, []);
