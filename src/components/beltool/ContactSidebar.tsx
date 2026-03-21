@@ -26,6 +26,9 @@ interface ContactSidebarProps {
   onShowSettings: () => void;
   dueCallbackCount: number;
   appointmentCount: number;
+  hasMoreLeads?: boolean;
+  loadingMore?: boolean;
+  onLoadMore?: () => void;
 }
 
 export function ContactSidebar({ companies, activeCompId, activeContactId, expandedComp, setExpandedComp, search, onSearchChange, onSelectContact, phase, onBusy, scores, convRate, user, onLogout, onShowAgenda, onShowCallbackQueue, onShowLeaderboard, onShowSettings, dueCallbackCount, appointmentCount }: ContactSidebarProps) {
