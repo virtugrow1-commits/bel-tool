@@ -51,11 +51,16 @@ export default function BelTool() {
   const [showCallback, setShowCallback] = useState(false);
   const [callbacks, setCallbacks] = useState<CallbackEntry[]>(() => store.get('callbacks', []));
   const [showCallbackQueue, setShowCallbackQueue] = useState(false);
-  const [showAgenda, setShowAgenda] = useState(false);
+   const [showAgenda, setShowAgenda] = useState(false);
+  const [showDetail, setShowDetail] = useState(false);
   const [appts, setAppts] = useState<Appointment[]>(() => store.get('appointments', []));
   const [webhooks, setWebhooks] = useState<Webhook[]>(() => store.get('webhooks', []));
   const [apiKey, setApiKey] = useState(() => store.get('apiKey', ''));
   const [surveyConfig, setSurveyConfig] = useState(() => store.get('surveyConfig', defaultSurvey()));
+  const [ghlConfig, setGhlConfig] = useState<GhlConfig>(() => store.get('ghlConfig', {
+    apiKey: '', locationId: '', pipelineId: '', calendarId: '',
+    syncContacts: true, syncOpportunities: true, syncAppointments: true, createNotes: true,
+  }));
 
   const t = i18n[lang as keyof typeof i18n] || i18n.nl;
   const activeComp = companies.find(c => c.id === activeCompId) || null;
