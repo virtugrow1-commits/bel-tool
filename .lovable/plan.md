@@ -1,49 +1,48 @@
 
 
-## Plan: Bellen vanuit de Bel-Tool met Twilio
+## Probleem
 
-### Huidige situatie
-De "bel" functie simuleert nu een gesprek met `setTimeout` — er wordt niet echt gebeld. Je hebt GHL met Twilio integratie.
+De pipeline in GHL wordt niet correct bijgewerkt wanneer je een actie kiest (bijv. "Niet geïnteresseerd", "Geen gehoor"). Er zijn drie oorzaken:
 
-### Aanpak: Twilio Browser Calling
+1. **Opportunity ID ontbreekt**: Bij het laden van leads wordt het opportunity ID niet opgeslagen. Bij `endCall` moet er opnieuw gezocht worden via `contact_id`, wat fout kan gaan als een contact meerdere opportunities heeft.
 
-We gebruiken de **Twilio Connector** (beschikbaar in Lovable) om echte telefoongesprekken te starten vanuit de browser via Twilio's Client JS SDK.
+2. **Dubbele pipeline-fetch**: `endCall` haalt de volledige pipeline opnieuw op (`ghl.getPipelines()`) alleen om de stage ID te vinden. Dit is traag en foutgevoelig.
 
-```text
-┌──────────────┐     ┌─────────────────┐     ┌──────────────────┐
-│  Bel-Tool    │────▶│  Edge Function   │────▶│ Twilio Gateway   │
-│  (Browser)   │     │  twilio-token    │     │ (Capability Token)│
-│              │     └─────────────────┘     └──────────────────┘
-│  Twilio JS   │────────────────────────────▶  Twilio PSTN Call
-│  SDK calling │
-└──────────────┘
-```
+3. **Stage-namen matchen niet**: De `STAGE_TO_GHL` mapping gebruikt hardcoded namen die exact moeten matchen met GHL. Als er een spatie of hoofdletter verschilt, wordt de stage niet gevonden en gebeurt er niets (silently fails).
 
-### Stappen
+## Plan
 
-1. **Twilio Connector koppelen** — Via de connector tool wordt Twilio aan het project gekoppeld. Dit geeft `TWILIO_API_KEY` en `LOVABLE_API_KEY` als secrets.
+### Stap 1: Opportunity ID meenemen bij het laden van leads
 
-2. **Edge Function: `twilio-token`** — Nieuwe edge function die een Twilio Access Token genereert voor de browser client. Dit token authoriseert de browser om via Twilio te bellen. Roept de Twilio gateway aan om een TwiML App SID te gebruiken.
+Bij `mapOpportunitiesToCompanies` ook het **opportunity ID** opslaan per contact. Dit vereist een kleine uitbreiding van het `CompanyContact` type (of een aparte mapping).
 
-3. **Edge Function: `twilio-voice`** — TwiML webhook die Twilio vertelt wat te doen wanneer een call wordt gestart (connect naar het opgegeven telefoonnummer).
+### Stap 2: Pipeline stages cachen bij eerste load
 
-4. **Frontend: Twilio Device integreren** — Installeer `@twilio/voice-sdk`. Bij het klikken op "Bellen":
-   - Haal een token op via de edge function
-   - Initialiseer een `Twilio.Device`
-   - Start een outbound call naar het telefoonnummer van de contact
-   - Toon real-time call status (ringing, connected, ended)
+Bij het laden van leads worden de pipeline stages al opgehaald. Sla een `Map<stageName, stageId>` op in state zodat we bij `endCall` direct de juiste `stageId` hebben zonder opnieuw `getPipelines` te hoeven aanroepen.
 
-5. **CallStateBar updaten** — De bestaande `CallStateBar` component koppelen aan echte Twilio call events (`ringing`, `accept`, `disconnect`) in plaats van de huidige setTimeout simulatie.
+### Stap 3: endCall direct opportunity updaten met opgeslagen IDs
 
-6. **BelTool.tsx: `startDialing` refactoren** — Vervang de setTimeout-simulatie door echte Twilio Device.connect() call, met het telefoonnummer van de actieve contact.
+In plaats van:
+- `ghl.updateContactStage()` (voegt alleen een tag toe → verwijderen)
+- `ghl.getPipelines()` opnieuw aanroepen
+- Opportunity zoeken op contact_id
 
-### Vereisten van de gebruiker
-- Een Twilio-account met een telefoonnummer (voor caller ID)
-- Een TwiML App in Twilio (wordt uitgelegd bij setup)
+Direct `ghl.upsertOpportunity()` aanroepen met het opgeslagen opportunity ID en de gecachede stage ID.
 
-### Technische details
-- **Package**: `@twilio/voice-sdk` (npm)
-- **Edge functions**: `twilio-token` (generates Access Token), `twilio-voice` (TwiML response)
-- **Bestanden gewijzigd**: `BelTool.tsx`, `CallStateBar.tsx`, `CallContent.tsx`
-- **Bestanden nieuw**: `supabase/functions/twilio-token/index.ts`, `supabase/functions/twilio-voice/index.ts`, `src/lib/twilio-device.ts`
+### Stap 4: Edge function - opportunity updaten op ID
+
+Pas `upsertOpportunity` in de edge function aan zodat als een `opportunityId` wordt meegegeven, deze direct wordt gebruikt (PUT) in plaats van opnieuw te zoeken.
+
+### Stap 5: Tag-toevoeging verwijderen
+
+`ghl.updateContactStage()` (die alleen een tag toevoegt) wordt verwijderd uit de `endCall` flow — de pipeline-verplaatsing is de enige bron van waarheid.
+
+## Bestanden die wijzigen
+
+| Bestand | Wijziging |
+|---|---|
+| `src/types/beltool.ts` | `opportunityId` toevoegen aan `CompanyContact` |
+| `src/pages/BelTool.tsx` | Opportunity IDs en stage IDs cachen; `endCall` vereenvoudigen |
+| `src/lib/beltool-ghl.ts` | `updateContactStage` verwijderen; `upsertOpportunity` parameter voor direct ID |
+| `supabase/functions/ghl-proxy/index.ts` | `upsertOpportunity` case: direct updaten als `opportunityId` is meegegeven |
 
