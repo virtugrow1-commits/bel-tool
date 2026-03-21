@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import type { Company, CompanyContact, CallPhase, CallState, SurveyAnswers, Appointment, CallbackEntry, Webhook } from '@/types/beltool';
 import { COMPANIES_INIT, defaultSurvey } from '@/lib/beltool-data';
 import { USERS, type User } from '@/lib/beltool-data';
@@ -23,6 +23,8 @@ export default function BelTool() {
   const [user, setUser] = useState<User | null>(() => store.get('user', null));
   const [lang, setLang] = useState(() => store.get('lang', 'nl'));
   const [companies, setCompanies] = useState<Company[]>(COMPANIES_INIT);
+  const [ghlLoading, setGhlLoading] = useState(false);
+  const [ghlError, setGhlError] = useState<string | null>(null);
   const [activeCompId, setActiveCompId] = useState<string | null>(null);
   const [activeContactId, setActiveContactId] = useState<string | null>(null);
   const [expandedComp, setExpandedComp] = useState<string | null>(null);
