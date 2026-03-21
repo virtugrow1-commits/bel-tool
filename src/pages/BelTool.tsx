@@ -669,6 +669,9 @@ export default function BelTool() {
             const ct = comp?.contacts.find(c => `${c.firstName} ${c.lastName}` === name);
             if (comp && ct) selectContact(comp, ct);
           }}
+          onInsertNote={(text) => {
+            setNotes(prev => prev ? prev + '\n' + text : text);
+          }}
         />
 
         <div className="flex-1 flex flex-col overflow-hidden bg-background">
