@@ -1,10 +1,11 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import type { Company, CompanyContact, CallPhase, CompanyStage } from '@/types/beltool';
 import { STAGE_META } from '@/types/beltool';
 import { useBelTool } from '@/contexts/BelToolContext';
 import type { Scores } from '@/lib/beltool-scoring';
 import type { User } from '@/lib/beltool-data';
+import { store } from '@/lib/beltool-store';
 
 const FILTER_TABS: { key: CompanyStage | 'all'; label: string; icon: string }[] = [
   { key: 'all', label: 'Alles', icon: '📋' },
@@ -15,6 +16,111 @@ const FILTER_TABS: { key: CompanyStage | 'all'; label: string; icon: string }[] 
   { key: 'afspraak', label: 'Afspraak', icon: '📅' },
   { key: 'nietInteressant', label: 'Afgevallen', icon: '🚫' },
 ];
+
+const QUICK_NOTES = [
+  { label: 'VM ingesproken', icon: '📩' },
+  { label: 'Terugbellen na vakantie', icon: '🏖️' },
+  { label: 'Interesse maar druk', icon: '⏳' },
+  { label: 'Doorverbonden secretaresse', icon: '👩‍💼' },
+  { label: 'Voicemail vol', icon: '📵' },
+  { label: 'Verkeerd nummer', icon: '❌' },
+];
+
+function getBestCallTimeSuggestion(scores: Scores): string | null {
+  const hour = new Date().getHours();
+  if (scores.gebeld < 3) return null;
+  const successRate = (scores.enquetes + scores.afspraken) / scores.gebeld;
+  if (hour < 9) return '🕘 Beste beltijd begint om 9:00 – meeste leads nemen dan op';
+  if (hour >= 9 && hour < 11) return '🎯 Nu is een topmoment — leads zijn het meest bereikbaar';
+  if (hour >= 11 && hour < 12) return '⏰ Nog 1 uur tot lunch — maak je calls af!';
+  if (hour >= 12 && hour < 13.5) return '🍽️ Lunchpauze — minder bereikbaarheid';
+  if (hour >= 13.5 && hour < 15) return '🎯 Middag-piek — veel leads nemen nu op';
+  if (hour >= 15 && hour < 17) return '📞 Laatste uren — focus op warme leads!';
+  if (successRate < 0.2) return '💡 Tip: probeer meer open vragen te stellen';
+  return null;
+}
+
+interface DailyTargets {
+  calls: number;
+  appointments: number;
+  surveys: number;
+}
+
+function DailyTargetBar({ scores, targets }: { scores: Scores; targets: DailyTargets }) {
+  const items = [
+    { label: 'Calls', current: scores.gebeld, target: targets.calls, color: 'hsl(var(--navy))' },
+    { label: 'Enquêtes', current: scores.enquetes, target: targets.surveys, color: 'hsl(var(--primary))' },
+    { label: 'Afspraken', current: scores.afspraken, target: targets.appointments, color: 'hsl(var(--success))' },
+  ];
+  return (
+    <div className="bg-card border border-border rounded-xl p-2.5 mb-2.5 shadow-sm">
+      <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">📊 Dagdoel</div>
+      <div className="space-y-1.5">
+        {items.map(it => {
+          const pct = Math.min((it.current / it.target) * 100, 100);
+          const done = it.current >= it.target;
+          return (
+            <div key={it.label} className="flex items-center gap-2">
+              <span className="text-[10px] font-medium text-muted-foreground w-[52px]">{it.label}</span>
+              <div className="flex-1 h-[5px] rounded-full bg-muted overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-[width] duration-700 ease-out"
+                  style={{ width: `${pct}%`, background: done ? 'hsl(var(--success))' : it.color }}
+                />
+              </div>
+              <span className={cn('text-[10px] font-bold tabular-nums w-[36px] text-right', done ? 'text-success' : 'text-foreground/60')}>
+                {it.current}/{it.target}
+              </span>
+              {done && <span className="text-[10px]">✅</span>}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function PauseTimer({ onPauseChange }: { onPauseChange?: (paused: boolean) => void }) {
+  const [paused, setPaused] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
+  const [sessionSeconds, setSessionSeconds] = useState(0);
+
+  useEffect(() => {
+    const iv = setInterval(() => {
+      setSessionSeconds(s => s + 1);
+      if (paused) setElapsed(e => e + 1);
+    }, 1000);
+    return () => clearInterval(iv);
+  }, [paused]);
+
+  const fmt = (s: number) => `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
+
+  return (
+    <div className={cn(
+      'flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-[11px] mb-2.5 transition-colors',
+      paused ? 'bg-warning/10 border-warning/20' : 'bg-muted/30 border-border'
+    )}>
+      <button
+        onClick={() => { setPaused(!paused); onPauseChange?.(!paused); }}
+        className={cn(
+          'w-6 h-6 rounded-md flex items-center justify-center text-[12px] transition-colors',
+          paused ? 'bg-primary text-white' : 'bg-muted text-muted-foreground hover:bg-muted/80'
+        )}
+      >
+        {paused ? '▶' : '⏸'}
+      </button>
+      <div className="flex-1">
+        <span className="text-muted-foreground font-medium">
+          {paused ? '⏸ Pauze' : '🟢 Actief'}
+        </span>
+      </div>
+      <span className="font-mono tabular-nums text-muted-foreground">{fmt(sessionSeconds)}</span>
+      {elapsed > 0 && (
+        <span className="font-mono tabular-nums text-warning text-[10px]">({fmt(elapsed)} pauze)</span>
+      )}
+    </div>
+  );
+}
 
 interface ContactSidebarProps {
   companies: Company[];
@@ -43,12 +149,15 @@ interface ContactSidebarProps {
   stageFilter: CompanyStage | 'all';
   onStageFilterChange: (f: CompanyStage | 'all') => void;
   onSelectFromLog?: (contactName: string) => void;
+  onInsertNote?: (text: string) => void;
 }
 
-export function ContactSidebar({ companies, activeCompId, activeContactId, expandedComp, setExpandedComp, search, onSearchChange, onSelectContact, phase, onBusy, scores, convRate, user, onLogout, onShowAgenda, onShowCallbackQueue, onShowLeaderboard, onShowSettings, dueCallbackCount, appointmentCount, hasMoreLeads, loadingMore, onLoadMore, stageFilter, onStageFilterChange, onSelectFromLog }: ContactSidebarProps) {
+export function ContactSidebar({ companies, activeCompId, activeContactId, expandedComp, setExpandedComp, search, onSearchChange, onSelectContact, phase, onBusy, scores, convRate, user, onLogout, onShowAgenda, onShowCallbackQueue, onShowLeaderboard, onShowSettings, dueCallbackCount, appointmentCount, hasMoreLeads, loadingMore, onLoadMore, stageFilter, onStageFilterChange, onSelectFromLog, onInsertNote }: ContactSidebarProps) {
   const { t } = useBelTool();
   const [filterOpen, setFilterOpen] = useState(false);
+  const [showTargetEdit, setShowTargetEdit] = useState(false);
   const filterRef = useRef<HTMLDivElement>(null);
+  const [targets, setTargets] = useState<DailyTargets>(() => store.get('dailyTargets', { calls: 50, appointments: 5, surveys: 10 }));
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -66,6 +175,21 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
     stageCounts[tab.key] = tab.key === 'all' ? companies.length : companies.filter(c => c.stage === tab.key).length;
   }
 
+  const callTimeTip = getBestCallTimeSuggestion(scores);
+
+  const exportCSV = useCallback(() => {
+    const rows = [['Tijd', 'Contact', 'Resultaat']];
+    scores.log.forEach(e => rows.push([e.time, e.contact, e.result]));
+    const csv = rows.map(r => r.join(';')).join('\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `belresultaten-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [scores.log]);
+
   return (
     <div className="w-[280px] border-r border-border flex flex-col flex-shrink-0 bg-card">
       <div className="px-3 pt-3 pb-2">
@@ -78,6 +202,8 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
             <button onClick={onShowAgenda} className={cn('w-7 h-7 rounded-lg flex items-center justify-center text-[13px] transition-colors border', appointmentCount > 0 ? 'text-primary bg-primary/10 border-primary/20' : 'text-muted-foreground border-transparent hover:bg-muted')} title={t.agenda}>📅</button>
             <button onClick={onShowCallbackQueue} className="w-7 h-7 rounded-lg flex items-center justify-center text-[13px] relative transition-colors border border-transparent hover:bg-muted" style={{ color: dueCallbackCount > 0 ? 'hsl(38 92% 50%)' : undefined }}>🔔{dueCallbackCount > 0 && <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-destructive text-white text-[7px] font-bold flex items-center justify-center">{dueCallbackCount}</span>}</button>
             <button onClick={onShowLeaderboard} className="w-7 h-7 rounded-lg flex items-center justify-center text-[13px] text-muted-foreground border border-transparent hover:bg-muted transition-colors">🏆</button>
+            <button onClick={exportCSV} className="w-7 h-7 rounded-lg flex items-center justify-center text-[13px] text-muted-foreground border border-transparent hover:bg-muted transition-colors" title="Exporteer resultaten">📤</button>
+            <button onClick={onShowSettings} className="w-7 h-7 rounded-lg flex items-center justify-center text-[13px] text-muted-foreground border border-transparent hover:bg-muted transition-colors" title="Instellingen">⚙️</button>
           </div>
         </div>
 
@@ -87,11 +213,49 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
           <div className="flex-1 min-w-0">
             <div className="text-[12px] font-semibold text-foreground truncate">{user.name}</div>
           </div>
-          <button onClick={onLogout} className="text-muted-foreground text-[10px] hover:text-foreground transition-colors">↗</button>
+          <button onClick={onLogout} className="text-muted-foreground text-[10px] hover:text-foreground transition-colors" title="Uitloggen">↗</button>
         </div>
 
+        {/* Pause timer */}
+        <PauseTimer />
+
+        {/* Best call time suggestion */}
+        {callTimeTip && (
+          <div className="px-2.5 py-2 rounded-lg bg-primary/[0.06] border border-primary/15 mb-2.5 text-[11px] font-medium text-primary">
+            {callTimeTip}
+          </div>
+        )}
+
+        {/* Daily targets */}
+        <DailyTargetBar scores={scores} targets={targets} />
+        <button
+          onClick={() => setShowTargetEdit(!showTargetEdit)}
+          className="text-[9px] text-muted-foreground hover:text-primary transition-colors mb-2 -mt-1"
+        >
+          {showTargetEdit ? '▲ Sluiten' : '⚙ Dagdoel aanpassen'}
+        </button>
+        {showTargetEdit && (
+          <div className="bg-muted/30 border border-border rounded-lg p-2.5 mb-2.5 space-y-1.5">
+            {(['calls', 'appointments', 'surveys'] as const).map(key => (
+              <div key={key} className="flex items-center gap-2">
+                <span className="text-[10px] text-muted-foreground w-[52px]">{key === 'calls' ? 'Calls' : key === 'appointments' ? 'Afspraken' : 'Enquêtes'}</span>
+                <input
+                  type="number"
+                  value={targets[key]}
+                  onChange={e => {
+                    const v = { ...targets, [key]: Math.max(1, parseInt(e.target.value) || 1) };
+                    setTargets(v);
+                    store.set('dailyTargets', v);
+                  }}
+                  className="flex-1 px-2 py-1 rounded-md border border-border bg-card text-foreground text-[11px] outline-none focus:border-primary w-16"
+                />
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Stats */}
-        <div className="bg-card border border-border rounded-xl p-2.5 mb-2.5 shadow-cliq">
+        <div className="bg-card border border-border rounded-xl p-2.5 mb-2.5 shadow-sm">
           <div className="flex justify-between items-center mb-1.5">
             <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">{t.today}</span>
             {scores.reeks >= 2 && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-warning/10 text-warning border border-warning/20">🔥{scores.reeks}x</span>}
@@ -117,6 +281,24 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
             </div>
           )}
         </div>
+
+        {/* Quick notes */}
+        {onInsertNote && phase !== 'idle' && (
+          <div className="mb-2.5">
+            <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-1">📝 Snelnotities</div>
+            <div className="flex flex-wrap gap-1">
+              {QUICK_NOTES.map(n => (
+                <button
+                  key={n.label}
+                  onClick={() => onInsertNote(n.label)}
+                  className="px-2 py-1 rounded-md border border-border bg-muted/30 text-[10px] font-medium text-foreground/70 hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-colors active:scale-[0.95]"
+                >
+                  {n.icon} {n.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Search */}
         <input
@@ -170,6 +352,14 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
               })}
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Keyboard shortcuts hint */}
+      <div className="px-3 pb-1.5">
+        <div className="flex flex-wrap gap-1 text-[9px] text-muted-foreground/50">
+          <span className="px-1.5 py-0.5 rounded bg-muted/50 font-mono">Space</span><span>bellen</span>
+          <span className="px-1.5 py-0.5 rounded bg-muted/50 font-mono">Esc</span><span>ophangen</span>
         </div>
       </div>
 

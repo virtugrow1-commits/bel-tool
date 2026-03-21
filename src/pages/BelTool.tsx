@@ -82,6 +82,37 @@ export default function BelTool() {
   const todayStr = new Date().toISOString().split('T')[0];
   const dueCallbacks = callbacks.filter(cb => cb.date <= todayStr && cb.status === 'scheduled');
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+
+      // Space = start call (when in precall phase with active contact)
+      if (e.code === 'Space' && phase === 'precall' && activeContact && callState === 'idle') {
+        e.preventDefault();
+        // Trigger call button click
+        const callBtn = document.querySelector('[data-call-button]') as HTMLButtonElement;
+        callBtn?.click();
+      }
+
+      // Escape = hang up
+      if (e.code === 'Escape' && callState !== 'idle' && callState !== 'ended') {
+        e.preventDefault();
+        hangup();
+      }
+
+      // N = focus notes textarea
+      if (e.code === 'KeyN' && !e.ctrlKey && !e.metaKey && phase !== 'idle') {
+        e.preventDefault();
+        const ta = document.querySelector('textarea[placeholder]') as HTMLTextAreaElement;
+        ta?.focus();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [phase, callState, activeContact]);
+
   // Check for due callbacks every 30s and show popup
   useEffect(() => {
     const check = () => {
@@ -637,6 +668,9 @@ export default function BelTool() {
             const comp = companies.find(c => c.contacts.some(ct => `${ct.firstName} ${ct.lastName}` === name));
             const ct = comp?.contacts.find(c => `${c.firstName} ${c.lastName}` === name);
             if (comp && ct) selectContact(comp, ct);
+          }}
+          onInsertNote={(text) => {
+            setNotes(prev => prev ? prev + '\n' + text : text);
           }}
         />
 
