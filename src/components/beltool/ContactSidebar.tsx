@@ -191,38 +191,26 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
           <button onClick={onLogout} className="text-muted-foreground text-[10px] hover:text-foreground transition-colors" title="Uitloggen">↗</button>
         </div>
 
-        {/* Row 3: Combined stats + daily targets */}
+        {/* Row 3: Daily targets only */}
         <div className="bg-card border border-border rounded-xl p-2.5 mb-2 shadow-sm">
-          {/* Stats row */}
-          <div className="flex justify-between items-center mb-1.5">
-            <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">{t.today}</span>
-            {scores.reeks >= 2 && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-warning/10 text-warning border border-warning/20">🔥{scores.reeks}x</span>}
-          </div>
-          <div className="grid grid-cols-3 gap-1.5 mb-2">
-            {[
-              { label: t.called, value: scores.gebeld, target: targets.calls, color: 'hsl(var(--navy))' },
-              { label: t.surveys, value: scores.enquetes, target: targets.surveys, color: 'hsl(var(--primary))' },
-              { label: t.appointments, value: scores.afspraken, target: targets.appointments, color: 'hsl(var(--success))' },
-            ].map(s => (
-              <div key={s.label} className="text-center py-1.5 rounded-lg bg-muted/50 border border-border">
-                <div className="text-lg font-extrabold leading-none" style={{ color: s.color }}>{s.value}<span className="text-[10px] font-semibold text-muted-foreground">/{s.target}</span></div>
-                <div className="text-[9px] font-medium text-muted-foreground mt-0.5">{s.label}</div>
-              </div>
-            ))}
-          </div>
-          {/* Progress bars */}
-          <div className="space-y-1">
+          <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">📊 Dagdoel</div>
+          <div className="space-y-1.5">
             {[
               { label: 'Calls', current: scores.gebeld, target: targets.calls, color: 'hsl(var(--navy))' },
               { label: 'Enquêtes', current: scores.enquetes, target: targets.surveys, color: 'hsl(var(--primary))' },
               { label: 'Afspraken', current: scores.afspraken, target: targets.appointments, color: 'hsl(var(--success))' },
             ].map(it => {
               const pct = Math.min((it.current / it.target) * 100, 100);
+              const done = it.current >= it.target;
               return (
-                <div key={it.label} className="flex items-center gap-1.5">
-                  <div className="flex-1 h-[3px] rounded-full bg-muted overflow-hidden">
-                    <div className="h-full rounded-full transition-[width] duration-700" style={{ width: `${pct}%`, background: pct >= 100 ? 'hsl(var(--success))' : it.color }} />
+                <div key={it.label} className="flex items-center gap-2">
+                  <span className="text-[10px] font-medium text-muted-foreground w-[52px]">{it.label}</span>
+                  <div className="flex-1 h-[4px] rounded-full bg-muted overflow-hidden">
+                    <div className="h-full rounded-full transition-[width] duration-700" style={{ width: `${pct}%`, background: done ? 'hsl(var(--success))' : it.color }} />
                   </div>
+                  <span className={cn('text-[10px] font-bold tabular-nums', done ? 'text-success' : 'text-foreground/60')}>
+                    {it.current}/{it.target}
+                  </span>
                 </div>
               );
             })}
@@ -231,7 +219,7 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
             onClick={() => setShowTargetEdit(!showTargetEdit)}
             className="text-[9px] text-muted-foreground hover:text-primary transition-colors mt-1.5 block"
           >
-            {showTargetEdit ? '▲ Sluiten' : '⚙ Dagdoel aanpassen'}
+            {showTargetEdit ? '▲ Sluiten' : '⚙ Aanpassen'}
           </button>
           {showTargetEdit && (
             <div className="bg-muted/30 border border-border rounded-lg p-2 mt-1.5 space-y-1">
