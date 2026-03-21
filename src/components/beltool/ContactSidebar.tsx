@@ -46,41 +46,10 @@ interface DailyTargets {
   surveys: number;
 }
 
-function DailyTargetBar({ scores, targets }: { scores: Scores; targets: DailyTargets }) {
-  const items = [
-    { label: 'Calls', current: scores.gebeld, target: targets.calls, color: 'hsl(var(--navy))' },
-    { label: 'Enquêtes', current: scores.enquetes, target: targets.surveys, color: 'hsl(var(--primary))' },
-    { label: 'Afspraken', current: scores.afspraken, target: targets.appointments, color: 'hsl(var(--success))' },
-  ];
-  return (
-    <div className="bg-card border border-border rounded-xl p-2.5 mb-2.5 shadow-sm">
-      <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">📊 Dagdoel</div>
-      <div className="space-y-1.5">
-        {items.map(it => {
-          const pct = Math.min((it.current / it.target) * 100, 100);
-          const done = it.current >= it.target;
-          return (
-            <div key={it.label} className="flex items-center gap-2">
-              <span className="text-[10px] font-medium text-muted-foreground w-[52px]">{it.label}</span>
-              <div className="flex-1 h-[5px] rounded-full bg-muted overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-[width] duration-700 ease-out"
-                  style={{ width: `${pct}%`, background: done ? 'hsl(var(--success))' : it.color }}
-                />
-              </div>
-              <span className={cn('text-[10px] font-bold tabular-nums w-[36px] text-right', done ? 'text-success' : 'text-foreground/60')}>
-                {it.current}/{it.target}
-              </span>
-              {done && <span className="text-[10px]">✅</span>}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
+// DailyTargets type for target state
 
-function PauseTimer({ onPauseChange }: { onPauseChange?: (paused: boolean) => void }) {
+
+function PauseTimerInline() {
   const [paused, setPaused] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [sessionSeconds, setSessionSeconds] = useState(0);
@@ -96,28 +65,20 @@ function PauseTimer({ onPauseChange }: { onPauseChange?: (paused: boolean) => vo
   const fmt = (s: number) => `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
 
   return (
-    <div className={cn(
-      'flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-[11px] mb-2.5 transition-colors',
-      paused ? 'bg-warning/10 border-warning/20' : 'bg-muted/30 border-border'
-    )}>
+    <div className="flex items-center gap-1.5">
       <button
-        onClick={() => { setPaused(!paused); onPauseChange?.(!paused); }}
+        onClick={() => setPaused(!paused)}
         className={cn(
-          'w-6 h-6 rounded-md flex items-center justify-center text-[12px] transition-colors',
-          paused ? 'bg-primary text-white' : 'bg-muted text-muted-foreground hover:bg-muted/80'
+          'w-5 h-5 rounded flex items-center justify-center text-[10px] transition-colors',
+          paused ? 'bg-primary text-white' : 'bg-muted text-muted-foreground'
         )}
       >
         {paused ? '▶' : '⏸'}
       </button>
-      <div className="flex-1">
-        <span className="text-muted-foreground font-medium">
-          {paused ? '⏸ Pauze' : '🟢 Actief'}
-        </span>
-      </div>
-      <span className="font-mono tabular-nums text-muted-foreground">{fmt(sessionSeconds)}</span>
-      {elapsed > 0 && (
-        <span className="font-mono tabular-nums text-warning text-[10px]">({fmt(elapsed)} pauze)</span>
-      )}
+      <span className={cn('text-[10px] font-mono tabular-nums', paused ? 'text-warning' : 'text-muted-foreground')}>
+        {fmt(sessionSeconds)}
+      </span>
+      {elapsed > 0 && <span className="text-[9px] font-mono text-warning/60">({fmt(elapsed)})</span>}
     </div>
   );
 }
@@ -193,94 +154,112 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
   return (
     <div className="w-[280px] border-r border-border flex flex-col flex-shrink-0 bg-card">
       <div className="px-3 pt-3 pb-2">
-        {/* Header */}
-        <div className="flex items-center gap-2 mb-2.5">
-          <div className="flex-1">
-            <div className="text-[14px] font-bold tracking-tight text-foreground">Bel-Tool</div>
-          </div>
-          <div className="flex gap-1">
-            <button onClick={onShowAgenda} className={cn('w-7 h-7 rounded-lg flex items-center justify-center text-[13px] transition-colors border', appointmentCount > 0 ? 'text-primary bg-primary/10 border-primary/20' : 'text-muted-foreground border-transparent hover:bg-muted')} title={t.agenda}>📅</button>
-            <button onClick={onShowCallbackQueue} className="w-7 h-7 rounded-lg flex items-center justify-center text-[13px] relative transition-colors border border-transparent hover:bg-muted" style={{ color: dueCallbackCount > 0 ? 'hsl(38 92% 50%)' : undefined }}>🔔{dueCallbackCount > 0 && <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-destructive text-white text-[7px] font-bold flex items-center justify-center">{dueCallbackCount}</span>}</button>
-            <button onClick={onShowLeaderboard} className="w-7 h-7 rounded-lg flex items-center justify-center text-[13px] text-muted-foreground border border-transparent hover:bg-muted transition-colors">🏆</button>
-            <button onClick={exportCSV} className="w-7 h-7 rounded-lg flex items-center justify-center text-[13px] text-muted-foreground border border-transparent hover:bg-muted transition-colors" title="Exporteer resultaten">📤</button>
-            <button onClick={onShowSettings} className="w-7 h-7 rounded-lg flex items-center justify-center text-[13px] text-muted-foreground border border-transparent hover:bg-muted transition-colors" title="Instellingen">⚙️</button>
+        {/* Row 1: Title + action icons */}
+        <div className="flex items-center gap-2 mb-2">
+          <div className="text-[14px] font-bold tracking-tight text-foreground flex-1">Bel-Tool</div>
+          <div className="flex gap-0.5">
+            {[
+              { fn: onShowAgenda, icon: '📅', active: appointmentCount > 0, title: t.agenda },
+              { fn: onShowCallbackQueue, icon: '🔔', badge: dueCallbackCount, title: 'Callbacks' },
+              { fn: onShowLeaderboard, icon: '🏆', title: 'Leaderboard' },
+              { fn: exportCSV, icon: '📤', title: 'Exporteer' },
+              { fn: onShowSettings, icon: '⚙️', title: 'Instellingen' },
+            ].map((btn, i) => (
+              <button
+                key={i}
+                onClick={btn.fn}
+                title={btn.title}
+                className={cn(
+                  'w-7 h-7 rounded-lg flex items-center justify-center text-[12px] transition-colors relative',
+                  btn.active ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:bg-muted'
+                )}
+              >
+                {btn.icon}
+                {btn.badge && btn.badge > 0 ? <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-destructive text-white text-[7px] font-bold flex items-center justify-center">{btn.badge}</span> : null}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* User pill */}
-        <div className="flex items-center gap-2 px-2.5 py-2 rounded-lg bg-muted/50 mb-2.5 border border-border">
-          <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-[9px] font-extrabold text-white">{user.avatar}</div>
+        {/* Row 2: User + pause timer combined */}
+        <div className="flex items-center gap-2 mb-2 px-2 py-1.5 rounded-lg bg-muted/40 border border-border">
+          <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-[8px] font-extrabold text-white flex-shrink-0">{user.avatar}</div>
           <div className="flex-1 min-w-0">
-            <div className="text-[12px] font-semibold text-foreground truncate">{user.name}</div>
+            <div className="text-[11px] font-semibold text-foreground truncate">{user.name}</div>
           </div>
+          <PauseTimerInline />
           <button onClick={onLogout} className="text-muted-foreground text-[10px] hover:text-foreground transition-colors" title="Uitloggen">↗</button>
         </div>
 
-        {/* Pause timer */}
-        <PauseTimer />
-
-        {/* Best call time suggestion */}
-        {callTimeTip && (
-          <div className="px-2.5 py-2 rounded-lg bg-primary/[0.06] border border-primary/15 mb-2.5 text-[11px] font-medium text-primary">
-            {callTimeTip}
-          </div>
-        )}
-
-        {/* Daily targets */}
-        <DailyTargetBar scores={scores} targets={targets} />
-        <button
-          onClick={() => setShowTargetEdit(!showTargetEdit)}
-          className="text-[9px] text-muted-foreground hover:text-primary transition-colors mb-2 -mt-1"
-        >
-          {showTargetEdit ? '▲ Sluiten' : '⚙ Dagdoel aanpassen'}
-        </button>
-        {showTargetEdit && (
-          <div className="bg-muted/30 border border-border rounded-lg p-2.5 mb-2.5 space-y-1.5">
-            {(['calls', 'appointments', 'surveys'] as const).map(key => (
-              <div key={key} className="flex items-center gap-2">
-                <span className="text-[10px] text-muted-foreground w-[52px]">{key === 'calls' ? 'Calls' : key === 'appointments' ? 'Afspraken' : 'Enquêtes'}</span>
-                <input
-                  type="number"
-                  value={targets[key]}
-                  onChange={e => {
-                    const v = { ...targets, [key]: Math.max(1, parseInt(e.target.value) || 1) };
-                    setTargets(v);
-                    store.set('dailyTargets', v);
-                  }}
-                  className="flex-1 px-2 py-1 rounded-md border border-border bg-card text-foreground text-[11px] outline-none focus:border-primary w-16"
-                />
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Stats */}
-        <div className="bg-card border border-border rounded-xl p-2.5 mb-2.5 shadow-sm">
+        {/* Row 3: Combined stats + daily targets */}
+        <div className="bg-card border border-border rounded-xl p-2.5 mb-2 shadow-sm">
+          {/* Stats row */}
           <div className="flex justify-between items-center mb-1.5">
             <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">{t.today}</span>
             {scores.reeks >= 2 && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-warning/10 text-warning border border-warning/20">🔥{scores.reeks}x</span>}
           </div>
-          <div className="grid grid-cols-3 gap-1.5">
+          <div className="grid grid-cols-3 gap-1.5 mb-2">
             {[
-              { label: t.called, value: scores.gebeld, color: 'hsl(var(--navy))' },
-              { label: t.surveys, value: scores.enquetes, color: 'hsl(var(--primary))' },
-              { label: t.appointments, value: scores.afspraken, color: 'hsl(var(--success))' },
+              { label: t.called, value: scores.gebeld, target: targets.calls, color: 'hsl(var(--navy))' },
+              { label: t.surveys, value: scores.enquetes, target: targets.surveys, color: 'hsl(var(--primary))' },
+              { label: t.appointments, value: scores.afspraken, target: targets.appointments, color: 'hsl(var(--success))' },
             ].map(s => (
               <div key={s.label} className="text-center py-1.5 rounded-lg bg-muted/50 border border-border">
-                <div className="text-lg font-extrabold leading-none" style={{ color: s.color }}>{s.value}</div>
+                <div className="text-lg font-extrabold leading-none" style={{ color: s.color }}>{s.value}<span className="text-[10px] font-semibold text-muted-foreground">/{s.target}</span></div>
                 <div className="text-[9px] font-medium text-muted-foreground mt-0.5">{s.label}</div>
               </div>
             ))}
           </div>
-          {scores.gebeld > 0 && (
-            <div className="mt-2 flex items-center gap-1.5">
-              <div className="flex-1 h-[3px] rounded-full bg-muted overflow-hidden">
-                <div className="h-full rounded-full bg-primary transition-[width] duration-500" style={{ width: `${convRate}%` }} />
-              </div>
-              <span className="text-[10px] font-bold" style={{ color: convRate >= 50 ? 'hsl(var(--success))' : 'hsl(var(--warning))' }}>{convRate}%</span>
+          {/* Progress bars */}
+          <div className="space-y-1">
+            {[
+              { label: 'Calls', current: scores.gebeld, target: targets.calls, color: 'hsl(var(--navy))' },
+              { label: 'Enquêtes', current: scores.enquetes, target: targets.surveys, color: 'hsl(var(--primary))' },
+              { label: 'Afspraken', current: scores.afspraken, target: targets.appointments, color: 'hsl(var(--success))' },
+            ].map(it => {
+              const pct = Math.min((it.current / it.target) * 100, 100);
+              return (
+                <div key={it.label} className="flex items-center gap-1.5">
+                  <div className="flex-1 h-[3px] rounded-full bg-muted overflow-hidden">
+                    <div className="h-full rounded-full transition-[width] duration-700" style={{ width: `${pct}%`, background: pct >= 100 ? 'hsl(var(--success))' : it.color }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <button
+            onClick={() => setShowTargetEdit(!showTargetEdit)}
+            className="text-[9px] text-muted-foreground hover:text-primary transition-colors mt-1.5 block"
+          >
+            {showTargetEdit ? '▲ Sluiten' : '⚙ Dagdoel aanpassen'}
+          </button>
+          {showTargetEdit && (
+            <div className="bg-muted/30 border border-border rounded-lg p-2 mt-1.5 space-y-1">
+              {(['calls', 'appointments', 'surveys'] as const).map(key => (
+                <div key={key} className="flex items-center gap-2">
+                  <span className="text-[10px] text-muted-foreground w-[52px]">{key === 'calls' ? 'Calls' : key === 'appointments' ? 'Afspraken' : 'Enquêtes'}</span>
+                  <input
+                    type="number"
+                    value={targets[key]}
+                    onChange={e => {
+                      const v = { ...targets, [key]: Math.max(1, parseInt(e.target.value) || 1) };
+                      setTargets(v);
+                      store.set('dailyTargets', v);
+                    }}
+                    className="flex-1 px-2 py-1 rounded-md border border-border bg-card text-foreground text-[11px] outline-none focus:border-primary w-16"
+                  />
+                </div>
+              ))}
             </div>
           )}
         </div>
+
+        {/* Best call time tip (compact) */}
+        {callTimeTip && (
+          <div className="px-2.5 py-1.5 rounded-lg bg-primary/[0.06] border border-primary/15 mb-2 text-[10px] font-medium text-primary">
+            {callTimeTip}
+          </div>
+        )}
 
         {/* Quick notes */}
         {onInsertNote && phase !== 'idle' && (
