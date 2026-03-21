@@ -75,7 +75,6 @@ export default function BelTool() {
 
     (async () => {
       try {
-        // 1. Fetch pipelines to find "Bellen" pipeline and "Nieuwe Lead" stage
         const pipelineData = await ghl.getPipelines();
         const pipelines = pipelineData?.pipelines || [];
         const bellenPipeline = pipelines.find((p: { name: string }) =>
@@ -83,11 +82,7 @@ export default function BelTool() {
         );
 
         if (!bellenPipeline) {
-          console.warn('No "Bellen" pipeline found, falling back to all contacts');
-          const data = await ghl.getContacts();
-          if (data?.contacts?.length) {
-            setCompanies(mapOpportunitiesToCompanies([]));
-          }
+          console.warn('No "Bellen" pipeline found');
           return;
         }
 
@@ -95,29 +90,52 @@ export default function BelTool() {
           s.name.toLowerCase().includes('nieuwe')
         );
 
-        // 2. Search opportunities — use contact data embedded in the response (no extra API calls)
-        const oppData = await ghl.searchOpportunities(
-          bellenPipeline.id,
-          nieuweLeadsStage?.id
-        );
+        setPipelineInfo({ pipelineId: bellenPipeline.id, stageId: nieuweLeadsStage?.id || '' });
+
+        const oppData = await ghl.searchOpportunities(bellenPipeline.id, nieuweLeadsStage?.id, 25);
         const opportunities = oppData?.opportunities || [];
+        const meta = oppData?.meta;
 
-        if (opportunities.length === 0) {
-          console.warn('No opportunities found in Bellen → Nieuwe Lead');
-          setCompanies([]);
-          return;
-        }
-
-        // 3. Map opportunities directly to companies — contact data is already included
         setCompanies(mapOpportunitiesToCompanies(opportunities));
+        setHasMoreLeads(!!meta?.nextPage);
+        if (meta?.startAfter && meta?.startAfterId) {
+          setPageCursor({ startAfter: meta.startAfter, startAfterId: meta.startAfterId });
+        } else {
+          setPageCursor(null);
+        }
       } catch (err: any) {
-        console.warn('GHL pipeline load failed, using demo data:', err.message);
+        console.warn('GHL pipeline load failed:', err.message);
         setGhlError(err.message);
       } finally {
         setGhlLoading(false);
       }
     })();
   }, [user]);
+
+  const loadMoreLeads = useCallback(async () => {
+    if (!pipelineInfo || !pageCursor || !hasMoreLeads || ghlLoading) return;
+    setGhlLoading(true);
+    try {
+      const oppData = await ghl.searchOpportunities(
+        pipelineInfo.pipelineId, pipelineInfo.stageId, 25,
+        pageCursor.startAfter, pageCursor.startAfterId
+      );
+      const opportunities = oppData?.opportunities || [];
+      const meta = oppData?.meta;
+
+      setCompanies(mapOpportunitiesToCompanies(opportunities));
+      setHasMoreLeads(!!meta?.nextPage);
+      if (meta?.startAfter && meta?.startAfterId) {
+        setPageCursor({ startAfter: meta.startAfter, startAfterId: meta.startAfterId });
+      } else {
+        setPageCursor(null);
+      }
+    } catch (err: any) {
+      console.warn('Load more failed:', err.message);
+    } finally {
+      setGhlLoading(false);
+    }
+  }, [pipelineInfo, pageCursor, hasMoreLeads, ghlLoading]);
 
   // Helper: map GHL opportunities (with embedded contact) into Company[] structure
   function mapOpportunitiesToCompanies(opportunities: Array<{
