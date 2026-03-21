@@ -33,6 +33,7 @@ export default function BelTool() {
   const [stageMap, setStageMap] = useState<Record<string, string>>({});
   const [pageCursor, setPageCursor] = useState<{ startAfter?: number; startAfterId?: string } | null>(null);
   const [hasMoreLeads, setHasMoreLeads] = useState(false);
+  const [stageFilter, setStageFilter] = useState<import('@/types/beltool').CompanyStage | 'all'>('nieuw');
   const [search, setSearch] = useState('');
   const [phase, setPhase] = useState<CallPhase>('idle');
   const [callState, setCallState] = useState<CallState>('idle');
