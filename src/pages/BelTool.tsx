@@ -97,6 +97,13 @@ export default function BelTool() {
           s.name.toLowerCase().includes('nieuwe')
         );
 
+        // Cache all stage names → IDs for quick lookup during endCall
+        const stages: Record<string, string> = {};
+        for (const s of bellenPipeline.stages || []) {
+          stages[s.name.toLowerCase()] = s.id;
+        }
+        setStageMap(stages);
+
         setPipelineInfo({ pipelineId: bellenPipeline.id, stageId: nieuweLeadsStage?.id || '' });
 
         const oppData = await ghl.searchOpportunities(bellenPipeline.id, nieuweLeadsStage?.id, 25);
