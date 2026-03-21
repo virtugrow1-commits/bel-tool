@@ -508,6 +508,70 @@ export default function BelTool() {
           </div>
         )}
 
+        {/* Incoming call popup */}
+        {incomingCall && (
+          <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50" style={{ animation: 'fadeIn 0.15s ease' }}>
+            <div
+              className="bg-[hsl(222_32%_12%)] border border-border/50 rounded-2xl shadow-2xl p-6 w-[360px]"
+              style={{ animation: 'incomingRing 0.5s ease infinite alternate' }}
+            >
+              <div className="text-center mb-4">
+                <div className="text-5xl mb-3" style={{ animation: 'phoneShake 0.4s ease infinite' }}>📱</div>
+                <div className="text-lg font-bold text-foreground">Inkomend gesprek</div>
+                <div className="text-[13px] text-muted-foreground/50 mt-1">
+                  {incomingCall.contactName ? 'Lead belt terug!' : 'Onbekend nummer'}
+                </div>
+              </div>
+              <div className="bg-foreground/[0.04] rounded-xl p-4 mb-4 border border-border/30">
+                {incomingCall.contactName ? (
+                  <>
+                    <div className="font-bold text-[16px]">{incomingCall.contactName}</div>
+                    <div className="text-[13px] text-muted-foreground/40 mt-0.5">{incomingCall.companyName}</div>
+                  </>
+                ) : (
+                  <div className="font-bold text-[16px]">Onbekend contact</div>
+                )}
+                <div className="text-[13px] text-primary mt-2 font-mono">{incomingCall.callerNumber}</div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    (async () => {
+                      const { supabase } = await import('@/integrations/supabase/client');
+                      await supabase.from('incoming_calls').update({ status: 'dismissed' }).eq('id', incomingCall.id);
+                    })();
+                    setIncomingCall(null);
+                  }}
+                  className="flex-1 py-3 rounded-xl bg-destructive/20 border border-destructive/30 text-destructive text-[13px] font-semibold hover:bg-destructive/30 active:scale-[0.97] transition-all"
+                >
+                  ✕ Weigeren
+                </button>
+                <button
+                  onClick={() => {
+                    if (incomingCall.contactId && incomingCall.companyId) {
+                      const comp = companies.find(c => c.id === incomingCall.companyId);
+                      const ct = comp?.contacts.find(c => c.id === incomingCall.contactId);
+                      if (comp && ct) {
+                        selectContact(comp, ct);
+                        setCallState('active');
+                      }
+                    }
+                    (async () => {
+                      const { supabase } = await import('@/integrations/supabase/client');
+                      await supabase.from('incoming_calls').update({ status: 'answered' }).eq('id', incomingCall.id);
+                    })();
+                    setIncomingCall(null);
+                  }}
+                  className="flex-1 py-3 rounded-xl bg-[hsl(152_56%_42%)] text-white text-[13px] font-semibold hover:bg-[hsl(152_56%_38%)] active:scale-[0.97] transition-all shadow-lg"
+                  style={{ animation: 'pulse 1.5s ease infinite' }}
+                >
+                  📞 Opnemen
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <SettingsPanel open={showSettings} onClose={() => setShowSettings(false)} onSyncLeads={reloadLeads} />
         <Leaderboard open={showLeaderboard} onClose={() => setShowLeaderboard(false)} />
         <AgendaView open={showAgenda} onClose={() => setShowAgenda(false)} appointments={appts} />
