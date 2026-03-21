@@ -24,7 +24,7 @@ const DTMF_KEYS = [
   ['*', '0', '#'],
 ];
 
-export function CallDisplay({ callState, contact, company, onHangup }: CallDisplayProps) {
+export function CallDisplay({ callState, contact, company, onHangup, onConfirmConnected }: CallDisplayProps) {
   const [elapsed, setElapsed] = useState(0);
   const [muted, setMuted] = useState(false);
   const [held, setHeld] = useState(false);
