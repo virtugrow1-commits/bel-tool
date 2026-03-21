@@ -78,6 +78,27 @@ export default function BelTool() {
   const convRate = scores.gebeld > 0 ? Math.round(((scores.enquetes + scores.afspraken) / scores.gebeld) * 100) : 0;
   const todayStr = new Date().toISOString().split('T')[0];
   const dueCallbacks = callbacks.filter(cb => cb.date <= todayStr && cb.status === 'scheduled');
+
+  // Check for due callbacks every 30s and show popup
+  useEffect(() => {
+    const check = () => {
+      const now = new Date();
+      const nowStr = now.toISOString().split('T')[0];
+      const nowTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+      const due = callbacks.find(cb =>
+        cb.status === 'scheduled' &&
+        !dismissedCallbacks.has(cb.id) &&
+        (cb.date < nowStr || (cb.date === nowStr && cb.time <= nowTime))
+      );
+      if (due && (!callbackPopup || callbackPopup.id !== due.id)) {
+        setCallbackPopup(due);
+      }
+    };
+    check();
+    const iv = setInterval(check, 30000);
+    return () => clearInterval(iv);
+  }, [callbacks, dismissedCallbacks, callbackPopup]);
+
   // Load leads from GHL "Bellen" pipeline → "Nieuwe Lead" stage
   useEffect(() => {
     if (!user) return;
