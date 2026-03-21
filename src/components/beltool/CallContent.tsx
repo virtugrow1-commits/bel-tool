@@ -130,7 +130,7 @@ interface CallContentProps {
   setBookAdvisor: (v: string) => void;
   scores: Scores;
   onShowCallback: () => void;
-  onStartDialing: () => void;
+  onStartDialing: (callId?: string) => void;
   onHangup: () => void;
   onConfirmConnected: () => void;
   activeCompId: string;
