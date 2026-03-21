@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import type { Company, CompanyContact, CallPhase, CompanyStage } from '@/types/beltool';
+import { STAGE_META } from '@/types/beltool';
 import { useBelTool } from '@/contexts/BelToolContext';
 import type { Scores } from '@/lib/beltool-scoring';
 import type { User } from '@/lib/beltool-data';
