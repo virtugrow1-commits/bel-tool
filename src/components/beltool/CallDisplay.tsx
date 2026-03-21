@@ -8,6 +8,7 @@ interface CallDisplayProps {
   contact: CompanyContact;
   company: Company;
   onHangup: () => void;
+  onConfirmConnected?: () => void;
 }
 
 function formatDuration(seconds: number) {
