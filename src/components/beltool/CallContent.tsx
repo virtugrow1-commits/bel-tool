@@ -191,6 +191,14 @@ export function CallContent({
           <div className="text-xs text-foreground/50">{activeContact.phone}</div>
           <div className="text-[10px] text-muted-foreground/30">{activeContact.email}</div>
         </div>
+        {callState === 'idle' && (
+          <button
+            onClick={onStartDialing}
+            className="px-4 py-1.5 rounded-full bg-gradient-to-r from-info to-primary text-white text-xs font-bold active:scale-[0.97] transition-transform flex items-center gap-1.5"
+          >
+            📞 Bellen
+          </button>
+        )}
         <CallStateBar callState={callState} onHangup={() => { onEndCall('lost', 'nietInteressant'); addScore('afgevallen'); }} />
       </div>
 
