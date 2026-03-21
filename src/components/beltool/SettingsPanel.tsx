@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Modal } from './Modal';
 import { useBelTool } from '@/contexts/BelToolContext';
-import { USERS, defaultSurvey } from '@/lib/beltool-data';
+import { USERS, defaultSurvey, type User } from '@/lib/beltool-data';
 import { initScores } from '@/lib/beltool-scoring';
 import { store } from '@/lib/beltool-store';
 import { ghl } from '@/lib/beltool-ghl';
@@ -29,7 +29,13 @@ const DEFAULT_PIPELINE_STAGES = [
   { name: 'Geen Gehoor', key: 'geenGehoor', color: '#6B7280' },
 ];
 
-export function SettingsPanel({ open, onClose, onSyncLeads }: { open: boolean; onClose: () => void; onSyncLeads: () => Promise<void> }) {
+export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpdateUsers }: {
+  open: boolean;
+  onClose: () => void;
+  onSyncLeads: () => Promise<void>;
+  managedUsers: User[];
+  onUpdateUsers: (users: User[]) => void;
+}) {
   const { lang, setLang, user, allScores, setAllScores, webhooks, setWebhooks, apiKey, setApiKey, t, surveyConfig, setSurveyConfig, ghlConfig, setGhlConfig } = useBelTool();
   const [tab, setTab] = useState('ghl');
   const [confirmReset, setConfirmReset] = useState<string | null>(null);
@@ -38,6 +44,8 @@ export function SettingsPanel({ open, onClose, onSyncLeads }: { open: boolean; o
   const [draft, setDraft] = useState<any>(null);
   const [newOpt, setNewOpt] = useState('');
   const [testStatus, setTestStatus] = useState<string | null>(null);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [newUser, setNewUser] = useState<Partial<User> & { name: string; email: string }>({ name: '', email: '', password: 'demo', role: 'caller', deviceId: '' });
 
   const qKeys = ['intro', 'q1', 'q2', 'q3', 'q4', 'bridge'];
   const qLabels: Record<string, string> = { intro: 'Introductie', q1: 'Vraag 1', q2: 'Vraag 2', q3: 'Vraag 3', q4: 'Vraag 4', bridge: 'Aanbod' };
@@ -73,6 +81,7 @@ export function SettingsPanel({ open, onClose, onSyncLeads }: { open: boolean; o
 
   const tabs = [
     { id: 'ghl', label: '🔗 GHL Integratie' },
+    { id: 'telefonie', label: '📞 Telefonie' },
     { id: 'vragen', label: '❓ Enquêtevragen' },
     { id: 'pipeline', label: '📊 Pipeline' },
     { id: 'fields', label: '📝 Custom Fields' },
@@ -512,27 +521,190 @@ export function SettingsPanel({ open, onClose, onSyncLeads }: { open: boolean; o
         </div>
       )}
 
+      {/* TELEFONIE TAB */}
+      {tab === 'telefonie' && (
+        <div className="space-y-5">
+          <div className="bg-primary/[0.06] border border-primary/15 rounded-xl p-4">
+            <h3 className="text-sm font-bold text-primary mb-2">📞 Bel Instellingen</h3>
+            <p className="text-muted-foreground text-sm">Stel per beller het Voys toestelnummer (Device ID) in. Elke beller kan een eigen toestel gebruiken.</p>
+          </div>
+
+          <div className="space-y-2">
+            {managedUsers.map(u => (
+              <div key={u.id} className="flex items-center gap-3 p-3 rounded-xl bg-foreground/[0.02] border border-border/40">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-info to-primary flex items-center justify-center text-[11px] font-bold text-white flex-shrink-0">{u.avatar}</div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-[13px]">{u.name}</div>
+                  <div className="text-[11px] text-muted-foreground/40">{u.email}</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-[11px] text-muted-foreground/50 whitespace-nowrap">Device ID</label>
+                  <input
+                    value={u.deviceId || ''}
+                    onChange={e => {
+                      const updated = managedUsers.map(mu => mu.id === u.id ? { ...mu, deviceId: e.target.value } : mu);
+                      onUpdateUsers(updated);
+                    }}
+                    placeholder="bijv. 201"
+                    className={cn(inputCls, 'w-24 text-center font-mono')}
+                    disabled={user?.role !== 'admin' && user?.id !== u.id}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="bg-foreground/[0.02] border border-border/30 rounded-xl p-4">
+            <div className="text-xs font-bold text-muted-foreground/50 mb-2">💡 UITLEG</div>
+            <div className="text-[12px] text-muted-foreground/60 space-y-1">
+              <p>• <strong>201</strong> = Web-call (browser softphone)</p>
+              <p>• <strong>202</strong> = Voys app (mobiel)</p>
+              <p>• Elk toestel heeft een eigen intern nummer in Voys</p>
+              <p>• Het Device ID bepaalt welk toestel eerst overgaat bij click-to-call</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* USERS TAB */}
       {tab === 'users' && (
-        <div>
-          {USERS.map(u => (
-            <div key={u.id} className="flex items-center gap-3 py-2.5 border-b border-border/30">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-info to-primary flex items-center justify-center text-[11px] font-bold text-white">{u.avatar}</div>
-              <div className="flex-1">
-                <div className="font-semibold text-[13px]">{u.name}</div>
-                <div className="text-[11px] text-muted-foreground">{u.email}</div>
+        <div className="space-y-4">
+          <div className="bg-primary/[0.06] border border-primary/15 rounded-xl p-4">
+            <h3 className="text-sm font-bold text-primary mb-2">👥 Gebruikersbeheer</h3>
+            <p className="text-muted-foreground text-sm">Voeg bellers toe, wijzig rollen of verwijder gebruikers.</p>
+          </div>
+
+          {/* Existing users */}
+          <div className="space-y-1.5">
+            {managedUsers.map(u => (
+              <div key={u.id} className="flex items-center gap-3 p-3 rounded-xl border border-border/30 bg-foreground/[0.02]">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-info to-primary flex items-center justify-center text-[11px] font-bold text-white flex-shrink-0">{u.avatar}</div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-[13px]">{u.name}</div>
+                  <div className="text-[11px] text-muted-foreground/40">{u.email}</div>
+                  {u.deviceId && <div className="text-[10px] text-muted-foreground/30 font-mono">Device: {u.deviceId}</div>}
+                </div>
+                <span
+                  className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                  style={{
+                    background: u.role === 'admin' ? 'hsl(0 84% 60% / 0.1)' : u.role === 'manager' ? 'hsl(38 92% 50% / 0.1)' : 'hsl(var(--primary) / 0.1)',
+                    color: u.role === 'admin' ? 'hsl(0 84% 60%)' : u.role === 'manager' ? 'hsl(38 92% 50%)' : 'hsl(var(--primary))',
+                  }}
+                >
+                  {u.role}
+                </span>
+                <button
+                  onClick={() => setEditingUser({ ...u })}
+                  className="text-[11px] text-primary font-semibold bg-transparent border-none hover:underline"
+                >
+                  Bewerk
+                </button>
+                {u.id !== user?.id && (
+                  <button
+                    onClick={() => {
+                      if (confirm(`Weet je zeker dat je ${u.name} wilt verwijderen?`)) {
+                        onUpdateUsers(managedUsers.filter(mu => mu.id !== u.id));
+                      }
+                    }}
+                    className="text-destructive bg-transparent border-none text-sm"
+                  >
+                    ✕
+                  </button>
+                )}
               </div>
-              <span
-                className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                style={{
-                  background: u.role === 'admin' ? 'hsl(0 84% 60% / 0.1)' : u.role === 'manager' ? 'hsl(38 92% 50% / 0.1)' : 'hsl(var(--primary) / 0.1)',
-                  color: u.role === 'admin' ? 'hsl(0 84% 60%)' : u.role === 'manager' ? 'hsl(38 92% 50%)' : 'hsl(var(--primary))',
-                }}
-              >
-                {u.role}
-              </span>
+            ))}
+          </div>
+
+          {/* Edit user modal inline */}
+          {editingUser && (
+            <div className="border border-primary/20 rounded-xl p-4 bg-primary/[0.03] space-y-3">
+              <div className="text-sm font-bold text-primary">✏️ {editingUser.name} bewerken</div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[11px] text-muted-foreground mb-1 block">Naam</label>
+                  <input value={editingUser.name} onChange={e => setEditingUser({ ...editingUser, name: e.target.value })} className={inputCls} />
+                </div>
+                <div>
+                  <label className="text-[11px] text-muted-foreground mb-1 block">Email</label>
+                  <input value={editingUser.email} onChange={e => setEditingUser({ ...editingUser, email: e.target.value })} className={inputCls} />
+                </div>
+                <div>
+                  <label className="text-[11px] text-muted-foreground mb-1 block">Rol</label>
+                  <select value={editingUser.role} onChange={e => setEditingUser({ ...editingUser, role: e.target.value as User['role'] })} className={inputCls}>
+                    <option value="caller">Beller</option>
+                    <option value="manager">Manager</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[11px] text-muted-foreground mb-1 block">Device ID</label>
+                  <input value={editingUser.deviceId || ''} onChange={e => setEditingUser({ ...editingUser, deviceId: e.target.value })} placeholder="bijv. 201" className={cn(inputCls, 'font-mono')} />
+                </div>
+                <div>
+                  <label className="text-[11px] text-muted-foreground mb-1 block">Wachtwoord</label>
+                  <input value={editingUser.password} onChange={e => setEditingUser({ ...editingUser, password: e.target.value })} className={inputCls} />
+                </div>
+              </div>
+              <div className="flex gap-2 pt-2">
+                <button onClick={() => setEditingUser(null)} className="px-4 py-2 rounded-lg border border-border text-muted-foreground text-[12px] font-semibold">Annuleren</button>
+                <button
+                  onClick={() => {
+                    const updated = managedUsers.map(mu => mu.id === editingUser.id ? { ...editingUser, avatar: editingUser.name.substring(0, 2).toUpperCase() } : mu);
+                    onUpdateUsers(updated);
+                    setEditingUser(null);
+                  }}
+                  className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-[12px] font-semibold"
+                >
+                  Opslaan
+                </button>
+              </div>
             </div>
-          ))}
+          )}
+
+          {/* Add new user */}
+          <div className="border border-border/30 rounded-xl p-4 space-y-3">
+            <div className="text-xs font-bold text-muted-foreground/50">➕ NIEUWE BELLER TOEVOEGEN</div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[11px] text-muted-foreground mb-1 block">Naam</label>
+                <input value={newUser.name} onChange={e => setNewUser({ ...newUser, name: e.target.value })} placeholder="Jan Jansen" className={inputCls} />
+              </div>
+              <div>
+                <label className="text-[11px] text-muted-foreground mb-1 block">Email</label>
+                <input value={newUser.email} onChange={e => setNewUser({ ...newUser, email: e.target.value })} placeholder="jan@bedrijf.nl" className={inputCls} />
+              </div>
+              <div>
+                <label className="text-[11px] text-muted-foreground mb-1 block">Rol</label>
+                <select value={newUser.role} onChange={e => setNewUser({ ...newUser, role: e.target.value as User['role'] })} className={inputCls}>
+                  <option value="caller">Beller</option>
+                  <option value="manager">Manager</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-[11px] text-muted-foreground mb-1 block">Device ID</label>
+                <input value={newUser.deviceId || ''} onChange={e => setNewUser({ ...newUser, deviceId: e.target.value })} placeholder="bijv. 203" className={cn(inputCls, 'font-mono')} />
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                if (!newUser.name.trim() || !newUser.email.trim()) return;
+                const id = `u${Date.now()}`;
+                const avatar = newUser.name.trim().substring(0, 2).toUpperCase();
+                const created: User = {
+                  id, name: newUser.name.trim(), email: newUser.email.trim(),
+                  password: newUser.password || 'demo', role: newUser.role || 'caller',
+                  avatar, deviceId: newUser.deviceId || '',
+                };
+                onUpdateUsers([...managedUsers, created]);
+                setNewUser({ name: '', email: '', password: 'demo', role: 'caller', deviceId: '' });
+              }}
+              disabled={!newUser.name.trim() || !newUser.email.trim()}
+              className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-[12px] font-semibold active:scale-[0.97] transition-transform disabled:opacity-40"
+            >
+              Gebruiker toevoegen
+            </button>
+          </div>
         </div>
       )}
     </Modal>

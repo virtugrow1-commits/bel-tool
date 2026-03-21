@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { User } from '@/lib/beltool-data';
 import { USERS } from '@/lib/beltool-data';
+import { store } from '@/lib/beltool-store';
 
 interface LoginScreenProps {
   onLogin: (user: User) => void;
@@ -12,7 +13,8 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
   const [err, setErr] = useState(false);
 
   const submit = () => {
-    const u = USERS.find(u => u.email === email && u.password === pw);
+    const allUsers: User[] = store.get('managedUsers', USERS);
+    const u = allUsers.find(u => u.email === email && u.password === pw);
     if (u) onLogin(u);
     else setErr(true);
   };

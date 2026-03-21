@@ -7,11 +7,12 @@ interface CallButtonProps {
   phoneNumber: string;
   leadId: string;
   leadName: string;
+  deviceId?: string;
   onCallStarted?: (callId: string) => void;
   className?: string;
 }
 
-export function CallButton({ phoneNumber, leadId, leadName, onCallStarted, className }: CallButtonProps) {
+export function CallButton({ phoneNumber, leadId, leadName, deviceId, onCallStarted, className }: CallButtonProps) {
   const [state, setState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -22,7 +23,7 @@ export function CallButton({ phoneNumber, leadId, leadName, onCallStarted, class
 
     try {
       const { data, error } = await supabase.functions.invoke('voys-call', {
-        body: { phone: phoneNumber, leadId, leadName },
+        body: { phone: phoneNumber, leadId, leadName, ...(deviceId ? { deviceId } : {}) },
       });
 
       if (error) throw new Error(error.message || 'Functie aanroep mislukt');
