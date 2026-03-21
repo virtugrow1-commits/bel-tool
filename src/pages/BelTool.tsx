@@ -144,10 +144,11 @@ export default function BelTool() {
   const selectContact = (comp: Company, contact: CompanyContact) => {
     setActiveCompId(comp.id);
     setActiveContactId(contact.id);
-    setPhase('precall');
+    setPhase('intro');
     setCallState('idle');
     setAnswers({ hours: '', tasks: [], tasksOther: '', growth: '', ai: '' });
     setNotes(''); setBookDate(''); setBookTime(''); setBookAdvisor('');
+    updateCompStage(comp.id, 'bellen');
   };
 
   const startDialing = async () => {
