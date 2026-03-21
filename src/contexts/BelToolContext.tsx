@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react';
 import type { Translations } from '@/lib/beltool-i18n';
-import type { SurveyConfig, Webhook } from '@/types/beltool';
+import type { SurveyConfig, Webhook, GhlConfig } from '@/types/beltool';
 import type { Scores } from '@/lib/beltool-scoring';
 import type { User } from '@/lib/beltool-data';
 
@@ -17,6 +17,8 @@ export interface BelToolContextValue {
   setApiKey: React.Dispatch<React.SetStateAction<string>>;
   surveyConfig: SurveyConfig;
   setSurveyConfig: React.Dispatch<React.SetStateAction<SurveyConfig>>;
+  ghlConfig: GhlConfig;
+  setGhlConfig: React.Dispatch<React.SetStateAction<GhlConfig>>;
 }
 
 export const BelToolContext = createContext<BelToolContextValue | null>(null);
