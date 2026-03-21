@@ -67,6 +67,46 @@ function GhlCalendarSelect() {
   );
 }
 
+type LocationType = 'google_meet' | 'bedrijf' | 'op_locatie' | '';
+
+function LocationSelect({ value, onChange, customAddress, onCustomChange, companyAddress }: {
+  value: LocationType;
+  onChange: (v: LocationType) => void;
+  customAddress: string;
+  onCustomChange: (v: string) => void;
+  companyAddress: string;
+}) {
+  return (
+    <div className="mb-3">
+      <div className="text-[11px] text-muted-foreground mb-1">Locatie</div>
+      <select
+        value={value}
+        onChange={e => onChange(e.target.value as LocationType)}
+        className="w-full px-3 py-2.5 rounded-lg border border-border bg-foreground/[0.05] text-foreground text-[13px] outline-none"
+      >
+        <option value="">Selecteer locatie...</option>
+        <option value="google_meet" className="text-foreground bg-card">Google Meet</option>
+        <option value="bedrijf" className="text-foreground bg-card">Bedrijfslocatie</option>
+        <option value="op_locatie" className="text-foreground bg-card">Op locatie</option>
+      </select>
+      {value === 'bedrijf' && companyAddress && (
+        <div className="mt-1.5 px-3 py-2 rounded-lg bg-foreground/[0.03] border border-border text-[12px] text-muted-foreground">
+          📍 {companyAddress}
+        </div>
+      )}
+      {value === 'op_locatie' && (
+        <input
+          type="text"
+          value={customAddress}
+          onChange={e => onCustomChange(e.target.value)}
+          placeholder="Vul adres in (bijv. Van der Valk Eindhoven)"
+          className="mt-1.5 w-full px-3 py-2.5 rounded-lg border border-border bg-foreground/[0.03] text-foreground text-[13px] outline-none placeholder:text-muted-foreground/60"
+        />
+      )}
+    </div>
+  );
+}
+
 interface CallContentProps {
   activeContact: CompanyContact;
   activeComp: Company;
