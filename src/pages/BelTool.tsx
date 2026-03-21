@@ -104,7 +104,6 @@ export default function BelTool() {
   // Listen for incoming calls via realtime
   useEffect(() => {
     if (!user) return;
-    const { supabase } = require('@/integrations/supabase/client');
     const channel = supabase
       .channel('incoming-calls')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'incoming_calls' }, (payload: any) => {
