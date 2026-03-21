@@ -303,7 +303,7 @@ export function CallContent({
           <div className="w-px h-5 bg-border" />
 
           {/* Quick notes */}
-          {phase !== 'idle' && phase !== 'precall' && (
+          {phase !== 'precall' && (
             <div className="flex items-center gap-1 flex-1 overflow-x-auto">
               <span className="text-[9px] text-muted-foreground font-bold shrink-0">📝</span>
               {QUICK_NOTES.map(n => (
