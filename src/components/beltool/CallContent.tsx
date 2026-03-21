@@ -315,6 +315,15 @@ export function CallContent({
                 <ActionBtn wide onClick={() => {
                   if (!bookDate || !bookTime) { showToast(t.pickDateTime, 'err'); return; }
                   if (!bookAdvisor) { showToast(t.selectAdvisor, 'err'); return; }
+                  // Book in GHL
+                  ghl.bookAppointment(activeContact.id, bookDate, bookTime, bookAdvisor).catch(console.error);
+                  // Create task in GHL
+                  ghl.createTask(activeContact.id, `Adviesgesprek ${activeContact.firstName} ${activeContact.lastName}`, {
+                    body: `Afspraak op ${fmtDate(bookDate)} om ${bookTime}`,
+                    dueDate: `${bookDate}T${bookTime}:00`,
+                  }).catch(console.error);
+                  // Update pipeline
+                  ghl.upsertOpportunity(activeContact.id, '', '', `${activeComp.name} - Adviesgesprek`).catch(console.error);
                   onEndCall('done', 'afspraak');
                   addScore('afspraak');
                   const adv = ADVISORS.find(a => a.id === bookAdvisor);
