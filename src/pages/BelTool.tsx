@@ -309,7 +309,8 @@ export default function BelTool() {
                     bookAdvisor={bookAdvisor} setBookAdvisor={setBookAdvisor}
                     scores={scores} onShowCallback={() => setShowCallback(true)}
                     onStartDialing={startDialing}
-                    onHangup={() => { endCall('lost', 'nietInteressant'); addScore('afgevallen'); }}
+                    onHangup={hangup}
+                    onConfirmConnected={confirmConnected}
                     activeCompId={activeCompId}
                   />
                 </div>
