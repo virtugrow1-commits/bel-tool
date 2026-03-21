@@ -236,20 +236,11 @@ export default function BelTool() {
               </div>
             </>
           ) : (
-            <CallContent
-              activeContact={activeContact!} activeComp={activeComp!}
-              phase={phase} callState={callState} setPhase={setPhase}
-              answers={answers} setAnswers={setAnswers} taskString={taskString}
-              onEndCall={endCall} onNextContact={nextContact}
-              showToast={flash} updateStage={updateCompStage} addScore={addScore}
-              bookDate={bookDate} setBookDate={setBookDate}
-              bookTime={bookTime} setBookTime={setBookTime}
-              bookAdvisor={bookAdvisor} setBookAdvisor={setBookAdvisor}
-              scores={scores} onShowCallback={() => setShowCallback(true)}
-              onStartDialing={startDialing}
-              onHangup={() => { endCall('lost', 'nietInteressant'); addScore('afgevallen'); }}
-              activeCompId={activeCompId || ''}
-            />
+            <div className="flex-1 flex flex-col items-center justify-center text-center gap-3">
+              <div className="text-5xl mb-2">📞</div>
+              <div className="text-lg font-bold text-foreground/40">{t.selectContact}</div>
+              <div className="text-[13px] text-foreground/20">{t.clickName}</div>
+            </div>
           )}
         </div>
       </div>
