@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils';
 import type { CompanyContact, Company, CallPhase, CallState, SurveyAnswers, SelectOption, SurveyConfig } from '@/types/beltool';
+import { CallButton } from './CallButton';
 import { useState, useEffect } from 'react';
 import { StepLayout } from './StepLayout';
 import { EndView } from './EndView';
