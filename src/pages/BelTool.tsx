@@ -348,12 +348,12 @@ export default function BelTool() {
       else if (type === 'geenGehoor') s.geenGehoor = p.geenGehoor + 1;
       else if (type === 'callback') { s.callbacks = (p.callbacks || 0) + 1; s.reeks = p.reeks + 1; }
       if (s.reeks > p.bestReeks) s.bestReeks = s.reeks;
-      s.log = [{ time: fmtTime(), contact: contactName, result: type }, ...(p.log || [])].slice(0, 50);
+      s.log = [{ time: fmtTime(), contact: contactName, result: type, contactId: activeContactId || undefined, companyId: activeCompId || undefined }, ...(p.log || [])].slice(0, 50);
       const next = { ...prev, [user.id]: s };
       store.set('scores', next);
       return next;
     });
-  }, [user, contactName]);
+  }, [user, contactName, activeContactId, activeCompId]);
 
   const updateCompStage = (compId: string, stage: Company['stage']) => setCompanies(p => p.map(c => c.id === compId ? { ...c, stage } : c));
 
@@ -665,7 +665,14 @@ export default function BelTool() {
           onLoadMore={loadMoreLeads}
           stageFilter={stageFilter}
           onStageFilterChange={setStageFilter}
-          onSelectFromLog={(name) => {
+          onSelectFromLog={(entry) => {
+            if (entry.contactId && entry.companyId) {
+              const comp = companies.find(c => c.id === entry.companyId);
+              const ct = comp?.contacts.find(c => c.id === entry.contactId);
+              if (comp && ct) { selectContact(comp, ct); return; }
+            }
+            // Fallback: match by name
+            const name = entry.contact;
             const comp = companies.find(c => c.contacts.some(ct => `${ct.firstName} ${ct.lastName}` === name));
             const ct = comp?.contacts.find(c => `${c.firstName} ${c.lastName}` === name);
             if (comp && ct) selectContact(comp, ct);
