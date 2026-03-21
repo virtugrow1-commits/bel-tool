@@ -376,20 +376,33 @@ export function CallContent({
                     {ADVISORS.map(a => <option key={a.id} value={a.id} className="text-foreground bg-card">{a.name} — {a.specialty}</option>)}
                   </select>
                 </div>
+                <LocationSelect
+                  value={locationType}
+                  onChange={setLocationType}
+                  customAddress={customAddress}
+                  onCustomChange={setCustomAddress}
+                  companyAddress={activeComp.address || ''}
+                />
                 <GhlCalendarSelect />
                 <ActionBtn wide onClick={() => {
                   if (!bookDate || !bookTime) { showToast(t.pickDateTime, 'err'); return; }
                   if (!bookAdvisor) { showToast(t.selectAdvisor, 'err'); return; }
+                  if (!locationType) { showToast('Selecteer een locatie', 'err'); return; }
+                  if (locationType === 'op_locatie' && !customAddress.trim()) { showToast('Vul een adres in', 'err'); return; }
                   const calId = (document.getElementById('ghl-calendar-select') as HTMLSelectElement)?.value;
                   if (!calId) { showToast('Selecteer een kalender', 'err'); return; }
+                  // Determine location string
+                  const locationStr = locationType === 'google_meet' ? 'Google Meet'
+                    : locationType === 'bedrijf' ? `Bedrijfslocatie: ${activeComp.address || 'Adres onbekend'}`
+                    : `Op locatie: ${customAddress.trim()}`;
                   // Book in GHL
-                  ghl.bookAppointment(activeContact.id, bookDate, bookTime, bookAdvisor, calId).catch(err => {
+                  ghl.bookAppointment(activeContact.id, bookDate, bookTime, bookAdvisor, calId, locationStr).catch(err => {
                     console.error('Appointment error:', err);
                     showToast('Fout bij inplannen: ' + err.message, 'err');
                   });
                   // Create task in GHL
                   ghl.createTask(activeContact.id, `Adviesgesprek ${activeContact.firstName} ${activeContact.lastName}`, {
-                    body: `Afspraak op ${fmtDate(bookDate)} om ${bookTime}`,
+                    body: `Afspraak op ${fmtDate(bookDate)} om ${bookTime}\n📍 ${locationStr}`,
                     dueDate: `${bookDate}T${bookTime}:00`,
                   }).catch(console.error);
                   // Update pipeline
