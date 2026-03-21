@@ -178,6 +178,8 @@ export function CallContent({
   scores, onShowCallback, onStartDialing, onHangup, onConfirmConnected, activeCompId, onShowDetail,
 }: CallContentProps) {
   const { t, surveyConfig } = useBelTool();
+  const [locationType, setLocationType] = useState<LocationType>('');
+  const [customAddress, setCustomAddress] = useState('');
   const stepIndex: Record<string, number> = { intro: 0, q1: 1, q2: 2, q3: 3, q4: 4, bridge: 5 };
   const currentStepNum = stepIndex[phase] ?? -1;
   const contactName = `${activeContact.firstName} ${activeContact.lastName}`;
