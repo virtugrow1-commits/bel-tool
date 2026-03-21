@@ -166,7 +166,18 @@ export default function BelTool() {
   const endCall = (ph: CallPhase, stage: Company['stage']) => {
     setPhase(ph);
     setCallState('ended');
-    if (activeCompId) { updateCompStage(activeCompId, stage); ghl.updateContactStage(activeContactId || '', stage); }
+    if (activeCompId) {
+      updateCompStage(activeCompId, stage);
+      ghl.updateContactStage(activeContactId || '', stage);
+      // Save notes to GHL if any
+      if (notes.trim()) {
+        ghl.createNote(activeContactId || '', notes).catch(console.error);
+      }
+      // Save survey answers if completed
+      if (['done', 'sent'].includes(ph) && answers.hours) {
+        ghl.saveSurveyAnswers(activeContactId || '', answers).catch(console.error);
+      }
+    }
   };
 
   const nextContact = () => { setPhase('idle'); setCallState('idle'); setActiveCompId(null); setActiveContactId(null); };
