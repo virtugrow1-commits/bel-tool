@@ -81,6 +81,7 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
 
   const tabs = [
     { id: 'ghl', label: '🔗 GHL Integratie' },
+    { id: 'telefonie', label: '📞 Telefonie' },
     { id: 'vragen', label: '❓ Enquêtevragen' },
     { id: 'pipeline', label: '📊 Pipeline' },
     { id: 'fields', label: '📝 Custom Fields' },
