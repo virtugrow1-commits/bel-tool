@@ -335,7 +335,7 @@ export default function BelTool() {
       }
 
       // Remove from local list
-      setCompanies(prev => prev.filter(c => c.id !== activeCompId));
+      // Keep contact in list — user can filter by stage
 
       if (notes.trim()) {
         ghl.createNote(activeContactId || '', notes).catch(console.error);
