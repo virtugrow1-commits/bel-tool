@@ -665,7 +665,14 @@ export default function BelTool() {
           onLoadMore={loadMoreLeads}
           stageFilter={stageFilter}
           onStageFilterChange={setStageFilter}
-          onSelectFromLog={(name) => {
+          onSelectFromLog={(entry) => {
+            if (entry.contactId && entry.companyId) {
+              const comp = companies.find(c => c.id === entry.companyId);
+              const ct = comp?.contacts.find(c => c.id === entry.contactId);
+              if (comp && ct) { selectContact(comp, ct); return; }
+            }
+            // Fallback: match by name
+            const name = entry.contact;
             const comp = companies.find(c => c.contacts.some(ct => `${ct.firstName} ${ct.lastName}` === name));
             const ct = comp?.contacts.find(c => `${c.firstName} ${c.lastName}` === name);
             if (comp && ct) selectContact(comp, ct);
