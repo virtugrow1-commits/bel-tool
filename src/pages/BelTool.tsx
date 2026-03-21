@@ -191,7 +191,7 @@ export default function BelTool() {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [user, companies]);
+  }, [user, companies, activeCallId, incomingCall]);
 
   // Load leads from GHL "Bellen" pipeline → "Nieuwe Lead" stage
   useEffect(() => {
