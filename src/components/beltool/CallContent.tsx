@@ -192,6 +192,9 @@ export function CallContent({
           <div className="text-xs text-foreground/50">{activeContact.phone}</div>
           <div className="text-[10px] text-muted-foreground/30">{activeContact.email}</div>
         </div>
+        {onShowDetail && (
+          <button onClick={onShowDetail} className="p-2 rounded-lg bg-foreground/[0.04] text-muted-foreground hover:text-foreground transition-colors">ℹ️</button>
+        )}
         {callState === 'idle' && (
           <button
             onClick={onStartDialing}

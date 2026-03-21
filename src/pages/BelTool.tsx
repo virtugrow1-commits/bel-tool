@@ -390,6 +390,7 @@ export default function BelTool() {
                     onHangup={hangup}
                     onConfirmConnected={confirmConnected}
                     activeCompId={activeCompId}
+                    onShowDetail={() => setShowDetail(true)}
                   />
                 </div>
                 {curStep >= 1 && (
