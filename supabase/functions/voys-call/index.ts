@@ -48,6 +48,13 @@ Deno.serve(async (req) => {
         );
       } else {
         const text = await res.text();
+        // If call was already disconnected, treat as success
+        if (text.includes('already disconnected')) {
+          return new Response(
+            JSON.stringify({ success: true, message: 'Gesprek was al beëindigd' }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
         return new Response(
           JSON.stringify({ success: false, error: `Ophangen mislukt (${res.status})`, details: text }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
