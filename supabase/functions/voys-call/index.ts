@@ -52,11 +52,10 @@ Deno.serve(async (req) => {
       voysBody.b_cli = voysOutbound;
     }
 
-    // Auth: Basic auth with email:token (base64 encoded)
-    // VoIPGRID API uses HTTP Basic Authentication, not Token auth
-    const basicAuth = btoa(`${voysEmail}:${voysToken}`);
+    // VoIPGRID API uses Token authentication: "Token email:api_token"
+    const authHeader = `Token ${voysEmail}:${voysToken}`;
 
-    console.log('Voys request:', JSON.stringify({ ...voysBody, auth: `Basic ${voysEmail}:***` }));
+    console.log('Voys request:', JSON.stringify({ ...voysBody, auth_type: 'Token', email: voysEmail }));
 
     const voysResponse = await fetch('https://api.voipgrid.nl/api/clicktodial/', {
       method: 'POST',
