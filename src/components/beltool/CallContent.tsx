@@ -108,6 +108,21 @@ function LocationSelect({ value, onChange, customAddress, onCustomChange, compan
   );
 }
 
+interface DailyTargets {
+  calls: number;
+  appointments: number;
+  surveys: number;
+}
+
+const QUICK_NOTES = [
+  { label: 'VM ingesproken', icon: '📩' },
+  { label: 'Terugbellen na vakantie', icon: '🏖️' },
+  { label: 'Interesse maar druk', icon: '⏳' },
+  { label: 'Doorverbonden secretaresse', icon: '👩‍💼' },
+  { label: 'Voicemail vol', icon: '📵' },
+  { label: 'Verkeerd nummer', icon: '❌' },
+];
+
 interface CallContentProps {
   activeContact: CompanyContact;
   activeComp: Company;
@@ -135,6 +150,9 @@ interface CallContentProps {
   onConfirmConnected: () => void;
   activeCompId: string;
   onShowDetail?: () => void;
+  notes: string;
+  onNotesChange: (v: string) => void;
+  dailyTargets: DailyTargets;
 }
 
 function ActionBtn({ children, variant = 'primary', wide, onClick }: { children: React.ReactNode; variant?: 'primary' | 'ghost' | 'warning' | 'danger' | 'muted'; wide?: boolean; onClick: () => void }) {
@@ -177,6 +195,7 @@ export function CallContent({
   onEndCall, onNextContact, showToast, updateStage, addScore,
   bookDate, setBookDate, bookTime, setBookTime, bookAdvisor, setBookAdvisor,
   scores, onShowCallback, onStartDialing, onHangup, onConfirmConnected, activeCompId, onShowDetail,
+  notes, onNotesChange, dailyTargets,
 }: CallContentProps) {
   const { t, surveyConfig, user } = useBelTool();
   const [locationType, setLocationType] = useState<LocationType>('');
@@ -222,44 +241,83 @@ export function CallContent({
 
   return (
     <>
-      {/* Top contact bar */}
-      <div className="flex items-center gap-3 px-5 py-3 border-b border-border bg-card">
-        <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center font-bold text-[12px] flex-shrink-0 text-white">
-          {activeContact.firstName[0]}{activeContact.lastName[0]}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="font-bold text-[14px] text-foreground">
-            {contactName} {activeContact.role && <span className="font-normal text-muted-foreground text-[12px]">• {activeContact.role}</span>}
+      {/* Top bar: contact + stats + quick notes */}
+      <div className="border-b border-border bg-card">
+        {/* Row 1: Contact info + call controls */}
+        <div className="flex items-center gap-3 px-5 py-2.5">
+          <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center font-bold text-[12px] flex-shrink-0 text-white">
+            {activeContact.firstName[0]}{activeContact.lastName[0]}
           </div>
-          <div className="text-[12px] text-muted-foreground">{activeComp.name}</div>
-        </div>
-        <div className="text-right mr-2 hidden sm:block">
-          <div className="text-[12px] text-foreground/70 font-mono tabular-nums">{activeContact.phone}</div>
-          <div className="text-[11px] text-muted-foreground">{activeContact.email}</div>
-        </div>
-        {onShowDetail && (
-          <button onClick={onShowDetail} className="w-8 h-8 rounded-lg bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors text-[13px] border border-border">ℹ️</button>
-        )}
-        {callState === 'idle' && (
-          <CallButton
-            phoneNumber={activeContact.phone}
-            leadId={activeContact.id}
-            leadName={`${activeContact.firstName} ${activeContact.lastName}`}
-            deviceId={user?.deviceId}
-            onCallStarted={(callId) => {
-              onStartDialing(callId);
-            }}
-          />
-        )}
-        {callState !== 'idle' && callState !== 'ended' && (
-          <div className={cn(
-            'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold border',
-            callState === 'active' ? 'bg-success/10 text-success border-success/20' : 'bg-warning/10 text-warning border-warning/20'
-          )}>
-            <div className={cn('w-2 h-2 rounded-full animate-pulse', callState === 'active' ? 'bg-success' : 'bg-warning')} />
-            {callState === 'dialing' ? 'Verbinden...' : callState === 'ringing' ? 'Gaat over...' : 'In gesprek'}
+          <div className="flex-1 min-w-0">
+            <div className="font-bold text-[14px] text-foreground">
+              {contactName} {activeContact.role && <span className="font-normal text-muted-foreground text-[12px]">• {activeContact.role}</span>}
+            </div>
+            <div className="text-[12px] text-muted-foreground">{activeComp.name}</div>
           </div>
-        )}
+          <div className="text-right mr-2 hidden sm:block">
+            <div className="text-[12px] text-foreground/70 font-mono tabular-nums">{activeContact.phone}</div>
+            <div className="text-[11px] text-muted-foreground">{activeContact.email}</div>
+          </div>
+          {onShowDetail && (
+            <button onClick={onShowDetail} className="w-8 h-8 rounded-lg bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors text-[13px] border border-border">ℹ️</button>
+          )}
+          {callState === 'idle' && (
+            <CallButton
+              phoneNumber={activeContact.phone}
+              leadId={activeContact.id}
+              leadName={`${activeContact.firstName} ${activeContact.lastName}`}
+              deviceId={user?.deviceId}
+              onCallStarted={(callId) => { onStartDialing(callId); }}
+            />
+          )}
+          {callState !== 'idle' && callState !== 'ended' && (
+            <div className={cn(
+              'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold border',
+              callState === 'active' ? 'bg-success/10 text-success border-success/20' : 'bg-warning/10 text-warning border-warning/20'
+            )}>
+              <div className={cn('w-2 h-2 rounded-full animate-pulse', callState === 'active' ? 'bg-success' : 'bg-warning')} />
+              {callState === 'dialing' ? 'Verbinden...' : callState === 'ringing' ? 'Gaat over...' : 'In gesprek'}
+            </div>
+          )}
+        </div>
+
+        {/* Row 2: Stats + daily targets + quick notes */}
+        <div className="flex items-center gap-3 px-5 py-2 border-t border-border/50 bg-muted/20">
+          {/* Inline scores */}
+          <div className="flex items-center gap-3">
+            {[
+              { label: t.called, value: scores.gebeld, target: dailyTargets.calls, color: 'hsl(var(--navy))' },
+              { label: t.surveys, value: scores.enquetes, target: dailyTargets.surveys, color: 'hsl(var(--primary))' },
+              { label: t.appointments, value: scores.afspraken, target: dailyTargets.appointments, color: 'hsl(var(--success))' },
+            ].map(s => (
+              <div key={s.label} className="flex items-center gap-1.5">
+                <span className="text-[16px] font-extrabold tabular-nums" style={{ color: s.color }}>{s.value}</span>
+                <span className="text-[10px] text-muted-foreground">/{s.target}</span>
+                <span className="text-[9px] text-muted-foreground font-medium">{s.label}</span>
+              </div>
+            ))}
+            {scores.reeks >= 2 && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-warning/10 text-warning border border-warning/20">🔥{scores.reeks}x</span>}
+          </div>
+
+          {/* Divider */}
+          <div className="w-px h-5 bg-border" />
+
+          {/* Quick notes */}
+          {phase !== 'precall' && (
+            <div className="flex items-center gap-1 flex-1 overflow-x-auto">
+              <span className="text-[9px] text-muted-foreground font-bold shrink-0">📝</span>
+              {QUICK_NOTES.map(n => (
+                <button
+                  key={n.label}
+                  onClick={() => onNotesChange(notes ? notes + '\n' + n.label : n.label)}
+                  className="px-2 py-0.5 rounded-md border border-border bg-card text-[9px] font-medium text-foreground/60 hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-colors active:scale-[0.95] whitespace-nowrap shrink-0"
+                >
+                  {n.icon} {n.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Content */}

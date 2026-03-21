@@ -694,6 +694,9 @@ export default function BelTool() {
                     onConfirmConnected={confirmConnected}
                     activeCompId={activeCompId}
                     onShowDetail={() => setShowDetail(true)}
+                    notes={notes}
+                    onNotesChange={setNotes}
+                    dailyTargets={store.get('dailyTargets', { calls: 50, appointments: 5, surveys: 10 })}
                   />
                 </div>
                 {curStep >= 1 && (
