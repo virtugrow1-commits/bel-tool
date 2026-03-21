@@ -268,6 +268,9 @@ export function CallContent({
               <ActionBtn variant="warning" onClick={onShowCallback}>{t.callback}</ActionBtn>
               <ActionBtn variant="muted" onClick={() => { onEndCall('noanswer', 'geenGehoor'); addScore('geenGehoor'); showToast(t.noAnswerNoted); }}>{t.noAnswerAction}</ActionBtn>
               <ActionBtn variant="danger" onClick={() => { onEndCall('lost', 'nietInteressant'); addScore('afgevallen'); }}>{t.notInterested}</ActionBtn>
+              {user?.role === 'admin' && (
+                <ActionBtn variant="ghost" onClick={() => { onEndCall('idle' as any, 'nieuw'); showToast('Lead gereset', 'info'); }}>✕ Annuleren</ActionBtn>
+              )}
             </div>
           </StepLayout>
         )}
