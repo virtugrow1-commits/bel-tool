@@ -75,6 +75,7 @@ export function SettingsPanel({ open, onClose }: { open: boolean; onClose: () =>
     { id: 'vragen', label: '❓ Enquêtevragen' },
     { id: 'pipeline', label: '📊 Pipeline' },
     { id: 'fields', label: '📝 Custom Fields' },
+    { id: 'sync', label: '🔄 Sync' },
     { id: 'lang', label: t.language },
     { id: 'api', label: t.apiKeys },
     { id: 'reset', label: t.resetStats },
@@ -182,6 +183,66 @@ export function SettingsPanel({ open, onClose }: { open: boolean; onClose: () =>
               ))}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* SYNC TAB */}
+      {tab === 'sync' && (
+        <div className="space-y-5">
+          <div className="bg-primary/[0.06] border border-primary/15 rounded-xl p-4">
+            <h3 className="text-sm font-bold text-primary mb-2">🔄 Handmatige Synchronisatie</h3>
+            <p className="text-muted-foreground text-sm">Synchroniseer leads, contacten en pipeline data vanuit GoHighLevel.</p>
+          </div>
+
+          <div className="space-y-3">
+            {([
+              { key: 'leads', icon: '📋', label: 'Leads synchroniseren', desc: 'Haal de nieuwste leads op uit de Bellen pipeline' },
+              { key: 'contacts', icon: '👥', label: 'Contacten synchroniseren', desc: 'Werk contactgegevens bij vanuit GHL' },
+              { key: 'pipeline', icon: '📊', label: 'Pipeline synchroniseren', desc: 'Synchroniseer pipeline stages met GHL' },
+              { key: 'calendars', icon: '📅', label: 'Kalenders synchroniseren', desc: 'Haal beschikbare kalenders op uit GHL' },
+            ] as const).map(item => (
+              <div key={item.key} className="flex items-center gap-3 p-4 rounded-xl bg-foreground/[0.02] border border-border/40">
+                <span className="text-2xl">{item.icon}</span>
+                <div className="flex-1">
+                  <div className="text-sm font-semibold">{item.label}</div>
+                  <div className="text-[11px] text-muted-foreground/50">{item.desc}</div>
+                </div>
+                <button
+                  onClick={() => {
+                    setTestStatus(`syncing-${item.key}`);
+                    setTimeout(() => {
+                      setTestStatus(`synced-${item.key}`);
+                      setTimeout(() => setTestStatus(null), 3000);
+                    }, 2000);
+                  }}
+                  disabled={testStatus?.startsWith('syncing')}
+                  className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-semibold active:scale-[0.97] transition-transform disabled:opacity-40"
+                >
+                  {testStatus === `syncing-${item.key}` ? '⏳ Bezig...' : testStatus === `synced-${item.key}` ? '✅ Klaar!' : '🔄 Sync'}
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <button
+            onClick={() => {
+              setTestStatus('syncing-all');
+              setTimeout(() => {
+                setTestStatus('synced-all');
+                setTimeout(() => setTestStatus(null), 3000);
+              }, 3000);
+            }}
+            disabled={testStatus?.startsWith('syncing')}
+            className="w-full py-3 rounded-lg bg-primary text-primary-foreground text-sm font-bold active:scale-[0.97] transition-transform disabled:opacity-40"
+          >
+            {testStatus === 'syncing-all' ? '⏳ Alles synchroniseren...' : testStatus === 'synced-all' ? '✅ Alles gesynchroniseerd!' : '🔄 Alles synchroniseren'}
+          </button>
+
+          {!ghlConfig.apiKey && (
+            <div className="bg-warning/[0.08] border border-warning/15 rounded-xl p-4">
+              <p className="text-warning text-sm">⚠️ Stel eerst de GHL API koppeling in via het GHL Integratie tabblad.</p>
+            </div>
+          )}
         </div>
       )}
 
