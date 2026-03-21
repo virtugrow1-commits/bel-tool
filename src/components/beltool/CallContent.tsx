@@ -441,6 +441,14 @@ export function CallContent({
         {phase === 'lost' && <EndView icon="🚫" title={t.notInterestedEnd} sub={`${activeContact.firstName} ${t.markedDropped}`} scores={scores} onNext={onNextContact} />}
         {phase === 'noanswer' && <EndView icon="📵" title={t.noAnswerEnd} sub={`${activeContact.firstName} ${t.markedCallback}`} scores={scores} onNext={onNextContact} />}
       </div>
+
+      {/* Floating call display */}
+      <CallDisplay
+        callState={callState}
+        contact={activeContact}
+        company={activeComp}
+        onHangup={() => { onEndCall('lost', 'nietInteressant'); addScore('afgevallen'); }}
+      />
     </>
   );
 }
