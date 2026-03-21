@@ -75,6 +75,7 @@ export function SettingsPanel({ open, onClose }: { open: boolean; onClose: () =>
     { id: 'vragen', label: '❓ Enquêtevragen' },
     { id: 'pipeline', label: '📊 Pipeline' },
     { id: 'fields', label: '📝 Custom Fields' },
+    { id: 'sync', label: '🔄 Sync' },
     { id: 'lang', label: t.language },
     { id: 'api', label: t.apiKeys },
     { id: 'reset', label: t.resetStats },
