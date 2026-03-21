@@ -306,32 +306,34 @@ export default function BelTool() {
     }
   };
 
-  // Map BelTool stages to GHL pipeline stage names
+  // Map BelTool stages to GHL pipeline stage names (lowercase for stageMap lookup)
   const STAGE_TO_GHL: Record<string, string> = {
-    nietInteressant: 'Niet Interessant',
-    geenGehoor: 'Neemt niet op',
-    terugbellenGepland: 'Later terug bellen',
-    afspraak: 'Afspraak ingeplant',
-    enqueteVerstuurd: 'Vraag om extra info (mail)',
+    nietInteressant: 'niet interessant',
+    geenGehoor: 'neemt niet op',
+    terugbellenGepland: 'later terug bellen',
+    afspraak: 'afspraak ingeplant',
+    enqueteVerstuurd: 'vraag om extra info (mail)',
   };
 
   const endCall = (ph: CallPhase, stage: Company['stage']) => {
     if (activeCompId) {
       updateCompStage(activeCompId, stage);
-      ghl.updateContactStage(activeContactId || '', stage);
 
-      // Move opportunity to the correct GHL pipeline stage
+      // Move opportunity directly using cached IDs — no extra API calls
       if (pipelineInfo && STAGE_TO_GHL[stage]) {
-        ghl.getPipelines().then((data) => {
-          const pipeline = data?.pipelines?.find((p: any) => p.id === pipelineInfo.pipelineId);
-          const ghlStage = pipeline?.stages?.find((s: any) => s.name === STAGE_TO_GHL[stage]);
-          if (ghlStage) {
-            ghl.upsertOpportunity(activeContactId || '', pipelineInfo.pipelineId, ghlStage.id, activeComp?.name || 'Lead');
-          }
-        }).catch(console.error);
+        const targetStageId = stageMap[STAGE_TO_GHL[stage]];
+        if (targetStageId) {
+          const oppId = activeContact?.opportunityId;
+          ghl.upsertOpportunity(
+            activeContactId || '', pipelineInfo.pipelineId, targetStageId,
+            activeComp?.name || 'Lead', oppId
+          ).catch(err => console.error('GHL opportunity update failed:', err));
+        } else {
+          console.warn(`GHL stage not found for "${STAGE_TO_GHL[stage]}". Available:`, Object.keys(stageMap));
+        }
       }
 
-      // Remove from local list so it doesn't show as "Nieuwe Lead" anymore
+      // Remove from local list
       setCompanies(prev => prev.filter(c => c.id !== activeCompId));
 
       if (notes.trim()) {
@@ -342,7 +344,6 @@ export default function BelTool() {
       }
     }
 
-    // Reset state so user can select the next contact immediately
     setPhase('idle');
     setCallState('idle');
     setActiveCompId(null);
