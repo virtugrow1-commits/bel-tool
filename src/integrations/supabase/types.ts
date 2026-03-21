@@ -14,7 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      incoming_calls: {
+        Row: {
+          call_id: string | null
+          called_number: string | null
+          caller_name: string | null
+          caller_number: string
+          company_name: string | null
+          contact_id: string | null
+          created_at: string
+          id: string
+          status: string
+        }
+        Insert: {
+          call_id?: string | null
+          called_number?: string | null
+          caller_name?: string | null
+          caller_number: string
+          company_name?: string | null
+          contact_id?: string | null
+          created_at?: string
+          id?: string
+          status?: string
+        }
+        Update: {
+          call_id?: string | null
+          called_number?: string | null
+          caller_name?: string | null
+          caller_number?: string
+          company_name?: string | null
+          contact_id?: string | null
+          created_at?: string
+          id?: string
+          status?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

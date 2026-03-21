@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import type { Company, CompanyContact, CallPhase, CallState, SurveyAnswers, Appointment, CallbackEntry, Webhook, GhlConfig } from '@/types/beltool';
 import { COMPANIES_INIT, defaultSurvey } from '@/lib/beltool-data';
 import { USERS, type User } from '@/lib/beltool-data';
@@ -56,6 +57,7 @@ export default function BelTool() {
   const [showCallbackQueue, setShowCallbackQueue] = useState(false);
   const [callbackPopup, setCallbackPopup] = useState<CallbackEntry | null>(null);
   const [dismissedCallbacks, setDismissedCallbacks] = useState<Set<number>>(new Set());
+  const [incomingCall, setIncomingCall] = useState<{ id: string; callerNumber: string; contactName?: string; companyName?: string; contactId?: string; companyId?: string } | null>(null);
   const [showAgenda, setShowAgenda] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
   const [appts, setAppts] = useState<Appointment[]>(() => store.get('appointments', []));
@@ -98,6 +100,48 @@ export default function BelTool() {
     const iv = setInterval(check, 30000);
     return () => clearInterval(iv);
   }, [callbacks, dismissedCallbacks, callbackPopup]);
+
+  // Listen for incoming calls via realtime
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel('incoming-calls')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'incoming_calls' }, (payload: any) => {
+        const row = payload.new;
+        if (row.status !== 'ringing') return;
+
+        // Try to match caller number to a known contact
+        let normalized = (row.caller_number || '').replace(/[\s\-\(\)]/g, '');
+        if (normalized.startsWith('+31')) normalized = '0' + normalized.substring(3);
+
+        let matchedContact: CompanyContact | undefined;
+        let matchedComp: Company | undefined;
+        for (const comp of companies) {
+          for (const ct of comp.contacts) {
+            const ctPhone = ct.phone.replace(/[\s\-\(\)]/g, '');
+            const ctNorm = ctPhone.startsWith('+31') ? '0' + ctPhone.substring(3) : ctPhone;
+            if (ctNorm === normalized || ctPhone === row.caller_number) {
+              matchedContact = ct;
+              matchedComp = comp;
+              break;
+            }
+          }
+          if (matchedContact) break;
+        }
+
+        setIncomingCall({
+          id: row.id,
+          callerNumber: row.caller_number,
+          contactName: matchedContact ? `${matchedContact.firstName} ${matchedContact.lastName}` : undefined,
+          companyName: matchedComp?.name,
+          contactId: matchedContact?.id,
+          companyId: matchedComp?.id,
+        });
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [user, companies]);
 
   // Load leads from GHL "Bellen" pipeline → "Nieuwe Lead" stage
   useEffect(() => {
@@ -458,6 +502,70 @@ export default function BelTool() {
                   className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground text-[12px] font-semibold hover:bg-primary/90 active:scale-[0.97] transition-all shadow-md"
                 >
                   📞 Nu bellen
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Incoming call popup */}
+        {incomingCall && (
+          <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50" style={{ animation: 'fadeIn 0.15s ease' }}>
+            <div
+              className="bg-[hsl(222_32%_12%)] border border-border/50 rounded-2xl shadow-2xl p-6 w-[360px]"
+              style={{ animation: 'incomingRing 0.5s ease infinite alternate' }}
+            >
+              <div className="text-center mb-4">
+                <div className="text-5xl mb-3" style={{ animation: 'phoneShake 0.4s ease infinite' }}>📱</div>
+                <div className="text-lg font-bold text-foreground">Inkomend gesprek</div>
+                <div className="text-[13px] text-muted-foreground/50 mt-1">
+                  {incomingCall.contactName ? 'Lead belt terug!' : 'Onbekend nummer'}
+                </div>
+              </div>
+              <div className="bg-foreground/[0.04] rounded-xl p-4 mb-4 border border-border/30">
+                {incomingCall.contactName ? (
+                  <>
+                    <div className="font-bold text-[16px]">{incomingCall.contactName}</div>
+                    <div className="text-[13px] text-muted-foreground/40 mt-0.5">{incomingCall.companyName}</div>
+                  </>
+                ) : (
+                  <div className="font-bold text-[16px]">Onbekend contact</div>
+                )}
+                <div className="text-[13px] text-primary mt-2 font-mono">{incomingCall.callerNumber}</div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    (async () => {
+                      const { supabase } = await import('@/integrations/supabase/client');
+                      await supabase.from('incoming_calls').update({ status: 'dismissed' }).eq('id', incomingCall.id);
+                    })();
+                    setIncomingCall(null);
+                  }}
+                  className="flex-1 py-3 rounded-xl bg-destructive/20 border border-destructive/30 text-destructive text-[13px] font-semibold hover:bg-destructive/30 active:scale-[0.97] transition-all"
+                >
+                  ✕ Weigeren
+                </button>
+                <button
+                  onClick={() => {
+                    if (incomingCall.contactId && incomingCall.companyId) {
+                      const comp = companies.find(c => c.id === incomingCall.companyId);
+                      const ct = comp?.contacts.find(c => c.id === incomingCall.contactId);
+                      if (comp && ct) {
+                        selectContact(comp, ct);
+                        setCallState('active');
+                      }
+                    }
+                    (async () => {
+                      const { supabase } = await import('@/integrations/supabase/client');
+                      await supabase.from('incoming_calls').update({ status: 'answered' }).eq('id', incomingCall.id);
+                    })();
+                    setIncomingCall(null);
+                  }}
+                  className="flex-1 py-3 rounded-xl bg-[hsl(152_56%_42%)] text-white text-[13px] font-semibold hover:bg-[hsl(152_56%_38%)] active:scale-[0.97] transition-all shadow-lg"
+                  style={{ animation: 'pulse 1.5s ease infinite' }}
+                >
+                  📞 Opnemen
                 </button>
               </div>
             </div>
