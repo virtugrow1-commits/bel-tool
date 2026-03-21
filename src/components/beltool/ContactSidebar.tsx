@@ -34,7 +34,7 @@ interface ContactSidebarProps {
   onShowAgenda: () => void;
   onShowCallbackQueue: () => void;
   onShowLeaderboard: () => void;
-  onShowSettings: () => void;
+  onShowSettings?: () => void;
   dueCallbackCount: number;
   appointmentCount: number;
   hasMoreLeads?: boolean;
