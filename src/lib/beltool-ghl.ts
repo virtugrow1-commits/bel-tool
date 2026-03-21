@@ -18,7 +18,7 @@ export const ghl = {
   },
 
   async updateContactStage(contactId: string, stage: string) {
-    // Add tag for the stage
+    // Legacy: Add tag for the stage
     await callGHL('addTag', { contactId, tags: [stage] });
   },
 
