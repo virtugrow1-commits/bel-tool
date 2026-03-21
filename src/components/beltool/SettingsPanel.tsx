@@ -4,6 +4,7 @@ import { useBelTool } from '@/contexts/BelToolContext';
 import { USERS, defaultSurvey } from '@/lib/beltool-data';
 import { initScores } from '@/lib/beltool-scoring';
 import { store } from '@/lib/beltool-store';
+import { ghl } from '@/lib/beltool-ghl';
 import { cn } from '@/lib/utils';
 import type { SelectOption } from '@/types/beltool';
 
