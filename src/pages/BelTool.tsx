@@ -274,7 +274,15 @@ export default function BelTool() {
     }
   };
 
-  const nextContact = () => { setPhase('idle'); setCallState('idle'); setActiveCompId(null); setActiveContactId(null); };
+  const nextContact = () => { setPhase('idle'); setCallState('idle'); setActiveCompId(null); setActiveContactId(null); setShowDetail(false); };
+
+  const updateContact = (uc: CompanyContact) => {
+    setCompanies(cs => cs.map(c => c.id === activeCompId ? { ...c, contacts: c.contacts.map(ct => ct.id === uc.id ? uc : ct) } : c));
+  };
+
+  const updateCompany = (uc: Company) => {
+    setCompanies(cs => cs.map(c => c.id === uc.id ? { ...c, ...uc } : c));
+  };
   const handleLogin = (u: User) => { setUser(u); store.set('user', u); };
   const handleLogout = () => { setUser(null); store.del('user'); setPhase('idle'); setActiveCompId(null); };
 
