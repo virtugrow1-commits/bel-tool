@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import type { Company, CompanyContact, CallPhase, CallState, SurveyAnswers, Appointment, CallbackEntry, Webhook, GhlConfig } from '@/types/beltool';
 import { COMPANIES_INIT, defaultSurvey } from '@/lib/beltool-data';
 import { USERS, type User } from '@/lib/beltool-data';
