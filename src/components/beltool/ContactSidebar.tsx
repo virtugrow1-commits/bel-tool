@@ -36,10 +36,8 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
     <div className="w-[290px] border-r border-border flex flex-col flex-shrink-0" style={{ background: 'hsl(222 32% 8%)' }}>
       <div className="px-4 pt-3.5 pb-2.5">
         <div className="flex items-center gap-2 mb-2.5">
-          <Logo size={30} />
           <div className="flex-1">
-            <div className="text-sm font-extrabold tracking-tight">Cliq<span className="text-primary">Makers</span></div>
-            <div className="text-[9px] text-muted-foreground/40 tracking-[1.5px]">{t.appSub}</div>
+            <div className="text-sm font-extrabold tracking-tight">Bel-Tool</div>
           </div>
           <div className="flex gap-0.5">
             <button onClick={onShowAgenda} className={cn('bg-transparent border-none text-[15px] cursor-pointer', appointmentCount > 0 ? 'text-primary' : 'text-muted-foreground/20')} title={t.agenda}>📅</button>
