@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Logo } from './Logo';
 import type { User } from '@/lib/beltool-data';
 import { USERS } from '@/lib/beltool-data';
 
