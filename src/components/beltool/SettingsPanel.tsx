@@ -29,7 +29,13 @@ const DEFAULT_PIPELINE_STAGES = [
   { name: 'Geen Gehoor', key: 'geenGehoor', color: '#6B7280' },
 ];
 
-export function SettingsPanel({ open, onClose, onSyncLeads }: { open: boolean; onClose: () => void; onSyncLeads: () => Promise<void> }) {
+export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpdateUsers }: {
+  open: boolean;
+  onClose: () => void;
+  onSyncLeads: () => Promise<void>;
+  managedUsers: User[];
+  onUpdateUsers: (users: User[]) => void;
+}) {
   const { lang, setLang, user, allScores, setAllScores, webhooks, setWebhooks, apiKey, setApiKey, t, surveyConfig, setSurveyConfig, ghlConfig, setGhlConfig } = useBelTool();
   const [tab, setTab] = useState('ghl');
   const [confirmReset, setConfirmReset] = useState<string | null>(null);
@@ -38,6 +44,8 @@ export function SettingsPanel({ open, onClose, onSyncLeads }: { open: boolean; o
   const [draft, setDraft] = useState<any>(null);
   const [newOpt, setNewOpt] = useState('');
   const [testStatus, setTestStatus] = useState<string | null>(null);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [newUser, setNewUser] = useState<Partial<User> & { name: string; email: string }>({ name: '', email: '', password: 'demo', role: 'caller', deviceId: '' });
 
   const qKeys = ['intro', 'q1', 'q2', 'q3', 'q4', 'bridge'];
   const qLabels: Record<string, string> = { intro: 'Introductie', q1: 'Vraag 1', q2: 'Vraag 2', q3: 'Vraag 3', q4: 'Vraag 4', bridge: 'Aanbod' };
