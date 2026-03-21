@@ -437,6 +437,12 @@ export default function BelTool() {
     if (activeCompId) updateCompStage(activeCompId, 'terugbellenGepland');
     addScore('callback');
     flash(t.callbackSaved, 'info');
+    // Reset state so user can select the next contact
+    setPhase('idle');
+    setCallState('idle');
+    setActiveCompId(null);
+    setActiveContactId(null);
+    setShowDetail(false);
   };
 
   const completeCallback = (cbId: number) => {
