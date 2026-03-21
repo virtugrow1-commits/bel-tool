@@ -28,6 +28,9 @@ export default function BelTool() {
   const [activeCompId, setActiveCompId] = useState<string | null>(null);
   const [activeContactId, setActiveContactId] = useState<string | null>(null);
   const [expandedComp, setExpandedComp] = useState<string | null>(null);
+  const [pipelineInfo, setPipelineInfo] = useState<{ pipelineId: string; stageId: string } | null>(null);
+  const [pageCursor, setPageCursor] = useState<{ startAfter?: number; startAfterId?: string } | null>(null);
+  const [hasMoreLeads, setHasMoreLeads] = useState(false);
   const [search, setSearch] = useState('');
   const [phase, setPhase] = useState<CallPhase>('idle');
   const [callState, setCallState] = useState<CallState>('idle');

@@ -151,10 +151,12 @@ serve(async (req) => {
       case 'searchOpportunities': {
         const pipelineId = params.pipelineId || '';
         const stageId = params.stageId || '';
-        const limit = params.limit || 100;
+        const limit = params.limit || 25;
         let url = `${GHL_BASE}/opportunities/search?location_id=${GHL_LOCATION_ID}&limit=${limit}`;
         if (pipelineId) url += `&pipeline_id=${pipelineId}`;
         if (stageId) url += `&pipeline_stage_id=${stageId}`;
+        if (params.startAfter) url += `&startAfter=${params.startAfter}`;
+        if (params.startAfterId) url += `&startAfterId=${params.startAfterId}`;
         const res = await fetch(url, { headers: ghlHeaders });
         if (!res.ok) throw new Error(`GHL search opportunities error [${res.status}]: ${await res.text()}`);
         result = await res.json();
