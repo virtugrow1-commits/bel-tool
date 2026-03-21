@@ -33,6 +33,7 @@ interface CallContentProps {
   onShowCallback: () => void;
   onStartDialing: () => void;
   onHangup: () => void;
+  onConfirmConnected: () => void;
   activeCompId: string;
 }
 
