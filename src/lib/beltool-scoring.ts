@@ -17,6 +17,8 @@ export interface ActivityLogEntry {
   time: string;
   contact: string;
   result: string;
+  contactId?: string;
+  companyId?: string;
 }
 
 export function initScores(): Scores {

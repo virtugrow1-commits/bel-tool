@@ -353,7 +353,7 @@ export default function BelTool() {
       store.set('scores', next);
       return next;
     });
-  }, [user, contactName]);
+  }, [user, contactName, activeContactId, activeCompId]);
 
   const updateCompStage = (compId: string, stage: Company['stage']) => setCompanies(p => p.map(c => c.id === compId ? { ...c, stage } : c));
 
