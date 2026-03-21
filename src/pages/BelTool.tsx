@@ -406,21 +406,24 @@ export default function BelTool() {
   };
 
   const hangup = async () => {
-    // Try to hang up via Voys API if we have a callId
-    if (activeCallId) {
-      try {
-        const { supabase } = await import('@/integrations/supabase/client');
-        await supabase.functions.invoke('voys-call', {
-          body: { action: 'hangup', callId: activeCallId },
-        });
-      } catch (err) {
-        console.error('Voys hangup failed:', err);
-      }
-    }
+    // Update UI immediately — don't wait for API
+    const callIdToHangup = activeCallId;
+    const contactToClean = activeContactId;
     setCallState('ended');
     setActiveCallId(null);
-    if (activeContactId) {
-      ghl.removeTag(activeContactId, ['beltool-call-now']).catch(console.error);
+
+    // Try to hang up via Voys API in background
+    if (callIdToHangup) {
+      try {
+        await supabase.functions.invoke('voys-call', {
+          body: { action: 'hangup', callId: callIdToHangup },
+        });
+      } catch (err) {
+        console.error('Voys hangup failed (call may already be ended):', err);
+      }
+    }
+    if (contactToClean) {
+      ghl.removeTag(contactToClean, ['beltool-call-now']).catch(console.error);
     }
   };
 
