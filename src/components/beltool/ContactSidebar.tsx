@@ -109,7 +109,7 @@ interface ContactSidebarProps {
   onLoadMore?: () => void;
   stageFilter: CompanyStage | 'all';
   onStageFilterChange: (f: CompanyStage | 'all') => void;
-  onSelectFromLog?: (contactName: string) => void;
+  onSelectFromLog?: (entry: { contact: string; contactId?: string; companyId?: string }) => void;
   onInsertNote?: (text: string) => void;
 }
 
