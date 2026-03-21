@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Logo } from './Logo';
 import type { User } from '@/lib/beltool-data';
 import { USERS } from '@/lib/beltool-data';
 
@@ -22,13 +21,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
     <div className="min-h-screen bg-background flex items-center justify-center">
       <div className="w-[380px] bg-card rounded-2xl p-9 border border-border shadow-2xl">
         <div className="text-center mb-7">
-          <div className="flex justify-center">
-            <Logo size={56} />
-          </div>
-          <div className="text-xl font-extrabold mt-3 tracking-tight">
-            Cliq<span className="text-primary">Makers</span>
-          </div>
-          <div className="text-[11px] text-muted-foreground mt-1 tracking-[1.5px]">BEL-TOOL</div>
+          <div className="text-2xl font-extrabold mt-3 tracking-tight">Bel-Tool</div>
         </div>
 
         {err && (

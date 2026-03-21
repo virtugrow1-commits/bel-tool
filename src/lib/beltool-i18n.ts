@@ -1,7 +1,7 @@
 export const i18n = {
   nl: {
-    appName: 'CliqMakers',
-    appSub: 'BEL-TOOL',
+    appName: 'Bel-Tool',
+    appSub: '',
     search: 'Zoek op naam of bedrijf...',
     selectContact: 'Selecteer een contact om te bellen',
     clickName: 'Klik op een bedrijf in de lijst links',
