@@ -33,6 +33,7 @@ export default function BelTool() {
   const [stageMap, setStageMap] = useState<Record<string, string>>({});
   const [pageCursor, setPageCursor] = useState<{ startAfter?: number; startAfterId?: string } | null>(null);
   const [hasMoreLeads, setHasMoreLeads] = useState(false);
+  const [stageFilter, setStageFilter] = useState<import('@/types/beltool').CompanyStage | 'all'>('nieuw');
   const [search, setSearch] = useState('');
   const [phase, setPhase] = useState<CallPhase>('idle');
   const [callState, setCallState] = useState<CallState>('idle');
@@ -334,7 +335,7 @@ export default function BelTool() {
       }
 
       // Remove from local list
-      setCompanies(prev => prev.filter(c => c.id !== activeCompId));
+      // Keep contact in list — user can filter by stage
 
       if (notes.trim()) {
         ghl.createNote(activeContactId || '', notes).catch(console.error);
@@ -446,6 +447,13 @@ export default function BelTool() {
           hasMoreLeads={hasMoreLeads}
           loadingMore={ghlLoading}
           onLoadMore={loadMoreLeads}
+          stageFilter={stageFilter}
+          onStageFilterChange={setStageFilter}
+          onSelectFromLog={(name) => {
+            const comp = companies.find(c => c.contacts.some(ct => `${ct.firstName} ${ct.lastName}` === name));
+            const ct = comp?.contacts.find(c => `${c.firstName} ${c.lastName}` === name);
+            if (comp && ct) selectContact(comp, ct);
+          }}
         />
 
         <div className="flex-1 flex flex-col overflow-hidden">
