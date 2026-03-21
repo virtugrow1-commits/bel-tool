@@ -641,7 +641,7 @@ export default function BelTool() {
           }}
         />
 
-        <div className="flex-1 flex flex-col overflow-hidden" style={{ background: 'hsl(222 28% 12%)' }}>
+        <div className="flex-1 flex flex-col overflow-hidden bg-background">
           {(phase === 'idle' || phase === 'precall' || curStep >= 0 || ['sent','done','lost','noanswer'].includes(phase)) && activeContact && activeComp ? (
             <>
               <div className="flex flex-1 overflow-hidden">
