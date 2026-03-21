@@ -54,7 +54,9 @@ export default function BelTool() {
   const [showCallback, setShowCallback] = useState(false);
   const [callbacks, setCallbacks] = useState<CallbackEntry[]>(() => store.get('callbacks', []));
   const [showCallbackQueue, setShowCallbackQueue] = useState(false);
-   const [showAgenda, setShowAgenda] = useState(false);
+  const [callbackPopup, setCallbackPopup] = useState<CallbackEntry | null>(null);
+  const [dismissedCallbacks, setDismissedCallbacks] = useState<Set<number>>(new Set());
+  const [showAgenda, setShowAgenda] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
   const [appts, setAppts] = useState<Appointment[]>(() => store.get('appointments', []));
   const [webhooks, setWebhooks] = useState<Webhook[]>(() => store.get('webhooks', []));
@@ -76,6 +78,27 @@ export default function BelTool() {
   const convRate = scores.gebeld > 0 ? Math.round(((scores.enquetes + scores.afspraken) / scores.gebeld) * 100) : 0;
   const todayStr = new Date().toISOString().split('T')[0];
   const dueCallbacks = callbacks.filter(cb => cb.date <= todayStr && cb.status === 'scheduled');
+
+  // Check for due callbacks every 30s and show popup
+  useEffect(() => {
+    const check = () => {
+      const now = new Date();
+      const nowStr = now.toISOString().split('T')[0];
+      const nowTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+      const due = callbacks.find(cb =>
+        cb.status === 'scheduled' &&
+        !dismissedCallbacks.has(cb.id) &&
+        (cb.date < nowStr || (cb.date === nowStr && cb.time <= nowTime))
+      );
+      if (due && (!callbackPopup || callbackPopup.id !== due.id)) {
+        setCallbackPopup(due);
+      }
+    };
+    check();
+    const iv = setInterval(check, 30000);
+    return () => clearInterval(iv);
+  }, [callbacks, dismissedCallbacks, callbackPopup]);
+
   // Load leads from GHL "Bellen" pipeline → "Nieuwe Lead" stage
   useEffect(() => {
     if (!user) return;
@@ -400,6 +423,45 @@ export default function BelTool() {
               color: '#fff',
             }}
           >{toast.msg}</div>
+        )}
+
+        {/* Callback reminder popup */}
+        {callbackPopup && (
+          <div className="fixed inset-0 z-[998] flex items-center justify-center bg-black/40" style={{ animation: 'fadeIn 0.2s ease' }}>
+            <div className="bg-[hsl(222_32%_12%)] border border-border/50 rounded-2xl shadow-2xl p-6 w-[340px]" style={{ animation: 'slideToast 0.3s ease' }}>
+              <div className="text-center mb-4">
+                <div className="text-4xl mb-2">🔔</div>
+                <div className="text-lg font-bold text-foreground">Terugbellen!</div>
+                <div className="text-[13px] text-muted-foreground/50 mt-1">Geplande callback is nu</div>
+              </div>
+              <div className="bg-foreground/[0.04] rounded-xl p-3 mb-4 border border-border/30">
+                <div className="font-semibold text-[14px]">{callbackPopup.contactName}</div>
+                <div className="text-[12px] text-muted-foreground/40 mt-0.5">{callbackPopup.companyName}</div>
+                <div className="text-[11px] text-muted-foreground/30 mt-1">📅 {callbackPopup.date} om {callbackPopup.time}</div>
+                {callbackPopup.note && <div className="text-[11px] text-muted-foreground/40 mt-1.5 italic">"{callbackPopup.note}"</div>}
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setDismissedCallbacks(prev => new Set([...prev, callbackPopup.id]));
+                    setCallbackPopup(null);
+                  }}
+                  className="flex-1 py-2.5 rounded-xl border border-border/40 bg-foreground/[0.04] text-muted-foreground/60 text-[12px] font-semibold hover:bg-foreground/[0.08] active:scale-[0.97] transition-all"
+                >
+                  Later
+                </button>
+                <button
+                  onClick={() => {
+                    completeCallback(callbackPopup.id);
+                    setCallbackPopup(null);
+                  }}
+                  className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground text-[12px] font-semibold hover:bg-primary/90 active:scale-[0.97] transition-all shadow-md"
+                >
+                  📞 Nu bellen
+                </button>
+              </div>
+            </div>
+          </div>
         )}
 
         <SettingsPanel open={showSettings} onClose={() => setShowSettings(false)} onSyncLeads={reloadLeads} />
