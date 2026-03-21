@@ -21,7 +21,6 @@ import { CallbackScheduler } from '@/components/beltool/CallbackScheduler';
 import { Modal } from '@/components/beltool/Modal';
 import { ContactDetailPanel } from '@/components/beltool/ContactDetailPanel';
 
-
 export default function BelTool() {
   const [user, setUser] = useState<User | null>(() => store.get('user', null));
   const [lang, setLang] = useState(() => store.get('lang', 'nl'));
