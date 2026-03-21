@@ -17,7 +17,6 @@ Deno.serve(async (req) => {
     );
 
     // Voys/VoIPGRID sends call status webhooks
-    // Can be form-encoded or JSON depending on config
     let data: Record<string, string> = {};
     const contentType = req.headers.get('content-type') || '';
 
@@ -27,7 +26,6 @@ Deno.serve(async (req) => {
       const form = await req.formData();
       form.forEach((v, k) => { data[k] = String(v); });
     } else {
-      // Try URL params (GET webhook)
       const url = new URL(req.url);
       url.searchParams.forEach((v, k) => { data[k] = v; });
     }
@@ -37,29 +35,69 @@ Deno.serve(async (req) => {
     const callerNumber = data.caller_id || data.caller_number || data.from || data.a_number || '';
     const calledNumber = data.called_number || data.to || data.b_number || '';
     const callId = data.call_id || data.callid || data.unique_id || '';
-    const status = data.status || data.direction || 'ringing';
+    const status = (data.status || data.direction || 'ringing').toLowerCase();
 
-    // Only process incoming/ringing calls
     if (!callerNumber) {
       return new Response(JSON.stringify({ ok: true, skipped: 'no caller number' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Normalize number for matching
-    let normalized = callerNumber.replace(/[\s\-\(\)]/g, '');
-    if (normalized.startsWith('+31')) normalized = '0' + normalized.substring(3);
+    // Map Voys statuses to our internal statuses
+    const statusMap: Record<string, string> = {
+      'ringing': 'ringing',
+      'in-progress': 'answered',
+      'answered': 'answered',
+      'connected': 'answered',
+      'completed': 'ended',
+      'ended': 'ended',
+      'hangup': 'ended',
+      'no-answer': 'ended',
+      'busy': 'ended',
+      'failed': 'ended',
+      'cancelled': 'ended',
+    };
+    const mappedStatus = statusMap[status] || status;
 
-    // Insert incoming call record - frontend picks it up via realtime
-    const { error } = await supabase.from('incoming_calls').insert({
-      caller_number: callerNumber,
-      called_number: calledNumber,
-      call_id: callId,
-      status: 'ringing',
-    });
+    // If we have a call_id and this is an update (answered/ended), update existing record
+    if (callId && mappedStatus !== 'ringing') {
+      const { data: existing } = await supabase
+        .from('incoming_calls')
+        .select('id')
+        .eq('call_id', callId)
+        .maybeSingle();
 
-    if (error) {
-      console.error('[voys-webhook] Insert error:', error);
+      if (existing) {
+        const { error } = await supabase
+          .from('incoming_calls')
+          .update({ status: mappedStatus })
+          .eq('call_id', callId);
+        if (error) console.error('[voys-webhook] Update error:', error);
+        console.log(`[voys-webhook] Updated call ${callId} → ${mappedStatus}`);
+        return new Response(JSON.stringify({ ok: true, updated: true }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
+    // New ringing call — insert
+    if (mappedStatus === 'ringing') {
+      const { error } = await supabase.from('incoming_calls').insert({
+        caller_number: callerNumber,
+        called_number: calledNumber,
+        call_id: callId || null,
+        status: 'ringing',
+      });
+      if (error) console.error('[voys-webhook] Insert error:', error);
+    } else {
+      // Non-ringing event without existing record — insert with current status
+      const { error } = await supabase.from('incoming_calls').insert({
+        caller_number: callerNumber,
+        called_number: calledNumber,
+        call_id: callId || null,
+        status: mappedStatus,
+      });
+      if (error) console.error('[voys-webhook] Insert error:', error);
     }
 
     return new Response(JSON.stringify({ ok: true }), {
