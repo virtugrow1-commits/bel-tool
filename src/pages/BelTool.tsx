@@ -324,7 +324,7 @@ export default function BelTool() {
           >{toast.msg}</div>
         )}
 
-        <SettingsPanel open={showSettings} onClose={() => setShowSettings(false)} />
+        <SettingsPanel open={showSettings} onClose={() => setShowSettings(false)} onSyncLeads={reloadLeads} />
         <Leaderboard open={showLeaderboard} onClose={() => setShowLeaderboard(false)} />
         <AgendaView open={showAgenda} onClose={() => setShowAgenda(false)} appointments={appts} />
         {showCallback && activeContact && activeComp && (
