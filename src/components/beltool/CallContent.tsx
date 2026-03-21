@@ -489,6 +489,7 @@ export function CallContent({
               <div className="flex flex-wrap gap-1.5">
                 <ActionBtn variant="ghost" onClick={() => setPhase('q4')}>{t.back}</ActionBtn>
                 <ActionBtn variant="warning" onClick={() => { onEndCall('sent', 'enqueteVerstuurd'); addScore('verstuurd'); showToast(t.bookingSent, 'info'); }}>{t.sendBookingDigital}</ActionBtn>
+                <ActionBtn variant="muted" onClick={() => { onEndCall('noanswer', 'anderMoment' as any); showToast('Ander moment genoteerd'); }}>⏳ Niet op dit moment</ActionBtn>
                 <ActionBtn variant="danger" onClick={() => { onEndCall('lost', 'nietInteressant'); addScore('afgevallen'); }}>{t.notInterested}</ActionBtn>
               </div>
             </StepLayout>
