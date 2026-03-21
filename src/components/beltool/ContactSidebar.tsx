@@ -113,17 +113,17 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
         <div className="relative" ref={filterRef}>
           <button
             onClick={() => setFilterOpen(!filterOpen)}
-            className="w-full flex items-center justify-between px-3 py-2 rounded-lg border border-border/40 bg-foreground/[0.04] text-[12px] font-semibold transition-colors hover:bg-foreground/[0.06]"
+            className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-md border border-border/30 bg-foreground/[0.03] text-[11px] font-semibold transition-colors hover:bg-foreground/[0.05]"
           >
             <span className="flex items-center gap-1.5">
-              <span>{FILTER_TABS.find(f => f.key === stageFilter)?.icon}</span>
+              <span className="text-[12px]">{FILTER_TABS.find(f => f.key === stageFilter)?.icon}</span>
               <span>{FILTER_TABS.find(f => f.key === stageFilter)?.label}</span>
-              <span className="text-[10px] text-muted-foreground/40">({stageCounts[stageFilter]})</span>
+              <span className="text-[9px] text-muted-foreground/30">({stageCounts[stageFilter]})</span>
             </span>
-            <span className={cn('text-muted-foreground/30 text-[10px] transition-transform', filterOpen && 'rotate-180')}>▼</span>
+            <span className={cn('text-muted-foreground/20 text-[9px] transition-transform', filterOpen && 'rotate-180')}>▼</span>
           </button>
           {filterOpen && (
-            <div className="absolute left-0 right-0 top-full mt-1 z-50 rounded-xl border border-border/40 bg-[hsl(222_32%_10%)] shadow-xl overflow-hidden">
+            <div className="absolute left-0 right-0 top-full mt-0.5 z-50 rounded-lg border border-border/30 bg-[hsl(222_32%_10%)] shadow-xl overflow-hidden">
               {FILTER_TABS.map(tab => {
                 const count = stageCounts[tab.key];
                 const isActive = stageFilter === tab.key;
@@ -133,18 +133,18 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
                     key={tab.key}
                     onClick={() => { onStageFilterChange(tab.key); setFilterOpen(false); }}
                     className={cn(
-                      'flex items-center gap-2 w-full text-left px-3 py-2 text-[12px] font-medium transition-colors',
-                      isActive ? 'bg-primary/[0.1] text-primary' : 'text-foreground/60 hover:bg-foreground/[0.05]'
+                      'flex items-center gap-2 w-full text-left px-2.5 py-1.5 text-[11px] font-medium transition-colors',
+                      isActive ? 'bg-primary/[0.1] text-primary' : 'text-foreground/50 hover:bg-foreground/[0.04]'
                     )}
                   >
-                    <span>{tab.icon}</span>
+                    <span className="text-[12px]">{tab.icon}</span>
                     <span className="flex-1">{tab.label}</span>
                     {count > 0 && (
                       <span
-                        className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold"
+                        className="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold"
                         style={{
-                          background: meta ? meta.color + '20' : 'rgba(255,255,255,0.06)',
-                          color: meta ? meta.color : 'rgba(255,255,255,0.4)',
+                          background: meta ? meta.color + '18' : 'rgba(255,255,255,0.05)',
+                          color: meta ? meta.color : 'rgba(255,255,255,0.35)',
                         }}
                       >{count}</span>
                     )}
