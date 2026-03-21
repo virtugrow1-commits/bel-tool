@@ -336,7 +336,7 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
 
       {/* Activity log */}
       {scores.log.length > 0 && (
-        <div className="border-t border-border flex-1 min-h-0 overflow-y-auto px-3 py-1.5 bg-muted/20">
+        <div className="border-t border-border max-h-[120px] overflow-y-auto px-3 py-1.5 bg-muted/20">
           <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5 sticky top-0 bg-muted/20 py-0.5">{t.activity} ({scores.log.length})</div>
           {scores.log.map((e, i) => (
             <button
