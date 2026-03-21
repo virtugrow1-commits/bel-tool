@@ -24,6 +24,7 @@ import { ContactDetailPanel } from '@/components/beltool/ContactDetailPanel';
 export default function BelTool() {
   const [user, setUser] = useState<User | null>(() => store.get('user', null));
   const [lang, setLang] = useState(() => store.get('lang', 'nl'));
+  const [managedUsers, setManagedUsers] = useState<User[]>(() => store.get('managedUsers', USERS));
   const [companies, setCompanies] = useState<Company[]>(COMPANIES_INIT);
   const [ghlLoading, setGhlLoading] = useState(false);
   const [ghlError, setGhlError] = useState<string | null>(null);
