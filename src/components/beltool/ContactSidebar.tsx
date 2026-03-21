@@ -46,39 +46,8 @@ interface DailyTargets {
   surveys: number;
 }
 
-function DailyTargetBar({ scores, targets }: { scores: Scores; targets: DailyTargets }) {
-  const items = [
-    { label: 'Calls', current: scores.gebeld, target: targets.calls, color: 'hsl(var(--navy))' },
-    { label: 'Enquêtes', current: scores.enquetes, target: targets.surveys, color: 'hsl(var(--primary))' },
-    { label: 'Afspraken', current: scores.afspraken, target: targets.appointments, color: 'hsl(var(--success))' },
-  ];
-  return (
-    <div className="bg-card border border-border rounded-xl p-2.5 mb-2.5 shadow-sm">
-      <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">📊 Dagdoel</div>
-      <div className="space-y-1.5">
-        {items.map(it => {
-          const pct = Math.min((it.current / it.target) * 100, 100);
-          const done = it.current >= it.target;
-          return (
-            <div key={it.label} className="flex items-center gap-2">
-              <span className="text-[10px] font-medium text-muted-foreground w-[52px]">{it.label}</span>
-              <div className="flex-1 h-[5px] rounded-full bg-muted overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-[width] duration-700 ease-out"
-                  style={{ width: `${pct}%`, background: done ? 'hsl(var(--success))' : it.color }}
-                />
-              </div>
-              <span className={cn('text-[10px] font-bold tabular-nums w-[36px] text-right', done ? 'text-success' : 'text-foreground/60')}>
-                {it.current}/{it.target}
-              </span>
-              {done && <span className="text-[10px]">✅</span>}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
+// DailyTargets type for target state
+
 
 function PauseTimerInline() {
   const [paused, setPaused] = useState(false);
