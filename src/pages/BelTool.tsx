@@ -267,8 +267,9 @@ export default function BelTool() {
     updateCompStage(comp.id, 'bellen');
   };
 
-  const startDialing = async () => {
+  const startDialing = async (callId?: string) => {
     setCallState('dialing');
+    if (callId) setActiveCallId(callId);
     addScore('gebeld');
 
     // Transition to ringing — Voys handles the actual call via edge function
@@ -286,10 +287,21 @@ export default function BelTool() {
     }
   };
 
-  const hangup = () => {
+  const hangup = async () => {
+    // Try to hang up via Voys API if we have a callId
+    if (activeCallId) {
+      try {
+        const { supabase } = await import('@/integrations/supabase/client');
+        await supabase.functions.invoke('voys-call', {
+          body: { action: 'hangup', callId: activeCallId },
+        });
+      } catch (err) {
+        console.error('Voys hangup failed:', err);
+      }
+    }
     setCallState('ended');
+    setActiveCallId(null);
     if (activeContactId) {
-      // Clean up the call tag
       ghl.removeTag(activeContactId, ['beltool-call-now']).catch(console.error);
     }
   };
