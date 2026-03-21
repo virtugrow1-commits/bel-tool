@@ -20,60 +20,66 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
   };
 
   return (
-    <div className="min-h-screen flex" style={{ background: 'hsl(222 34% 8%)' }}>
+    <div className="min-h-screen flex" style={{ background: 'linear-gradient(135deg, #0D1B3E 0%, #1A3060 55%, #00C4B4 100%)' }}>
       {/* Fake CRM nav */}
-      <div className="w-[72px] border-r border-border/30 flex flex-col items-center py-6" style={{ background: 'hsl(222 34% 6%)' }}>
-        <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center mb-6">
-          <span className="text-primary text-lg font-extrabold">V</span>
+      <div className="w-[220px] flex flex-col items-start py-6 px-4" style={{ background: 'rgba(13, 27, 62, 0.9)', borderRight: '1px solid rgba(255,255,255,0.08)' }}>
+        <div className="flex items-center gap-2 mb-8">
+          <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
+            <span className="text-primary text-sm font-extrabold">C</span>
+          </div>
+          <span className="text-sm font-bold text-white/80">ClioCRM</span>
         </div>
-        {['🚀','📊','💬','📅','👤','🎯','💳'].map((icon, i) => (
-          <div key={i} className="w-9 h-9 rounded-lg flex items-center justify-center text-[14px] text-muted-foreground/20 mb-1">{icon}</div>
+        {['🚀 Launchpad','📊 Dashboard','💬 Gesprekken','📅 Kalenders','👤 Contacten','🎯 Leads','💳 Betalingen'].map((item, i) => (
+          <div key={i} className="flex items-center gap-2.5 px-2 py-[7px] w-full text-[12px] text-white/20 font-medium">{item}</div>
         ))}
       </div>
 
-      {/* Login form centered */}
+      {/* Login form */}
       <div className="flex-1 flex items-center justify-center">
-        <div className="w-[360px] bg-card/50 rounded-xl p-8 border border-border/30 shadow-2xl backdrop-blur-sm">
+        <div className="w-[380px] rounded-xl p-8 border" style={{ background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(20px)', borderColor: 'rgba(0,196,180,0.25)', boxShadow: '0 8px 32px rgba(0,196,180,0.2)' }}>
           <div className="text-center mb-6">
-            <div className="w-12 h-12 rounded-xl bg-primary/15 flex items-center justify-center mx-auto mb-3">
-              <span className="text-2xl">📞</span>
+            <div className="w-14 h-14 rounded-xl bg-primary/20 flex items-center justify-center mx-auto mb-3">
+              <span className="text-3xl">📞</span>
             </div>
-            <div className="text-xl font-bold tracking-tight text-foreground/90">Bel-Tool</div>
-            <div className="text-[11px] text-muted-foreground/30 mt-1">Log in om te starten</div>
+            <div className="text-xl font-bold tracking-tight text-white">Bel-Tool</div>
+            <div className="text-[12px] text-white/40 mt-1">Log in om te starten</div>
           </div>
 
           {err && (
-            <div className="bg-destructive/8 border border-destructive/15 rounded-lg px-3 py-2 text-[11px] text-destructive mb-3">
+            <div className="bg-destructive/15 border border-destructive/25 rounded-lg px-3 py-2.5 text-[12px] text-red-300 mb-3">
               Ongeldig email of wachtwoord
             </div>
           )}
 
           <div className="mb-3">
-            <div className="text-[10px] font-medium text-muted-foreground/40 mb-1">Email</div>
+            <div className="text-[11px] font-semibold text-white/50 mb-1.5">Email</div>
             <input
               value={email}
               onChange={e => setEmail(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && submit()}
-              className="w-full px-3 py-2 rounded-lg border border-border/30 bg-foreground/[0.03] text-foreground text-[12px] outline-none focus:ring-1 focus:ring-primary/50"
+              className="w-full px-3 py-2.5 rounded-lg border text-white text-[13px] outline-none focus:border-primary"
+              style={{ background: 'rgba(255,255,255,0.06)', borderColor: 'rgba(255,255,255,0.12)' }}
             />
           </div>
           <div className="mb-5">
-            <div className="text-[10px] font-medium text-muted-foreground/40 mb-1">Wachtwoord</div>
+            <div className="text-[11px] font-semibold text-white/50 mb-1.5">Wachtwoord</div>
             <input
               type="password"
               value={pw}
               onChange={e => setPw(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && submit()}
-              className="w-full px-3 py-2 rounded-lg border border-border/30 bg-foreground/[0.03] text-foreground text-[12px] outline-none focus:ring-1 focus:ring-primary/50"
+              className="w-full px-3 py-2.5 rounded-lg border text-white text-[13px] outline-none focus:border-primary"
+              style={{ background: 'rgba(255,255,255,0.06)', borderColor: 'rgba(255,255,255,0.12)' }}
             />
           </div>
           <button
             onClick={submit}
-            className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground text-[12px] font-bold active:scale-[0.97] transition-transform hover:bg-primary/90"
+            className="w-full py-3 rounded-lg bg-primary text-white text-[14px] font-bold active:scale-[0.97] transition-all hover:bg-primary/90"
+            style={{ boxShadow: '0 4px 18px rgba(0,196,180,0.45)' }}
           >
             Inloggen
           </button>
-          <div className="text-[9px] text-muted-foreground/25 text-center mt-4">
+          <div className="text-[10px] text-white/25 text-center mt-4">
             Demo: willem / sophie / mark @cliqmakers.nl — pw: demo
           </div>
         </div>

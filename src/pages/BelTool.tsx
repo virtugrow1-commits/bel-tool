@@ -465,33 +465,33 @@ export default function BelTool() {
 
   return (
     <BelToolContext.Provider value={ctx}>
-        <div className="flex h-screen overflow-hidden bg-background text-foreground">
+      <div className="flex h-screen overflow-hidden bg-background text-foreground">
           <CrmNavSidebar onShowSettings={() => setShowSettings(true)} />
         {toast && (
           <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[999] px-6 py-2.5 rounded-xl text-[13px] font-semibold shadow-xl border"
             style={{
               animation: 'slideToast 0.25s ease',
-              background: toast.type === 'err' ? 'hsl(0 50% 25%)' : toast.type === 'info' ? 'hsl(222 30% 20%)' : 'hsl(152 40% 18%)',
-              borderColor: toast.type === 'err' ? 'hsl(0 72% 51% / 0.2)' : toast.type === 'info' ? 'hsl(217 91% 60% / 0.2)' : 'hsl(152 56% 42% / 0.2)',
-              color: '#fff',
+              background: toast.type === 'err' ? '#FEF2F2' : toast.type === 'info' ? '#EAF8F7' : '#E6F9F0',
+              borderColor: toast.type === 'err' ? '#FECACA' : toast.type === 'info' ? '#C8EEEC' : '#BBF7D0',
+              color: toast.type === 'err' ? '#DC2626' : toast.type === 'info' ? '#0D1B3E' : '#16A34A',
             }}
           >{toast.msg}</div>
         )}
 
         {/* Callback reminder popup */}
         {callbackPopup && (
-          <div className="fixed inset-0 z-[998] flex items-center justify-center bg-black/40" style={{ animation: 'fadeIn 0.2s ease' }}>
-            <div className="bg-[hsl(222_32%_12%)] border border-border/50 rounded-2xl shadow-2xl p-6 w-[340px]" style={{ animation: 'slideToast 0.3s ease' }}>
+          <div className="fixed inset-0 z-[998] flex items-center justify-center bg-black/30" style={{ animation: 'fadeIn 0.2s ease', backdropFilter: 'blur(4px)' }}>
+            <div className="bg-card border border-border rounded-2xl shadow-xl p-6 w-[340px]" style={{ animation: 'slideToast 0.3s ease' }}>
               <div className="text-center mb-4">
                 <div className="text-4xl mb-2">🔔</div>
                 <div className="text-lg font-bold text-foreground">Terugbellen!</div>
-                <div className="text-[13px] text-muted-foreground/50 mt-1">Geplande callback is nu</div>
+                <div className="text-[13px] text-muted-foreground mt-1">Geplande callback is nu</div>
               </div>
-              <div className="bg-foreground/[0.04] rounded-xl p-3 mb-4 border border-border/30">
-                <div className="font-semibold text-[14px]">{callbackPopup.contactName}</div>
-                <div className="text-[12px] text-muted-foreground/40 mt-0.5">{callbackPopup.companyName}</div>
-                <div className="text-[11px] text-muted-foreground/30 mt-1">📅 {callbackPopup.date} om {callbackPopup.time}</div>
-                {callbackPopup.note && <div className="text-[11px] text-muted-foreground/40 mt-1.5 italic">"{callbackPopup.note}"</div>}
+              <div className="bg-muted/50 rounded-xl p-3 mb-4 border border-border">
+                <div className="font-semibold text-[14px] text-foreground">{callbackPopup.contactName}</div>
+                <div className="text-[12px] text-muted-foreground mt-0.5">{callbackPopup.companyName}</div>
+                <div className="text-[11px] text-muted-foreground mt-1">📅 {callbackPopup.date} om {callbackPopup.time}</div>
+                {callbackPopup.note && <div className="text-[11px] text-muted-foreground mt-1.5 italic">"{callbackPopup.note}"</div>}
               </div>
               <div className="flex gap-2">
                 <button
@@ -499,7 +499,7 @@ export default function BelTool() {
                     setDismissedCallbacks(prev => new Set([...prev, callbackPopup.id]));
                     setCallbackPopup(null);
                   }}
-                  className="flex-1 py-2.5 rounded-xl border border-border/40 bg-foreground/[0.04] text-muted-foreground/60 text-[12px] font-semibold hover:bg-foreground/[0.08] active:scale-[0.97] transition-all"
+                  className="flex-1 py-2.5 rounded-xl border border-border bg-muted text-muted-foreground text-[12px] font-semibold hover:bg-muted/80 active:scale-[0.97] transition-all"
                 >
                   Later
                 </button>
@@ -508,7 +508,7 @@ export default function BelTool() {
                     completeCallback(callbackPopup.id);
                     setCallbackPopup(null);
                   }}
-                  className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground text-[12px] font-semibold hover:bg-primary/90 active:scale-[0.97] transition-all shadow-md"
+                  className="flex-1 py-2.5 rounded-xl bg-primary text-white text-[12px] font-semibold hover:bg-primary/90 active:scale-[0.97] transition-all shadow-sm"
                 >
                   📞 Nu bellen
                 </button>
@@ -519,26 +519,26 @@ export default function BelTool() {
 
         {/* Incoming call popup */}
         {incomingCall && (
-          <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50" style={{ animation: 'fadeIn 0.15s ease' }}>
+          <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/30" style={{ animation: 'fadeIn 0.15s ease', backdropFilter: 'blur(4px)' }}>
             <div
-              className="bg-[hsl(222_32%_12%)] border border-border/50 rounded-2xl shadow-2xl p-6 w-[360px]"
+              className="bg-card border border-border rounded-2xl shadow-xl p-6 w-[360px]"
               style={{ animation: 'incomingRing 0.5s ease infinite alternate' }}
             >
               <div className="text-center mb-4">
                 <div className="text-5xl mb-3" style={{ animation: 'phoneShake 0.4s ease infinite' }}>📱</div>
                 <div className="text-lg font-bold text-foreground">Inkomend gesprek</div>
-                <div className="text-[13px] text-muted-foreground/50 mt-1">
+                <div className="text-[13px] text-muted-foreground mt-1">
                   {incomingCall.contactName ? 'Lead belt terug!' : 'Onbekend nummer'}
                 </div>
               </div>
-              <div className="bg-foreground/[0.04] rounded-xl p-4 mb-4 border border-border/30">
+              <div className="bg-muted/50 rounded-xl p-4 mb-4 border border-border">
                 {incomingCall.contactName ? (
                   <>
-                    <div className="font-bold text-[16px]">{incomingCall.contactName}</div>
-                    <div className="text-[13px] text-muted-foreground/40 mt-0.5">{incomingCall.companyName}</div>
+                    <div className="font-bold text-[16px] text-foreground">{incomingCall.contactName}</div>
+                    <div className="text-[13px] text-muted-foreground mt-0.5">{incomingCall.companyName}</div>
                   </>
                 ) : (
-                  <div className="font-bold text-[16px]">Onbekend contact</div>
+                  <div className="font-bold text-[16px] text-foreground">Onbekend contact</div>
                 )}
                 <div className="text-[13px] text-primary mt-2 font-mono">{incomingCall.callerNumber}</div>
               </div>
@@ -551,7 +551,7 @@ export default function BelTool() {
                     })();
                     setIncomingCall(null);
                   }}
-                  className="flex-1 py-3 rounded-xl bg-destructive/20 border border-destructive/30 text-destructive text-[13px] font-semibold hover:bg-destructive/30 active:scale-[0.97] transition-all"
+                  className="flex-1 py-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-[13px] font-semibold hover:bg-destructive/20 active:scale-[0.97] transition-all"
                 >
                   ✕ Weigeren
                 </button>
@@ -571,7 +571,7 @@ export default function BelTool() {
                     })();
                     setIncomingCall(null);
                   }}
-                  className="flex-1 py-3 rounded-xl bg-[hsl(152_56%_42%)] text-white text-[13px] font-semibold hover:bg-[hsl(152_56%_38%)] active:scale-[0.97] transition-all shadow-lg"
+                  className="flex-1 py-3 rounded-xl bg-success text-white text-[13px] font-semibold hover:bg-success/90 active:scale-[0.97] transition-all shadow-sm"
                   style={{ animation: 'pulse 1.5s ease infinite' }}
                 >
                   📞 Opnemen
@@ -641,7 +641,7 @@ export default function BelTool() {
           }}
         />
 
-        <div className="flex-1 flex flex-col overflow-hidden" style={{ background: 'hsl(222 28% 12%)' }}>
+        <div className="flex-1 flex flex-col overflow-hidden bg-background">
           {(phase === 'idle' || phase === 'precall' || curStep >= 0 || ['sent','done','lost','noanswer'].includes(phase)) && activeContact && activeComp ? (
             <>
               <div className="flex flex-1 overflow-hidden">
