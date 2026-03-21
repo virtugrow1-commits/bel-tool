@@ -20,7 +20,7 @@ import { AgendaView } from '@/components/beltool/AgendaView';
 import { CallbackScheduler } from '@/components/beltool/CallbackScheduler';
 import { Modal } from '@/components/beltool/Modal';
 import { ContactDetailPanel } from '@/components/beltool/ContactDetailPanel';
-import { CrmNavSidebar } from '@/components/beltool/CrmNavSidebar';
+
 
 export default function BelTool() {
   const [user, setUser] = useState<User | null>(() => store.get('user', null));
@@ -466,7 +466,7 @@ export default function BelTool() {
   return (
     <BelToolContext.Provider value={ctx}>
       <div className="flex h-screen overflow-hidden bg-background text-foreground">
-          <CrmNavSidebar onShowSettings={() => setShowSettings(true)} />
+          
         {toast && (
           <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[999] px-6 py-2.5 rounded-xl text-[13px] font-semibold shadow-xl border"
             style={{
