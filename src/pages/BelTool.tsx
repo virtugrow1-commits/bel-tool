@@ -64,55 +64,106 @@ export default function BelTool() {
   const convRate = scores.gebeld > 0 ? Math.round(((scores.enquetes + scores.afspraken) / scores.gebeld) * 100) : 0;
   const todayStr = new Date().toISOString().split('T')[0];
   const dueCallbacks = callbacks.filter(cb => cb.date <= todayStr && cb.status === 'scheduled');
-  // Load contacts from GHL on login
+  // Load leads from GHL "Bellen" pipeline → "Nieuwe leads" stage
   useEffect(() => {
     if (!user) return;
     setGhlLoading(true);
     setGhlError(null);
-    ghl.getContacts()
-      .then((data: { contacts?: Array<{ id: string; firstName?: string; lastName?: string; companyName?: string; phone?: string; email?: string; tags?: string[]; }> }) => {
-        if (data?.contacts && Array.isArray(data.contacts)) {
-          // Group contacts by company
-          const companyMap = new Map<string, Company>();
-          for (const c of data.contacts) {
-            const compName = c.companyName || `${c.firstName || ''} ${c.lastName || ''}`.trim();
-            const compKey = compName.toLowerCase().replace(/\s+/g, '-');
-            if (!companyMap.has(compKey)) {
-              companyMap.set(compKey, {
-                id: `ghl-${compKey}`,
-                name: compName,
-                stage: 'nieuw',
-                contacts: [],
-              });
-            }
-            const comp = companyMap.get(compKey)!;
-            comp.contacts.push({
-              id: c.id,
-              firstName: c.firstName || '',
-              lastName: c.lastName || '',
-              role: '',
-              phone: c.phone || '',
-              email: c.email || '',
-            });
-            // Map GHL tags to stages
-            if (c.tags?.includes('afspraak')) comp.stage = 'afspraak';
-            else if (c.tags?.includes('terugbellen')) comp.stage = 'terugbellen';
-            else if (c.tags?.includes('enqueteTel')) comp.stage = 'enqueteTel';
-            else if (c.tags?.includes('nietInteressant')) comp.stage = 'nietInteressant';
+
+    (async () => {
+      try {
+        // 1. Fetch pipelines to find "Bellen" pipeline and "Nieuwe leads" stage
+        const pipelineData = await ghl.getPipelines();
+        const pipelines = pipelineData?.pipelines || [];
+        const bellenPipeline = pipelines.find((p: { name: string }) =>
+          p.name.toLowerCase().includes('bellen')
+        );
+
+        if (!bellenPipeline) {
+          console.warn('No "Bellen" pipeline found, falling back to all contacts');
+          // Fallback to all contacts
+          const data = await ghl.getContacts();
+          if (data?.contacts?.length) {
+            setCompanies(mapContactsToCompanies(data.contacts));
           }
-          const ghlCompanies = Array.from(companyMap.values());
-          if (ghlCompanies.length > 0) {
-            setCompanies(ghlCompanies);
-          }
-          // If no contacts from GHL, keep demo data
+          return;
         }
-      })
-      .catch((err: Error) => {
-        console.warn('GHL load failed, using demo data:', err.message);
+
+        const nieuweLeadsStage = bellenPipeline.stages?.find((s: { name: string }) =>
+          s.name.toLowerCase().includes('nieuwe')
+        );
+
+        // 2. Search opportunities in that pipeline + stage
+        const oppData = await ghl.searchOpportunities(
+          bellenPipeline.id,
+          nieuweLeadsStage?.id
+        );
+        const opportunities = oppData?.opportunities || [];
+
+        if (opportunities.length === 0) {
+          console.warn('No opportunities found in Bellen → Nieuwe leads');
+          setCompanies([]);
+          return;
+        }
+
+        // 3. Fetch contact details for each opportunity
+        const contactIds = opportunities
+          .map((o: { contact?: { id: string } }) => o.contact?.id)
+          .filter(Boolean) as string[];
+
+        const uniqueIds = [...new Set(contactIds)];
+        const contactPromises = uniqueIds.map(id => ghl.getContact(id).catch(() => null));
+        const contactResults = await Promise.all(contactPromises);
+
+        const contacts = contactResults
+          .filter(Boolean)
+          .map((r: any) => r?.contact || r)
+          .filter(Boolean);
+
+        if (contacts.length > 0) {
+          setCompanies(mapContactsToCompanies(contacts));
+        } else {
+          setCompanies([]);
+        }
+      } catch (err: any) {
+        console.warn('GHL pipeline load failed, using demo data:', err.message);
         setGhlError(err.message);
-      })
-      .finally(() => setGhlLoading(false));
+      } finally {
+        setGhlLoading(false);
+      }
+    })();
   }, [user]);
+
+  // Helper: map raw GHL contacts into Company[] structure
+  function mapContactsToCompanies(contacts: Array<{ id: string; firstName?: string; lastName?: string; companyName?: string; phone?: string; email?: string; tags?: string[] }>): Company[] {
+    const companyMap = new Map<string, Company>();
+    for (const c of contacts) {
+      const compName = c.companyName || `${c.firstName || ''} ${c.lastName || ''}`.trim();
+      const compKey = compName.toLowerCase().replace(/\s+/g, '-');
+      if (!companyMap.has(compKey)) {
+        companyMap.set(compKey, {
+          id: `ghl-${compKey}`,
+          name: compName,
+          stage: 'nieuw',
+          contacts: [],
+        });
+      }
+      companyMap.get(compKey)!.contacts.push({
+        id: c.id,
+        firstName: c.firstName || '',
+        lastName: c.lastName || '',
+        role: '',
+        phone: c.phone || '',
+        email: c.email || '',
+      });
+      // Map GHL tags to stages
+      if (c.tags?.includes('afspraak')) companyMap.get(compKey)!.stage = 'afspraak';
+      else if (c.tags?.includes('terugbellen')) companyMap.get(compKey)!.stage = 'terugbellen';
+      else if (c.tags?.includes('enqueteTel')) companyMap.get(compKey)!.stage = 'enqueteTel';
+      else if (c.tags?.includes('nietInteressant')) companyMap.get(compKey)!.stage = 'nietInteressant';
+    }
+    return Array.from(companyMap.values());
+  }
 
   const flash = useCallback((msg: string, type?: string) => {
     setToast({ msg, type: type || 'ok' });
