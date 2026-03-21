@@ -7,7 +7,7 @@ import { renderScript, getWorkdays, fmtDate, TIMES } from '@/lib/beltool-data';
 import { ADVISORS } from '@/lib/beltool-data';
 import { calcLeadScore, leadLabel, type Scores } from '@/lib/beltool-scoring';
 import { useBelTool } from '@/contexts/BelToolContext';
-import { Logo } from './Logo';
+import { ghl } from '@/lib/beltool-ghl';
 
 interface CallContentProps {
   activeContact: CompanyContact;
