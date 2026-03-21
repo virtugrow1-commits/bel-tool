@@ -23,7 +23,7 @@ export function CallButton({ phoneNumber, leadId, leadName, deviceId, onCallStar
 
     try {
       const { data, error } = await supabase.functions.invoke('voys-call', {
-        body: { phone: phoneNumber, leadId, leadName },
+        body: { phone: phoneNumber, leadId, leadName, ...(deviceId ? { deviceId } : {}) },
       });
 
       if (error) throw new Error(error.message || 'Functie aanroep mislukt');
