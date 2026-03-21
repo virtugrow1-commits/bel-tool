@@ -7,6 +7,7 @@ export interface CompanyContact {
   email: string;
   linkedin?: string;
   notes?: string;
+  opportunityId?: string;
 }
 
 export interface Company {

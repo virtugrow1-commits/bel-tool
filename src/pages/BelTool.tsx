@@ -30,6 +30,7 @@ export default function BelTool() {
   const [activeContactId, setActiveContactId] = useState<string | null>(null);
   const [expandedComp, setExpandedComp] = useState<string | null>(null);
   const [pipelineInfo, setPipelineInfo] = useState<{ pipelineId: string; stageId: string } | null>(null);
+  const [stageMap, setStageMap] = useState<Record<string, string>>({});
   const [pageCursor, setPageCursor] = useState<{ startAfter?: number; startAfterId?: string } | null>(null);
   const [hasMoreLeads, setHasMoreLeads] = useState(false);
   const [search, setSearch] = useState('');
@@ -96,6 +97,13 @@ export default function BelTool() {
           s.name.toLowerCase().includes('nieuwe')
         );
 
+        // Cache all stage names → IDs for quick lookup during endCall
+        const stages: Record<string, string> = {};
+        for (const s of bellenPipeline.stages || []) {
+          stages[s.name.toLowerCase()] = s.id;
+        }
+        setStageMap(stages);
+
         setPipelineInfo({ pipelineId: bellenPipeline.id, stageId: nieuweLeadsStage?.id || '' });
 
         const oppData = await ghl.searchOpportunities(bellenPipeline.id, nieuweLeadsStage?.id, 25);
@@ -132,6 +140,11 @@ export default function BelTool() {
       const nieuweLeadsStage = bellenPipeline.stages?.find((s: { name: string }) =>
         s.name.toLowerCase().includes('nieuwe')
       );
+      const stages: Record<string, string> = {};
+      for (const s of bellenPipeline.stages || []) {
+        stages[s.name.toLowerCase()] = s.id;
+      }
+      setStageMap(stages);
       setPipelineInfo({ pipelineId: bellenPipeline.id, stageId: nieuweLeadsStage?.id || '' });
 
       const oppData = await ghl.searchOpportunities(bellenPipeline.id, nieuweLeadsStage?.id, 25);
@@ -180,6 +193,7 @@ export default function BelTool() {
 
   // Helper: map GHL opportunities (with embedded contact) into Company[] structure
   function mapOpportunitiesToCompanies(opportunities: Array<{
+    id?: string;
     contact?: { id: string; name?: string; companyName?: string; phone?: string; email?: string; tags?: string[] };
     contactId?: string;
   }>): Company[] {
@@ -190,7 +204,6 @@ export default function BelTool() {
       const compName = c.companyName || c.name || 'Onbekend';
       const compKey = compName.toLowerCase().replace(/\s+/g, '-');
 
-      // Split "name" into first/last (GHL opportunities only have a combined name)
       const nameParts = (c.name || compName).split(' ');
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ') || '';
@@ -210,6 +223,7 @@ export default function BelTool() {
         role: '',
         phone: c.phone || '',
         email: c.email || '',
+        opportunityId: opp.id || '',
       });
     }
     return Array.from(companyMap.values());
@@ -292,32 +306,34 @@ export default function BelTool() {
     }
   };
 
-  // Map BelTool stages to GHL pipeline stage names
+  // Map BelTool stages to GHL pipeline stage names (lowercase for stageMap lookup)
   const STAGE_TO_GHL: Record<string, string> = {
-    nietInteressant: 'Niet Interessant',
-    geenGehoor: 'Neemt niet op',
-    terugbellenGepland: 'Later terug bellen',
-    afspraak: 'Afspraak ingeplant',
-    enqueteVerstuurd: 'Vraag om extra info (mail)',
+    nietInteressant: 'niet interessant',
+    geenGehoor: 'neemt niet op',
+    terugbellenGepland: 'later terug bellen',
+    afspraak: 'afspraak ingeplant',
+    enqueteVerstuurd: 'vraag om extra info (mail)',
   };
 
   const endCall = (ph: CallPhase, stage: Company['stage']) => {
     if (activeCompId) {
       updateCompStage(activeCompId, stage);
-      ghl.updateContactStage(activeContactId || '', stage);
 
-      // Move opportunity to the correct GHL pipeline stage
+      // Move opportunity directly using cached IDs — no extra API calls
       if (pipelineInfo && STAGE_TO_GHL[stage]) {
-        ghl.getPipelines().then((data) => {
-          const pipeline = data?.pipelines?.find((p: any) => p.id === pipelineInfo.pipelineId);
-          const ghlStage = pipeline?.stages?.find((s: any) => s.name === STAGE_TO_GHL[stage]);
-          if (ghlStage) {
-            ghl.upsertOpportunity(activeContactId || '', pipelineInfo.pipelineId, ghlStage.id, activeComp?.name || 'Lead');
-          }
-        }).catch(console.error);
+        const targetStageId = stageMap[STAGE_TO_GHL[stage]];
+        if (targetStageId) {
+          const oppId = activeContact?.opportunityId;
+          ghl.upsertOpportunity(
+            activeContactId || '', pipelineInfo.pipelineId, targetStageId,
+            activeComp?.name || 'Lead', oppId
+          ).catch(err => console.error('GHL opportunity update failed:', err));
+        } else {
+          console.warn(`GHL stage not found for "${STAGE_TO_GHL[stage]}". Available:`, Object.keys(stageMap));
+        }
       }
 
-      // Remove from local list so it doesn't show as "Nieuwe Lead" anymore
+      // Remove from local list
       setCompanies(prev => prev.filter(c => c.id !== activeCompId));
 
       if (notes.trim()) {
@@ -328,7 +344,6 @@ export default function BelTool() {
       }
     }
 
-    // Reset state so user can select the next contact immediately
     setPhase('idle');
     setCallState('idle');
     setActiveCompId(null);

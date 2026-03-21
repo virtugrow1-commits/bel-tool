@@ -165,41 +165,53 @@ serve(async (req) => {
 
       // ─── CREATE/UPDATE OPPORTUNITY ───
       case 'upsertOpportunity': {
-        // Search existing opportunity for this contact
-        const searchRes = await fetch(
-          `${GHL_BASE}/opportunities/search?location_id=${GHL_LOCATION_ID}&contact_id=${params.contactId}`,
-          { headers: ghlHeaders }
-        );
-        const searchData = await searchRes.json();
-        const existing = searchData?.opportunities?.[0];
-
-        if (existing) {
-          // Update existing opportunity stage
-          const res = await fetch(`${GHL_BASE}/opportunities/${existing.id}`, {
+        // If we have the opportunity ID, update directly (no search needed)
+        if (params.opportunityId) {
+          const res = await fetch(`${GHL_BASE}/opportunities/${params.opportunityId}`, {
             method: 'PUT', headers: ghlHeaders,
             body: JSON.stringify({
               pipelineStageId: params.stageId,
               status: params.status || 'open',
-              name: params.name || existing.name,
+              name: params.name || 'Lead',
             }),
           });
           if (!res.ok) throw new Error(`GHL update opportunity error [${res.status}]: ${await res.text()}`);
           result = await res.json();
         } else {
-          // Create new opportunity
-          const res = await fetch(`${GHL_BASE}/opportunities/`, {
-            method: 'POST', headers: ghlHeaders,
-            body: JSON.stringify({
-              pipelineId: params.pipelineId,
-              locationId: GHL_LOCATION_ID,
-              name: params.name || 'Nieuwe lead',
-              pipelineStageId: params.stageId,
-              status: 'open',
-              contactId: params.contactId,
-            }),
-          });
-          if (!res.ok) throw new Error(`GHL create opportunity error [${res.status}]: ${await res.text()}`);
-          result = await res.json();
+          // Fallback: search by contact_id
+          const searchRes = await fetch(
+            `${GHL_BASE}/opportunities/search?location_id=${GHL_LOCATION_ID}&contact_id=${params.contactId}`,
+            { headers: ghlHeaders }
+          );
+          const searchData = await searchRes.json();
+          const existing = searchData?.opportunities?.[0];
+
+          if (existing) {
+            const res = await fetch(`${GHL_BASE}/opportunities/${existing.id}`, {
+              method: 'PUT', headers: ghlHeaders,
+              body: JSON.stringify({
+                pipelineStageId: params.stageId,
+                status: params.status || 'open',
+                name: params.name || existing.name,
+              }),
+            });
+            if (!res.ok) throw new Error(`GHL update opportunity error [${res.status}]: ${await res.text()}`);
+            result = await res.json();
+          } else {
+            const res = await fetch(`${GHL_BASE}/opportunities/`, {
+              method: 'POST', headers: ghlHeaders,
+              body: JSON.stringify({
+                pipelineId: params.pipelineId,
+                locationId: GHL_LOCATION_ID,
+                name: params.name || 'Nieuwe lead',
+                pipelineStageId: params.stageId,
+                status: 'open',
+                contactId: params.contactId,
+              }),
+            });
+            if (!res.ok) throw new Error(`GHL create opportunity error [${res.status}]: ${await res.text()}`);
+            result = await res.json();
+          }
         }
         break;
       }
