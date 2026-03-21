@@ -18,6 +18,7 @@ import { Leaderboard } from '@/components/beltool/Leaderboard';
 import { AgendaView } from '@/components/beltool/AgendaView';
 import { CallbackScheduler } from '@/components/beltool/CallbackScheduler';
 import { Modal } from '@/components/beltool/Modal';
+import { ContactDetailPanel } from '@/components/beltool/ContactDetailPanel';
 
 export default function BelTool() {
   const [user, setUser] = useState<User | null>(() => store.get('user', null));
