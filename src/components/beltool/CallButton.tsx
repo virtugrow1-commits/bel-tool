@@ -12,7 +12,7 @@ interface CallButtonProps {
   className?: string;
 }
 
-export function CallButton({ phoneNumber, leadId, leadName, onCallStarted, className }: CallButtonProps) {
+export function CallButton({ phoneNumber, leadId, leadName, deviceId, onCallStarted, className }: CallButtonProps) {
   const [state, setState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
 
