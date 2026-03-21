@@ -193,6 +193,7 @@ export default function BelTool() {
 
   // Helper: map GHL opportunities (with embedded contact) into Company[] structure
   function mapOpportunitiesToCompanies(opportunities: Array<{
+    id?: string;
     contact?: { id: string; name?: string; companyName?: string; phone?: string; email?: string; tags?: string[] };
     contactId?: string;
   }>): Company[] {
@@ -203,7 +204,6 @@ export default function BelTool() {
       const compName = c.companyName || c.name || 'Onbekend';
       const compKey = compName.toLowerCase().replace(/\s+/g, '-');
 
-      // Split "name" into first/last (GHL opportunities only have a combined name)
       const nameParts = (c.name || compName).split(' ');
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ') || '';
@@ -223,6 +223,7 @@ export default function BelTool() {
         role: '',
         phone: c.phone || '',
         email: c.email || '',
+        opportunityId: opp.id || '',
       });
     }
     return Array.from(companyMap.values());
