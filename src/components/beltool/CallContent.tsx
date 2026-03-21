@@ -93,6 +93,7 @@ interface CallContentProps {
   onHangup: () => void;
   onConfirmConnected: () => void;
   activeCompId: string;
+  onShowDetail?: () => void;
 }
 
 function ActionBtn({ children, variant = 'primary', wide, onClick }: { children: React.ReactNode; variant?: 'primary' | 'ghost' | 'warning' | 'danger' | 'muted'; wide?: boolean; onClick: () => void }) {
