@@ -82,7 +82,7 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
                 <div className="w-[30px] h-[30px] rounded-lg bg-foreground/[0.04] flex items-center justify-center text-xs font-bold text-muted-foreground/40 flex-shrink-0">{comp.name.charAt(0)}</div>
                 <div className="flex-1 min-w-0">
                   <div className={cn('font-semibold text-[12.5px] truncate', isActiveComp ? 'text-foreground' : 'text-foreground/75')}>{comp.name}</div>
-                  <div className="text-[10px] text-muted-foreground/30">{comp.contacts.length} {t.contacts}</div>
+                  <div className="text-[10px] text-muted-foreground/30">{comp.industry ? `${comp.industry} • ` : ''}{comp.contacts.length} {t.contacts}</div>
                 </div>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: s.color + '15', color: s.color }}>{s.label}</span>
                 <span className={cn('text-muted-foreground/20 text-[10px] transition-transform', isExpanded && 'rotate-90')}>▶</span>

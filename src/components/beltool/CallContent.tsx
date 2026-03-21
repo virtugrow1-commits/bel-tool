@@ -93,6 +93,7 @@ interface CallContentProps {
   onHangup: () => void;
   onConfirmConnected: () => void;
   activeCompId: string;
+  onShowDetail?: () => void;
 }
 
 function ActionBtn({ children, variant = 'primary', wide, onClick }: { children: React.ReactNode; variant?: 'primary' | 'ghost' | 'warning' | 'danger' | 'muted'; wide?: boolean; onClick: () => void }) {
@@ -134,7 +135,7 @@ export function CallContent({
   activeContact, activeComp, phase, callState, setPhase, answers, setAnswers, taskString,
   onEndCall, onNextContact, showToast, updateStage, addScore,
   bookDate, setBookDate, bookTime, setBookTime, bookAdvisor, setBookAdvisor,
-  scores, onShowCallback, onStartDialing, onHangup, onConfirmConnected, activeCompId,
+  scores, onShowCallback, onStartDialing, onHangup, onConfirmConnected, activeCompId, onShowDetail,
 }: CallContentProps) {
   const { t, surveyConfig } = useBelTool();
   const stepIndex: Record<string, number> = { intro: 0, q1: 1, q2: 2, q3: 3, q4: 4, bridge: 5 };
@@ -191,6 +192,9 @@ export function CallContent({
           <div className="text-xs text-foreground/50">{activeContact.phone}</div>
           <div className="text-[10px] text-muted-foreground/30">{activeContact.email}</div>
         </div>
+        {onShowDetail && (
+          <button onClick={onShowDetail} className="p-2 rounded-lg bg-foreground/[0.04] text-muted-foreground hover:text-foreground transition-colors">ℹ️</button>
+        )}
         {callState === 'idle' && (
           <button
             onClick={onStartDialing}

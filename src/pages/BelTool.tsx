@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import type { Company, CompanyContact, CallPhase, CallState, SurveyAnswers, Appointment, CallbackEntry, Webhook } from '@/types/beltool';
+import type { Company, CompanyContact, CallPhase, CallState, SurveyAnswers, Appointment, CallbackEntry, Webhook, GhlConfig } from '@/types/beltool';
 import { COMPANIES_INIT, defaultSurvey } from '@/lib/beltool-data';
 import { USERS, type User } from '@/lib/beltool-data';
 import { store } from '@/lib/beltool-store';
@@ -18,6 +18,7 @@ import { Leaderboard } from '@/components/beltool/Leaderboard';
 import { AgendaView } from '@/components/beltool/AgendaView';
 import { CallbackScheduler } from '@/components/beltool/CallbackScheduler';
 import { Modal } from '@/components/beltool/Modal';
+import { ContactDetailPanel } from '@/components/beltool/ContactDetailPanel';
 
 export default function BelTool() {
   const [user, setUser] = useState<User | null>(() => store.get('user', null));
@@ -50,11 +51,16 @@ export default function BelTool() {
   const [showCallback, setShowCallback] = useState(false);
   const [callbacks, setCallbacks] = useState<CallbackEntry[]>(() => store.get('callbacks', []));
   const [showCallbackQueue, setShowCallbackQueue] = useState(false);
-  const [showAgenda, setShowAgenda] = useState(false);
+   const [showAgenda, setShowAgenda] = useState(false);
+  const [showDetail, setShowDetail] = useState(false);
   const [appts, setAppts] = useState<Appointment[]>(() => store.get('appointments', []));
   const [webhooks, setWebhooks] = useState<Webhook[]>(() => store.get('webhooks', []));
   const [apiKey, setApiKey] = useState(() => store.get('apiKey', ''));
   const [surveyConfig, setSurveyConfig] = useState(() => store.get('surveyConfig', defaultSurvey()));
+  const [ghlConfig, setGhlConfig] = useState<GhlConfig>(() => store.get('ghlConfig', {
+    apiKey: '', locationId: '', pipelineId: '', calendarId: '',
+    syncContacts: true, syncOpportunities: true, syncAppointments: true, createNotes: true,
+  }));
 
   const t = i18n[lang as keyof typeof i18n] || i18n.nl;
   const activeComp = companies.find(c => c.id === activeCompId) || null;
@@ -268,7 +274,15 @@ export default function BelTool() {
     }
   };
 
-  const nextContact = () => { setPhase('idle'); setCallState('idle'); setActiveCompId(null); setActiveContactId(null); };
+  const nextContact = () => { setPhase('idle'); setCallState('idle'); setActiveCompId(null); setActiveContactId(null); setShowDetail(false); };
+
+  const updateContact = (uc: CompanyContact) => {
+    setCompanies(cs => cs.map(c => c.id === activeCompId ? { ...c, contacts: c.contacts.map(ct => ct.id === uc.id ? uc : ct) } : c));
+  };
+
+  const updateCompany = (uc: Company) => {
+    setCompanies(cs => cs.map(c => c.id === uc.id ? { ...c, ...uc } : c));
+  };
   const handleLogin = (u: User) => { setUser(u); store.set('user', u); };
   const handleLogout = () => { setUser(null); store.del('user'); setPhase('idle'); setActiveCompId(null); };
 
@@ -294,7 +308,7 @@ export default function BelTool() {
 
   if (!user) return <LoginScreen onLogin={handleLogin} />;
 
-  const ctx = { lang, setLang, user, t, allScores, setAllScores, webhooks, setWebhooks, apiKey, setApiKey, surveyConfig, setSurveyConfig };
+  const ctx = { lang, setLang, user, t, allScores, setAllScores, webhooks, setWebhooks, apiKey, setApiKey, surveyConfig, setSurveyConfig, ghlConfig, setGhlConfig };
 
   return (
     <BelToolContext.Provider value={ctx}>
@@ -376,6 +390,7 @@ export default function BelTool() {
                     onHangup={hangup}
                     onConfirmConnected={confirmConnected}
                     activeCompId={activeCompId}
+                    onShowDetail={() => setShowDetail(true)}
                   />
                 </div>
                 {curStep >= 1 && (
@@ -385,6 +400,15 @@ export default function BelTool() {
                     onNoAnswer={() => { endCall('noanswer', 'geenGehoor'); addScore('geenGehoor'); flash(t.noAnswerNoted); }}
                     onGoToAppointment={() => { if (activeCompId) updateCompStage(activeCompId, 'enqueteTel'); addScore('enquete'); setPhase('bridge'); }}
                     onShowCallback={() => setShowCallback(true)}
+                  />
+                )}
+                {showDetail && activeContact && activeComp && (
+                  <ContactDetailPanel
+                    contact={activeContact}
+                    company={activeComp}
+                    onUpdateContact={updateContact}
+                    onUpdateCompany={updateCompany}
+                    onClose={() => setShowDetail(false)}
                   />
                 )}
               </div>
