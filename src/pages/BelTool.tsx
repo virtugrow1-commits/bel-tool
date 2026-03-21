@@ -20,6 +20,7 @@ import { AgendaView } from '@/components/beltool/AgendaView';
 import { CallbackScheduler } from '@/components/beltool/CallbackScheduler';
 import { Modal } from '@/components/beltool/Modal';
 import { ContactDetailPanel } from '@/components/beltool/ContactDetailPanel';
+import { CrmNavSidebar } from '@/components/beltool/CrmNavSidebar';
 
 export default function BelTool() {
   const [user, setUser] = useState<User | null>(() => store.get('user', null));
