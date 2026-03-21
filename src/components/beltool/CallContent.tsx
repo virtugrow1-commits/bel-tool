@@ -123,8 +123,15 @@ export function CallContent({
           </div>
           <div className="text-lg font-bold">{contactName}</div>
           <div className="text-[13px] text-muted-foreground mt-0.5">{activeContact.role} — {activeComp.name}</div>
-          <div className="text-sm text-foreground/50 mt-2 tabular-nums">{activeContact.phone}</div>
-          <div className="text-xs text-muted-foreground/30 mt-0.5">{activeContact.email}</div>
+          <div className="mt-2 flex items-center justify-center gap-1.5">
+            <input
+              type="tel"
+              defaultValue={activeContact.phone}
+              onChange={e => { activeContact.phone = e.target.value; }}
+              className="bg-transparent border border-border/40 rounded-lg px-3 py-1.5 text-sm text-foreground tabular-nums text-center w-[200px] outline-none focus:ring-1 focus:ring-primary"
+            />
+          </div>
+          <div className="text-xs text-muted-foreground/30 mt-1">{activeContact.email}</div>
 
           {callState === 'idle' && (
             <button
