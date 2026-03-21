@@ -292,17 +292,39 @@ export default function BelTool() {
     }
   };
 
+  // Map BelTool stages to GHL pipeline stage names
+  const STAGE_TO_GHL: Record<string, string> = {
+    nietInteressant: 'Niet Interessant',
+    geenGehoor: 'Neemt niet op',
+    terugbellenGepland: 'Later terug bellen',
+    afspraak: 'Afspraak ingeplant',
+    enqueteVerstuurd: 'Vraag om extra info (mail)',
+  };
+
   const endCall = (ph: CallPhase, stage: Company['stage']) => {
     setPhase(ph);
     setCallState('ended');
     if (activeCompId) {
       updateCompStage(activeCompId, stage);
       ghl.updateContactStage(activeContactId || '', stage);
-      // Save notes to GHL if any
+
+      // Move opportunity to the correct GHL pipeline stage
+      if (pipelineInfo && STAGE_TO_GHL[stage]) {
+        ghl.getPipelines().then((data) => {
+          const pipeline = data?.pipelines?.find((p: any) => p.id === pipelineInfo.pipelineId);
+          const ghlStage = pipeline?.stages?.find((s: any) => s.name === STAGE_TO_GHL[stage]);
+          if (ghlStage) {
+            ghl.upsertOpportunity(activeContactId || '', pipelineInfo.pipelineId, ghlStage.id, activeComp?.name || 'Lead');
+          }
+        }).catch(console.error);
+      }
+
+      // Remove from local list so it doesn't show as "Nieuwe Lead" anymore
+      setCompanies(prev => prev.filter(c => c.id !== activeCompId));
+
       if (notes.trim()) {
         ghl.createNote(activeContactId || '', notes).catch(console.error);
       }
-      // Save survey answers if completed
       if (['done', 'sent'].includes(ph) && answers.hours) {
         ghl.saveSurveyAnswers(activeContactId || '', answers).catch(console.error);
       }
