@@ -5,6 +5,8 @@ export interface CompanyContact {
   role: string;
   phone: string;
   email: string;
+  linkedin?: string;
+  notes?: string;
 }
 
 export interface Company {
@@ -12,6 +14,21 @@ export interface Company {
   name: string;
   stage: CompanyStage;
   contacts: CompanyContact[];
+  industry?: string;
+  website?: string;
+  address?: string;
+  notes?: string;
+}
+
+export interface GhlConfig {
+  apiKey: string;
+  locationId: string;
+  pipelineId: string;
+  calendarId: string;
+  syncContacts: boolean;
+  syncOpportunities: boolean;
+  syncAppointments: boolean;
+  createNotes: boolean;
 }
 
 export type CompanyStage =
