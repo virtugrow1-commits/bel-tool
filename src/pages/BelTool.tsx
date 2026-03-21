@@ -64,8 +64,57 @@ export default function BelTool() {
   const convRate = scores.gebeld > 0 ? Math.round(((scores.enquetes + scores.afspraken) / scores.gebeld) * 100) : 0;
   const todayStr = new Date().toISOString().split('T')[0];
   const dueCallbacks = callbacks.filter(cb => cb.date <= todayStr && cb.status === 'scheduled');
+  // Load contacts from GHL on login
+  useEffect(() => {
+    if (!user) return;
+    setGhlLoading(true);
+    setGhlError(null);
+    ghl.getContacts()
+      .then((data: { contacts?: Array<{ id: string; firstName?: string; lastName?: string; companyName?: string; phone?: string; email?: string; tags?: string[]; }> }) => {
+        if (data?.contacts && Array.isArray(data.contacts)) {
+          // Group contacts by company
+          const companyMap = new Map<string, Company>();
+          for (const c of data.contacts) {
+            const compName = c.companyName || `${c.firstName || ''} ${c.lastName || ''}`.trim();
+            const compKey = compName.toLowerCase().replace(/\s+/g, '-');
+            if (!companyMap.has(compKey)) {
+              companyMap.set(compKey, {
+                id: `ghl-${compKey}`,
+                name: compName,
+                stage: 'nieuw',
+                contacts: [],
+              });
+            }
+            const comp = companyMap.get(compKey)!;
+            comp.contacts.push({
+              id: c.id,
+              firstName: c.firstName || '',
+              lastName: c.lastName || '',
+              role: '',
+              phone: c.phone || '',
+              email: c.email || '',
+            });
+            // Map GHL tags to stages
+            if (c.tags?.includes('afspraak')) comp.stage = 'afspraak';
+            else if (c.tags?.includes('terugbellen')) comp.stage = 'terugbellen';
+            else if (c.tags?.includes('enqueteTel')) comp.stage = 'enqueteTel';
+            else if (c.tags?.includes('nietInteressant')) comp.stage = 'nietInteressant';
+          }
+          const ghlCompanies = Array.from(companyMap.values());
+          if (ghlCompanies.length > 0) {
+            setCompanies(ghlCompanies);
+          }
+          // If no contacts from GHL, keep demo data
+        }
+      })
+      .catch((err: Error) => {
+        console.warn('GHL load failed, using demo data:', err.message);
+        setGhlError(err.message);
+      })
+      .finally(() => setGhlLoading(false));
+  }, [user]);
 
-  const flash = useCallback((msg: string, type?: string) => {
+
     setToast({ msg, type: type || 'ok' });
     setTimeout(() => setToast(null), 3000);
   }, []);
