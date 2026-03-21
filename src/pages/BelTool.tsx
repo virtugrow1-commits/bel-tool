@@ -519,26 +519,26 @@ export default function BelTool() {
 
         {/* Incoming call popup */}
         {incomingCall && (
-          <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50" style={{ animation: 'fadeIn 0.15s ease' }}>
+          <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/30" style={{ animation: 'fadeIn 0.15s ease', backdropFilter: 'blur(4px)' }}>
             <div
-              className="bg-[hsl(222_32%_12%)] border border-border/50 rounded-2xl shadow-2xl p-6 w-[360px]"
+              className="bg-card border border-border rounded-2xl shadow-xl p-6 w-[360px]"
               style={{ animation: 'incomingRing 0.5s ease infinite alternate' }}
             >
               <div className="text-center mb-4">
                 <div className="text-5xl mb-3" style={{ animation: 'phoneShake 0.4s ease infinite' }}>📱</div>
                 <div className="text-lg font-bold text-foreground">Inkomend gesprek</div>
-                <div className="text-[13px] text-muted-foreground/50 mt-1">
+                <div className="text-[13px] text-muted-foreground mt-1">
                   {incomingCall.contactName ? 'Lead belt terug!' : 'Onbekend nummer'}
                 </div>
               </div>
-              <div className="bg-foreground/[0.04] rounded-xl p-4 mb-4 border border-border/30">
+              <div className="bg-muted/50 rounded-xl p-4 mb-4 border border-border">
                 {incomingCall.contactName ? (
                   <>
-                    <div className="font-bold text-[16px]">{incomingCall.contactName}</div>
-                    <div className="text-[13px] text-muted-foreground/40 mt-0.5">{incomingCall.companyName}</div>
+                    <div className="font-bold text-[16px] text-foreground">{incomingCall.contactName}</div>
+                    <div className="text-[13px] text-muted-foreground mt-0.5">{incomingCall.companyName}</div>
                   </>
                 ) : (
-                  <div className="font-bold text-[16px]">Onbekend contact</div>
+                  <div className="font-bold text-[16px] text-foreground">Onbekend contact</div>
                 )}
                 <div className="text-[13px] text-primary mt-2 font-mono">{incomingCall.callerNumber}</div>
               </div>
@@ -551,7 +551,7 @@ export default function BelTool() {
                     })();
                     setIncomingCall(null);
                   }}
-                  className="flex-1 py-3 rounded-xl bg-destructive/20 border border-destructive/30 text-destructive text-[13px] font-semibold hover:bg-destructive/30 active:scale-[0.97] transition-all"
+                  className="flex-1 py-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-[13px] font-semibold hover:bg-destructive/20 active:scale-[0.97] transition-all"
                 >
                   ✕ Weigeren
                 </button>
@@ -571,7 +571,7 @@ export default function BelTool() {
                     })();
                     setIncomingCall(null);
                   }}
-                  className="flex-1 py-3 rounded-xl bg-[hsl(152_56%_42%)] text-white text-[13px] font-semibold hover:bg-[hsl(152_56%_38%)] active:scale-[0.97] transition-all shadow-lg"
+                  className="flex-1 py-3 rounded-xl bg-success text-white text-[13px] font-semibold hover:bg-success/90 active:scale-[0.97] transition-all shadow-sm"
                   style={{ animation: 'pulse 1.5s ease infinite' }}
                 >
                   📞 Opnemen
