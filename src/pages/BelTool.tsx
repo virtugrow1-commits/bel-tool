@@ -348,7 +348,7 @@ export default function BelTool() {
       else if (type === 'geenGehoor') s.geenGehoor = p.geenGehoor + 1;
       else if (type === 'callback') { s.callbacks = (p.callbacks || 0) + 1; s.reeks = p.reeks + 1; }
       if (s.reeks > p.bestReeks) s.bestReeks = s.reeks;
-      s.log = [{ time: fmtTime(), contact: contactName, result: type }, ...(p.log || [])].slice(0, 50);
+      s.log = [{ time: fmtTime(), contact: contactName, result: type, contactId: activeContactId || undefined, companyId: activeCompId || undefined }, ...(p.log || [])].slice(0, 50);
       const next = { ...prev, [user.id]: s };
       store.set('scores', next);
       return next;
