@@ -509,6 +509,7 @@ export function CallContent({
         contact={activeContact}
         company={activeComp}
         onHangup={onHangup}
+        onConfirmConnected={onConfirmConnected}
       />
     </>
   );

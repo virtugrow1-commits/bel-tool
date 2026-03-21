@@ -8,6 +8,7 @@ interface CallDisplayProps {
   contact: CompanyContact;
   company: Company;
   onHangup: () => void;
+  onConfirmConnected?: () => void;
 }
 
 function formatDuration(seconds: number) {
@@ -23,7 +24,7 @@ const DTMF_KEYS = [
   ['*', '0', '#'],
 ];
 
-export function CallDisplay({ callState, contact, company, onHangup }: CallDisplayProps) {
+export function CallDisplay({ callState, contact, company, onHangup, onConfirmConnected }: CallDisplayProps) {
   const [elapsed, setElapsed] = useState(0);
   const [muted, setMuted] = useState(false);
   const [held, setHeld] = useState(false);
@@ -183,7 +184,17 @@ export function CallDisplay({ callState, contact, company, onHangup }: CallDispl
               </button>
             </div>
           ) : (
-            <div className="flex items-center justify-center">
+            <div className="flex items-center justify-center gap-2">
+              {onConfirmConnected && (
+                <button
+                  onClick={onConfirmConnected}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-success text-white text-sm font-semibold hover:bg-success/90 transition-all duration-150 active:scale-95 shadow-lg"
+                  title="Handmatig bevestigen dat gesprek is opgenomen"
+                >
+                  <Phone size={15} />
+                  Opgenomen
+                </button>
+              )}
               <button
                 onClick={onHangup}
                 className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-destructive text-white text-sm font-semibold hover:bg-destructive/90 transition-all duration-150 active:scale-95 shadow-lg"
