@@ -185,32 +185,37 @@ export function CallContent({
   const currentStepNum = stepIndex[phase] ?? -1;
   const contactName = `${activeContact.firstName} ${activeContact.lastName}`;
 
-  // Idle screen
+  // Idle screen — show scores in the center
   if (phase === 'idle') {
     return (
       <div className="flex-1 flex flex-col items-center justify-center text-center gap-3 bg-background">
         <div className="text-5xl">📞</div>
         <div className="text-lg font-bold text-foreground/50 mt-4">{t.selectContact}</div>
         <div className="text-[13px] text-muted-foreground mt-1.5">{t.clickName}</div>
-        {scores.gebeld > 0 && (
-          <div className="animate-fade-in mt-5 bg-card rounded-xl p-5 border border-border shadow-cliq">
-            <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-3 text-center">{t.sessionOverview}</div>
-            <div className="flex gap-5 justify-center">
-              {[
-                { l: t.called, v: scores.gebeld, c: 'hsl(var(--navy))' },
-                { l: t.surveys, v: scores.enquetes, c: 'hsl(var(--primary))' },
-                { l: t.appointments, v: scores.afspraken, c: 'hsl(var(--success))' },
-                { l: t.conversion, v: scores.gebeld > 0 ? Math.round(((scores.enquetes + scores.afspraken) / scores.gebeld) * 100) + '%' : '0%', c: 'hsl(var(--warning))' },
-                { l: t.bestStreak, v: scores.bestReeks, c: 'hsl(var(--warning))' },
-              ].map(x => (
-                <div key={x.l} className="text-center">
-                  <div className="text-[22px] font-extrabold" style={{ color: x.c }}>{x.v}</div>
-                  <div className="text-[11px] text-muted-foreground mt-0.5">{x.l}</div>
-                </div>
-              ))}
-            </div>
+
+        {/* Session score overview — always visible */}
+        <div className="animate-fade-in mt-6 bg-card rounded-2xl p-6 border border-border shadow-sm w-full max-w-lg">
+          <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-4 text-center">{t.sessionOverview || 'Sessie overzicht'}</div>
+          <div className="grid grid-cols-5 gap-4">
+            {[
+              { l: t.called, v: scores.gebeld, c: 'hsl(var(--navy))' },
+              { l: t.surveys, v: scores.enquetes, c: 'hsl(var(--primary))' },
+              { l: t.appointments, v: scores.afspraken, c: 'hsl(var(--success))' },
+              { l: t.conversion, v: scores.gebeld > 0 ? Math.round(((scores.enquetes + scores.afspraken) / scores.gebeld) * 100) + '%' : '0%', c: 'hsl(var(--warning))' },
+              { l: t.bestStreak, v: scores.bestReeks, c: 'hsl(var(--warning))' },
+            ].map(x => (
+              <div key={x.l} className="text-center">
+                <div className="text-[28px] font-extrabold leading-none" style={{ color: x.c }}>{x.v}</div>
+                <div className="text-[11px] text-muted-foreground mt-1.5">{x.l}</div>
+              </div>
+            ))}
           </div>
-        )}
+          {scores.reeks >= 2 && (
+            <div className="mt-4 text-center">
+              <span className="text-sm font-bold px-3 py-1 rounded-full bg-warning/10 text-warning border border-warning/20">🔥 {scores.reeks}x streak!</span>
+            </div>
+          )}
+        </div>
       </div>
     );
   }
@@ -268,6 +273,9 @@ export function CallContent({
               <ActionBtn variant="warning" onClick={onShowCallback}>{t.callback}</ActionBtn>
               <ActionBtn variant="muted" onClick={() => { onEndCall('noanswer', 'geenGehoor'); addScore('geenGehoor'); showToast(t.noAnswerNoted); }}>{t.noAnswerAction}</ActionBtn>
               <ActionBtn variant="danger" onClick={() => { onEndCall('lost', 'nietInteressant'); addScore('afgevallen'); }}>{t.notInterested}</ActionBtn>
+              {user?.role === 'admin' && (
+                <ActionBtn variant="ghost" onClick={() => { onEndCall('idle' as any, 'nieuw'); showToast('Lead gereset', 'info'); }}>✕ Annuleren</ActionBtn>
+              )}
             </div>
           </StepLayout>
         )}
