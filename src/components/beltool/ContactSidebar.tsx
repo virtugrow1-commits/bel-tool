@@ -191,79 +191,10 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
           <button onClick={onLogout} className="text-muted-foreground text-[10px] hover:text-foreground transition-colors" title="Uitloggen">↗</button>
         </div>
 
-        {/* Row 3: Daily targets only */}
-        <div className="bg-card border border-border rounded-xl p-2.5 mb-2 shadow-sm">
-          <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">📊 Dagdoel</div>
-          <div className="space-y-1.5">
-            {[
-              { label: 'Calls', current: scores.gebeld, target: targets.calls, color: 'hsl(var(--navy))' },
-              { label: 'Enquêtes', current: scores.enquetes, target: targets.surveys, color: 'hsl(var(--primary))' },
-              { label: 'Afspraken', current: scores.afspraken, target: targets.appointments, color: 'hsl(var(--success))' },
-            ].map(it => {
-              const pct = Math.min((it.current / it.target) * 100, 100);
-              const done = it.current >= it.target;
-              return (
-                <div key={it.label} className="flex items-center gap-2">
-                  <span className="text-[10px] font-medium text-muted-foreground w-[52px]">{it.label}</span>
-                  <div className="flex-1 h-[4px] rounded-full bg-muted overflow-hidden">
-                    <div className="h-full rounded-full transition-[width] duration-700" style={{ width: `${pct}%`, background: done ? 'hsl(var(--success))' : it.color }} />
-                  </div>
-                  <span className={cn('text-[10px] font-bold tabular-nums', done ? 'text-success' : 'text-foreground/60')}>
-                    {it.current}/{it.target}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-          <button
-            onClick={() => setShowTargetEdit(!showTargetEdit)}
-            className="text-[9px] text-muted-foreground hover:text-primary transition-colors mt-1.5 block"
-          >
-            {showTargetEdit ? '▲ Sluiten' : '⚙ Aanpassen'}
-          </button>
-          {showTargetEdit && (
-            <div className="bg-muted/30 border border-border rounded-lg p-2 mt-1.5 space-y-1">
-              {(['calls', 'appointments', 'surveys'] as const).map(key => (
-                <div key={key} className="flex items-center gap-2">
-                  <span className="text-[10px] text-muted-foreground w-[52px]">{key === 'calls' ? 'Calls' : key === 'appointments' ? 'Afspraken' : 'Enquêtes'}</span>
-                  <input
-                    type="number"
-                    value={targets[key]}
-                    onChange={e => {
-                      const v = { ...targets, [key]: Math.max(1, parseInt(e.target.value) || 1) };
-                      setTargets(v);
-                      store.set('dailyTargets', v);
-                    }}
-                    className="flex-1 px-2 py-1 rounded-md border border-border bg-card text-foreground text-[11px] outline-none focus:border-primary w-16"
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
         {/* Best call time tip (compact) */}
         {callTimeTip && (
           <div className="px-2.5 py-1.5 rounded-lg bg-primary/[0.06] border border-primary/15 mb-2 text-[10px] font-medium text-primary">
             {callTimeTip}
-          </div>
-        )}
-
-        {/* Quick notes */}
-        {onInsertNote && phase !== 'idle' && (
-          <div className="mb-2.5">
-            <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-1">📝 Snelnotities</div>
-            <div className="flex flex-wrap gap-1">
-              {QUICK_NOTES.map(n => (
-                <button
-                  key={n.label}
-                  onClick={() => onInsertNote(n.label)}
-                  className="px-2 py-1 rounded-md border border-border bg-muted/30 text-[10px] font-medium text-foreground/70 hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-colors active:scale-[0.95]"
-                >
-                  {n.icon} {n.label}
-                </button>
-              ))}
-            </div>
           </div>
         )}
 
