@@ -402,6 +402,15 @@ export default function BelTool() {
                     onShowCallback={() => setShowCallback(true)}
                   />
                 )}
+                {showDetail && activeContact && activeComp && (
+                  <ContactDetailPanel
+                    contact={activeContact}
+                    company={activeComp}
+                    onUpdateContact={updateContact}
+                    onUpdateCompany={updateCompany}
+                    onClose={() => setShowDetail(false)}
+                  />
+                )}
               </div>
             </>
           ) : (
