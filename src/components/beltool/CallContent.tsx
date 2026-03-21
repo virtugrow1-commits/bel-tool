@@ -447,7 +447,7 @@ export function CallContent({
         callState={callState}
         contact={activeContact}
         company={activeComp}
-        onHangup={() => { onEndCall('lost', 'nietInteressant'); addScore('afgevallen'); }}
+        onHangup={onHangup}
       />
     </>
   );
