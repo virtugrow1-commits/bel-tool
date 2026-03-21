@@ -197,8 +197,6 @@ export function SettingsPanel({ open, onClose, onSyncLeads }: { open: boolean; o
           <div className="space-y-3">
             {([
               { key: 'leads', icon: '📋', label: 'Leads synchroniseren', desc: 'Haal de nieuwste leads op uit de Bellen pipeline' },
-              { key: 'contacts', icon: '👥', label: 'Contacten synchroniseren', desc: 'Werk contactgegevens bij vanuit GHL' },
-              { key: 'pipeline', icon: '📊', label: 'Pipeline synchroniseren', desc: 'Synchroniseer pipeline stages met GHL' },
               { key: 'calendars', icon: '📅', label: 'Kalenders synchroniseren', desc: 'Haal beschikbare kalenders op uit GHL' },
             ] as const).map(item => (
               <div key={item.key} className="flex items-center gap-3 p-4 rounded-xl bg-foreground/[0.02] border border-border/40">
@@ -208,34 +206,44 @@ export function SettingsPanel({ open, onClose, onSyncLeads }: { open: boolean; o
                   <div className="text-[11px] text-muted-foreground/50">{item.desc}</div>
                 </div>
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     setTestStatus(`syncing-${item.key}`);
-                    setTimeout(() => {
+                    try {
+                      if (item.key === 'leads') {
+                        await onSyncLeads();
+                      } else if (item.key === 'calendars') {
+                        await ghl.getCalendars();
+                      }
                       setTestStatus(`synced-${item.key}`);
-                      setTimeout(() => setTestStatus(null), 3000);
-                    }, 2000);
+                    } catch {
+                      setTestStatus(`error-${item.key}`);
+                    }
+                    setTimeout(() => setTestStatus(null), 3000);
                   }}
                   disabled={testStatus?.startsWith('syncing')}
                   className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-semibold active:scale-[0.97] transition-transform disabled:opacity-40"
                 >
-                  {testStatus === `syncing-${item.key}` ? '⏳ Bezig...' : testStatus === `synced-${item.key}` ? '✅ Klaar!' : '🔄 Sync'}
+                  {testStatus === `syncing-${item.key}` ? '⏳ Bezig...' : testStatus === `synced-${item.key}` ? '✅ Klaar!' : testStatus === `error-${item.key}` ? '❌ Fout' : '🔄 Sync'}
                 </button>
               </div>
             ))}
           </div>
 
           <button
-            onClick={() => {
+            onClick={async () => {
               setTestStatus('syncing-all');
-              setTimeout(() => {
+              try {
+                await onSyncLeads();
                 setTestStatus('synced-all');
-                setTimeout(() => setTestStatus(null), 3000);
-              }, 3000);
+              } catch {
+                setTestStatus('error-all');
+              }
+              setTimeout(() => setTestStatus(null), 3000);
             }}
             disabled={testStatus?.startsWith('syncing')}
             className="w-full py-3 rounded-lg bg-primary text-primary-foreground text-sm font-bold active:scale-[0.97] transition-transform disabled:opacity-40"
           >
-            {testStatus === 'syncing-all' ? '⏳ Alles synchroniseren...' : testStatus === 'synced-all' ? '✅ Alles gesynchroniseerd!' : '🔄 Alles synchroniseren'}
+            {testStatus === 'syncing-all' ? '⏳ Alles synchroniseren...' : testStatus === 'synced-all' ? '✅ Alles gesynchroniseerd!' : testStatus === 'error-all' ? '❌ Synchronisatie mislukt' : '🔄 Alles synchroniseren'}
           </button>
 
           {!ghlConfig.apiKey && (
