@@ -9,7 +9,54 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { phone, leadId, leadName } = await req.json();
+    const body = await req.json();
+    const { action } = body;
+
+    const voysEmail = Deno.env.get('VOYS_EMAIL');
+    const voysToken = Deno.env.get('VOYS_API_TOKEN');
+    const voysDevice = Deno.env.get('VOYS_DEVICE_ID');
+    const voysOutbound = Deno.env.get('VOYS_OUTBOUND_NUMBER');
+    const authHeader = `Token ${voysEmail}:${voysToken}`;
+
+    // ── HANGUP ──
+    if (action === 'hangup') {
+      const { callId } = body;
+      if (!callId) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'callId is verplicht' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      console.log('Voys hangup:', callId);
+
+      const res = await fetch(`https://api.voipgrid.nl/api/clicktodial/${callId}/`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': authHeader,
+          'Accept': 'application/json',
+        },
+      });
+
+      console.log('Voys hangup response:', res.status);
+
+      // 204 No Content = success for DELETE
+      if (res.ok || res.status === 204) {
+        return new Response(
+          JSON.stringify({ success: true, message: 'Gesprek beëindigd' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      } else {
+        const text = await res.text();
+        return new Response(
+          JSON.stringify({ success: false, error: `Ophangen mislukt (${res.status})`, details: text }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
+    // ── DIAL (default) ──
+    const { phone, leadId, leadName } = body;
 
     if (!phone) {
       return new Response(
@@ -28,22 +75,13 @@ Deno.serve(async (req) => {
       normalizedPhone = '+31' + normalizedPhone;
     }
 
-    const voysEmail = Deno.env.get('VOYS_EMAIL');
-    const voysToken = Deno.env.get('VOYS_API_TOKEN');
-    const voysDevice = Deno.env.get('VOYS_DEVICE_ID');
-    const voysOutbound = Deno.env.get('VOYS_OUTBOUND_NUMBER');
-
     if (!voysEmail || !voysToken || !voysDevice) {
       return new Response(
-        JSON.stringify({ success: false, error: 'Voys configuratie ontbreekt', missing: { email: !voysEmail, token: !voysToken, device: !voysDevice } }),
+        JSON.stringify({ success: false, error: 'Voys configuratie ontbreekt' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Voys/VoIPGRID Click-to-Dial API
-    // a_number = internal extension (e.g. "202") or the full phone number of your device
-    // b_number = destination phone number
-    // b_cli = outbound caller ID shown to b_number (optional)
     const voysBody: Record<string, string> = {
       a_number: voysDevice,
       b_number: normalizedPhone,
@@ -51,9 +89,6 @@ Deno.serve(async (req) => {
     if (voysOutbound) {
       voysBody.b_cli = voysOutbound;
     }
-
-    // VoIPGRID API uses Token authentication: "Token email:api_token"
-    const authHeader = `Token ${voysEmail}:${voysToken}`;
 
     console.log('Voys request:', JSON.stringify({ ...voysBody, auth_type: 'Token', email: voysEmail }));
 
@@ -70,7 +105,7 @@ Deno.serve(async (req) => {
     let voysData: Record<string, unknown> = {};
     const responseText = await voysResponse.text();
     console.log('Voys response:', voysResponse.status, responseText);
-    
+
     try {
       voysData = JSON.parse(responseText);
     } catch {
