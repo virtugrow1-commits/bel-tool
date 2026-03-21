@@ -23,10 +23,9 @@ export const USERS: User[] = [
 ];
 
 export const ADVISORS: Advisor[] = [
-  { id: 'a1', name: 'Willem Claassen', specialty: 'AI & Automatisering' },
-  { id: 'a2', name: 'Sophie van Dijk', specialty: 'CRM & Workflows' },
-  { id: 'a3', name: 'Mark Bakker', specialty: 'Marketing & Sales' },
-  { id: 'a4', name: 'Eva de Groot', specialty: 'Telefonie & Integratie' },
+  { id: '09a9x0oU0pFO3boHXMtJ', name: 'Willem Claassen', specialty: 'AI & Automatisering' },
+  { id: 'A7NVM9VI9gY1vAQCwjTc', name: 'Sophie van Dijk', specialty: 'CRM & Workflows' },
+  { id: 'DzQORGpaY7nDmGdfB5qZ', name: 'Mark Bakker', specialty: 'Marketing & Sales' },
 ];
 
 export const COMPANIES_INIT: Company[] = [
