@@ -1,10 +1,10 @@
 import { cn } from '@/lib/utils';
 import type { CompanyContact, Company, CallPhase, CallState, SurveyAnswers, SelectOption, SurveyConfig } from '@/types/beltool';
 import { CallButton } from './CallButton';
+import { CallDisplay } from './CallDisplay';
 import { useState, useEffect } from 'react';
 import { StepLayout } from './StepLayout';
 import { EndView } from './EndView';
-import { CallStateBar } from './CallStateBar';
 import { renderScript, getWorkdays, fmtDate, TIMES } from '@/lib/beltool-data';
 import { ADVISORS } from '@/lib/beltool-data';
 import { calcLeadScore, leadLabel, type Scores } from '@/lib/beltool-scoring';
@@ -248,7 +248,15 @@ export function CallContent({
             }}
           />
         )}
-        <CallStateBar callState={callState} onHangup={() => { onEndCall('lost', 'nietInteressant'); addScore('afgevallen'); }} />
+        {callState !== 'idle' && callState !== 'ended' && (
+          <div className={cn(
+            'flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold',
+            callState === 'active' ? 'bg-success/10 text-success border border-success/20' : 'bg-warning/10 text-warning border border-warning/20'
+          )}>
+            <div className={cn('w-2 h-2 rounded-full animate-pulse', callState === 'active' ? 'bg-success' : 'bg-warning')} />
+            {callState === 'dialing' ? 'Verbinden...' : callState === 'ringing' ? 'Gaat over...' : 'In gesprek'}
+          </div>
+        )}
       </div>
 
       {/* Content */}
@@ -433,6 +441,14 @@ export function CallContent({
         {phase === 'lost' && <EndView icon="🚫" title={t.notInterestedEnd} sub={`${activeContact.firstName} ${t.markedDropped}`} scores={scores} onNext={onNextContact} />}
         {phase === 'noanswer' && <EndView icon="📵" title={t.noAnswerEnd} sub={`${activeContact.firstName} ${t.markedCallback}`} scores={scores} onNext={onNextContact} />}
       </div>
+
+      {/* Floating call display */}
+      <CallDisplay
+        callState={callState}
+        contact={activeContact}
+        company={activeComp}
+        onHangup={() => { onEndCall('lost', 'nietInteressant'); addScore('afgevallen'); }}
+      />
     </>
   );
 }
