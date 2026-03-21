@@ -100,21 +100,26 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
                         </div>
                       </button>
                     );
-        })}
-        {hasMoreLeads && onLoadMore && (
-          <button
-            onClick={onLoadMore}
-            disabled={loadingMore}
-            className="w-full py-2.5 mt-2 rounded-lg border border-primary/20 bg-primary/[0.06] text-primary text-[12px] font-semibold hover:bg-primary/10 active:scale-[0.97] transition-all disabled:opacity-40"
-          >
-            {loadingMore ? 'Laden...' : 'Volgende 25 leads laden →'}
-          </button>
-        )}
-      </div>
+                  })}
+                </div>
               )}
             </div>
           );
         })}
+        {(() => {
+          const totalLeads = companies.length;
+          const actionedLeads = companies.filter(c => c.stage !== 'nieuw').length;
+          const pct = totalLeads > 0 ? (actionedLeads / totalLeads) * 100 : 0;
+          return hasMoreLeads && onLoadMore && pct >= 60 ? (
+            <button
+              onClick={onLoadMore}
+              disabled={loadingMore}
+              className="w-full py-2.5 mt-3 rounded-lg border border-primary/20 bg-primary/[0.06] text-primary text-[12px] font-semibold hover:bg-primary/10 active:scale-[0.97] transition-all disabled:opacity-40"
+            >
+              {loadingMore ? 'Laden...' : `Volgende 25 leads laden → (${actionedLeads}/${totalLeads} afgewerkt)`}
+            </button>
+          ) : null;
+        })()}
       </div>
       {scores.log.length > 0 && <div className="border-t border-border/30 max-h-[100px] overflow-y-auto px-3 py-1.5"><div className="text-[9px] font-bold text-muted-foreground/20 tracking-[1.5px] mb-1">{t.activity}</div>{scores.log.slice(0, 5).map((e, i) => <div key={i} className="flex items-center gap-1 py-0.5 text-[10px]"><span className="text-muted-foreground/20 w-8">{e.time}</span><span>{{ afspraak: '📅', enquete: '✅', verstuurd: '📨', afgevallen: '🚫', geenGehoor: '📵', callback: '🔔', gebeld: '📞' }[e.result]}</span><span className="text-muted-foreground/40 truncate">{e.contact}</span></div>)}</div>}
     </div>
