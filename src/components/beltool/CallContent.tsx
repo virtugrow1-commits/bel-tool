@@ -7,7 +7,7 @@ import { renderScript, getWorkdays, fmtDate, TIMES } from '@/lib/beltool-data';
 import { ADVISORS } from '@/lib/beltool-data';
 import { calcLeadScore, leadLabel, type Scores } from '@/lib/beltool-scoring';
 import { useBelTool } from '@/contexts/BelToolContext';
-import { Logo } from './Logo';
+import { ghl } from '@/lib/beltool-ghl';
 
 interface CallContentProps {
   activeContact: CompanyContact;
@@ -86,7 +86,7 @@ export function CallContent({
   if (phase === 'idle') {
     return (
       <div className="flex-1 flex flex-col items-center justify-center text-center gap-3">
-        <Logo size={64} />
+        <div className="text-5xl">📞</div>
         <div className="text-lg font-bold text-foreground/40 mt-4">{t.selectContact}</div>
         <div className="text-[13px] text-foreground/20 mt-1.5">{t.clickName}</div>
         {scores.gebeld > 0 && (
@@ -315,6 +315,15 @@ export function CallContent({
                 <ActionBtn wide onClick={() => {
                   if (!bookDate || !bookTime) { showToast(t.pickDateTime, 'err'); return; }
                   if (!bookAdvisor) { showToast(t.selectAdvisor, 'err'); return; }
+                  // Book in GHL
+                  ghl.bookAppointment(activeContact.id, bookDate, bookTime, bookAdvisor).catch(console.error);
+                  // Create task in GHL
+                  ghl.createTask(activeContact.id, `Adviesgesprek ${activeContact.firstName} ${activeContact.lastName}`, {
+                    body: `Afspraak op ${fmtDate(bookDate)} om ${bookTime}`,
+                    dueDate: `${bookDate}T${bookTime}:00`,
+                  }).catch(console.error);
+                  // Update pipeline
+                  ghl.upsertOpportunity(activeContact.id, '', '', `${activeComp.name} - Adviesgesprek`).catch(console.error);
                   onEndCall('done', 'afspraak');
                   addScore('afspraak');
                   const adv = ADVISORS.find(a => a.id === bookAdvisor);
