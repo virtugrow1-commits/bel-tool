@@ -243,8 +243,8 @@ export function CallContent({
             phoneNumber={activeContact.phone}
             leadId={activeContact.id}
             leadName={`${activeContact.firstName} ${activeContact.lastName}`}
-            onCallStarted={() => {
-              onStartDialing();
+            onCallStarted={(callId) => {
+              onStartDialing(callId);
             }}
           />
         )}
