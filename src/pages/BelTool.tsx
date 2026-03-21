@@ -413,6 +413,7 @@ export default function BelTool() {
     terugbellenGepland: 'terugbellen gepland',
     afspraak: 'afspraak gepland',
     enqueteVerstuurd: 'digitaal verstuurd',
+    anderMoment: 'ander moment',
   };
 
   const endCall = (ph: CallPhase, stage: Company['stage']) => {
