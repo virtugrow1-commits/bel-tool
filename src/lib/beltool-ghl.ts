@@ -109,6 +109,10 @@ export const cliq = {
     return callCliq('getCalendars');
   },
 
+  async getFreeSlots(calendarId: string, startDate: string, endDate?: string) {
+    return callCliq('getFreeSlots', { calendarId, startDate, endDate });
+  },
+
   async getUsers() {
     return callCliq('getUsers');
   },
