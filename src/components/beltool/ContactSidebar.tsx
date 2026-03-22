@@ -227,7 +227,7 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
                       isActive ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted/50'
                     )}
                   >
-                    <span className="text-[13px]">{tab.icon}</span>
+                    <span className="text-[13px]">{tab.icon === 'snowflake' ? <Snowflake size={14} className="text-blue-400" /> : tab.icon}</span>
                     <span className="flex-1">{tab.label}</span>
                     {count > 0 && (
                       <span
