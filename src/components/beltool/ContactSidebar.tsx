@@ -12,10 +12,11 @@ import { DarkModeToggle } from './DarkModeToggle';
 import { DailyProgress } from './DailyProgress';
 import { ConnectionStatus } from './ConnectionStatus';
 import { smartSort } from '@/lib/smart-queue';
+import { Snowflake } from 'lucide-react';
 
-const FILTER_TABS: { key: CompanyStage | 'all'; label: string; icon: string }[] = [
+const FILTER_TABS: { key: CompanyStage | 'all'; label: string; icon: string | 'snowflake' }[] = [
   { key: 'all', label: 'Alles', icon: '📋' },
-  { key: 'nieuw', label: 'Nieuw', icon: '🆕' },
+  { key: 'nieuw', label: 'Koud', icon: 'snowflake' },
   { key: 'terugbellenGepland', label: 'Terugbellen', icon: '🔔' },
   { key: 'geenGehoor', label: 'Geen gehoor', icon: '📵' },
   { key: 'enqueteVerstuurd', label: 'Verstuurd', icon: '📨' },
@@ -226,7 +227,7 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
                       isActive ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted/50'
                     )}
                   >
-                    <span className="text-[13px]">{tab.icon}</span>
+                    <span className="text-[13px]">{tab.icon === 'snowflake' ? <Snowflake size={14} className="text-blue-400" /> : tab.icon}</span>
                     <span className="flex-1">{tab.label}</span>
                     {count > 0 && (
                       <span
