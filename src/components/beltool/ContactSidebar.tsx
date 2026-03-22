@@ -323,20 +323,11 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
             </div>
           );
         })}
-        {(() => {
-          const totalLeads = companies.length;
-          const actionedLeads = companies.filter(c => c.stage !== 'nieuw').length;
-          const pct = totalLeads > 0 ? (actionedLeads / totalLeads) * 100 : 0;
-          return hasMoreLeads && onLoadMore && pct >= 60 ? (
-            <button
-              onClick={onLoadMore}
-              disabled={loadingMore}
-              className="w-full py-2.5 mt-2 rounded-xl border border-primary/20 bg-primary/[0.05] text-primary text-[11px] font-semibold hover:bg-primary/10 active:scale-[0.97] transition-all disabled:opacity-40"
-            >
-              {loadingMore ? 'Laden...' : `Volgende 25 laden → (${actionedLeads}/${totalLeads})`}
-            </button>
-          ) : null;
-        })()}
+        {loadingMore && filtered.length > 0 && (
+          <div className="text-center py-2">
+            <span className="text-[10px] text-muted-foreground">Meer leads laden...</span>
+          </div>
+        )}
       </div>
 
       {/* Activity log — fixed height at bottom, independently scrollable */}
