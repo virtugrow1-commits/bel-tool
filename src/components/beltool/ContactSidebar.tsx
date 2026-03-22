@@ -11,7 +11,6 @@ import { ContactSkeleton } from './Skeletons';
 import { DarkModeToggle } from './DarkModeToggle';
 import { DailyProgress } from './DailyProgress';
 import { ConnectionStatus } from './ConnectionStatus';
-import { AttemptBadge } from './AttemptBadge';
 import { smartSort } from '@/lib/smart-queue';
 
 const FILTER_TABS: { key: CompanyStage | 'all'; label: string; icon: string }[] = [
@@ -309,7 +308,6 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
                         <div className="flex-1 min-w-0">
                           <div className={cn('text-[12px] font-semibold truncate', isSel ? 'text-foreground' : 'text-foreground/70')}>{ct.firstName} {ct.lastName}</div>
                         </div>
-                        <AttemptBadge contactId={ct.id} compact />
                       </button>
                     );
                   })}

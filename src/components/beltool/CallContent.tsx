@@ -5,7 +5,6 @@ import { CallDisplay } from './CallDisplay';
 import { ObjectionPanel } from './ObjectionPanel';
 import { VoicemailScript } from './VoicemailScript';
 import { WrapUpTimer } from './WrapUpTimer';
-import { AttemptBadge } from './AttemptBadge';
 import { useState, useEffect } from 'react';
 import { StepLayout } from './StepLayout';
 import { EndView } from './EndView';
@@ -14,7 +13,6 @@ import { ADVISORS } from '@/lib/beltool-data';
 import { calcLeadScore, leadLabel, type Scores } from '@/lib/beltool-scoring';
 import { useBelTool } from '@/contexts/BelToolContext';
 import { cliq } from '@/lib/beltool-ghl';
-import { getAttemptCount } from '@/lib/smart-queue';
 import { store } from '@/lib/beltool-store';
 
 function CalendarPicker({ bookDate, setBookDate, bookTime, setBookTime }: { bookDate: string; setBookDate: (v: string) => void; bookTime: string; setBookTime: (v: string) => void }) {
@@ -211,7 +209,6 @@ export function CallContent({
   const stepIndex: Record<string, number> = { intro: 0, q1: 1, q2: 2, q3: 3, q4: 4, bridge: 5 };
   const currentStepNum = stepIndex[phase] ?? -1;
   const contactName = `${activeContact.firstName} ${activeContact.lastName}`;
-  const attemptCount = getAttemptCount(activeContact.id);
 
   // Idle screen — show scores in the center
   if (phase === 'idle') {
@@ -261,9 +258,8 @@ export function CallContent({
             <div className="font-bold text-[14px] text-foreground">
               {contactName} {activeContact.role && <span className="font-normal text-muted-foreground text-[12px]">• {activeContact.role}</span>}
             </div>
-            <div className="text-[12px] text-muted-foreground flex items-center gap-2">
+            <div className="text-[12px] text-muted-foreground">
               {activeComp.name}
-              <AttemptBadge contactId={activeContact.id} compact />
             </div>
           </div>
           <div className="text-right mr-2 hidden sm:block">
