@@ -37,9 +37,7 @@ export function LoginScreen({ onLogin, onResetPassword, loading }: LoginScreenPr
     <div className="min-h-screen flex items-center justify-center px-4" style={{ background: 'linear-gradient(135deg, #0D1B3E 0%, #1A3060 55%, #00C4B4 100%)' }}>
       <div className="w-full max-w-[400px] rounded-2xl p-8 border" style={{ background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(20px)', borderColor: 'rgba(0,196,180,0.25)', boxShadow: '0 8px 32px rgba(0,196,180,0.2)' }}>
         <div className="text-center mb-6">
-          <div className="w-16 h-16 rounded-2xl bg-primary/20 flex items-center justify-center mx-auto mb-4">
-            <span className="text-4xl">📞</span>
-          </div>
+          <img src="/cliqmakers-logo.png" alt="CliqMakers" className="h-14 mx-auto mb-4 object-contain" />
           <div className="text-2xl font-bold tracking-tight text-white">
             {mode === 'reset' ? 'Wachtwoord herstellen' : 'Bel-Tool'}
           </div>
