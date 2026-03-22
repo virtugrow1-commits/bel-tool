@@ -169,21 +169,23 @@ export default function ProspectSurvey() {
 
   const submit = async () => {
     setStatus('submitting');
+    const errors: string[] = [];
     try {
       const allTaken = answers.taken.concat(answers.takenOverig ? [answers.takenOverig] : []).join(', ');
       let ghlContactId = contactId;
 
       // Step 1: Ensure we have a valid GHL contact
       if (ghlContactId) {
-        // Verify the contact exists in GHL
         try {
           const { data, error } = await supabase.functions.invoke('ghl-proxy', {
             body: { action: 'getContact', contactId: ghlContactId },
           });
           if (error || !data?.contact) {
-            ghlContactId = null; // Contact doesn't exist, will create new
+            console.warn('[Enquête] Contact ID niet gevonden in GHL:', ghlContactId, error);
+            ghlContactId = null;
           }
-        } catch {
+        } catch (err) {
+          console.warn('[Enquête] GHL getContact failed:', err);
           ghlContactId = null;
         }
       }
@@ -202,16 +204,60 @@ export default function ProspectSurvey() {
               source: 'Bel-Tool Enquête (digitaal)',
             },
           });
+          console.log('[Enquête] createContact response:', data, error);
           if (!error && data?.contact?.id) {
             ghlContactId = data.contact.id;
+          } else {
+            errors.push('Contact aanmaken mislukt: ' + (error?.message || JSON.stringify(data)));
           }
-        } catch {
-          // GHL not available — continue with local save
+        } catch (err) {
+          console.error('[Enquête] createContact error:', err);
+          errors.push('GHL niet bereikbaar');
         }
       }
 
       // Step 3: Save survey data to GHL contact
       if (ghlContactId) {
+        // 3a: Create note (BLOCKING — most important, always works)
+        try {
+          const noteBody = `📋 Digitale Enquête Ingevuld:\n⏱️ Uren/week: ${answers.uren}\n🔄 Taken: ${allTaken}\n📈 Groeifase: ${answers.groei}\n🤖 AI status: ${answers.ai}\n\n👤 ${answers.naam} — ${answers.bedrijf}\n📧 ${answers.email}\n📞 ${answers.telefoon}`;
+          const { error } = await supabase.functions.invoke('ghl-proxy', {
+            body: { action: 'createNote', contactId: ghlContactId, body: noteBody },
+          });
+          if (error) {
+            console.error('[Enquête] createNote error:', error);
+            errors.push('Notitie aanmaken mislukt');
+          }
+        } catch (err) {
+          console.error('[Enquête] createNote exception:', err);
+          errors.push('Notitie mislukt');
+        }
+
+        // 3b: Create TASK — "Terugbellen voor adviesgesprek" (BLOCKING)
+        try {
+          const tomorrow = new Date();
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          tomorrow.setHours(9, 0, 0, 0);
+
+          const { error } = await supabase.functions.invoke('ghl-proxy', {
+            body: {
+              action: 'createTask',
+              contactId: ghlContactId,
+              title: `📞 Terugbellen: ${answers.naam} (${answers.bedrijf}) — enquête ingevuld`,
+              body: `Enquête digitaal ingevuld. Terugbellen om adviesgesprek in te plannen.\n\n⏱️ Verliest ${answers.uren}/week aan: ${allTaken}\n📈 ${answers.groei}\n🤖 AI: ${answers.ai}\n\n📧 ${answers.email}\n📞 ${answers.telefoon}`,
+              dueDate: tomorrow.toISOString(),
+            },
+          });
+          if (error) {
+            console.error('[Enquête] createTask error:', error);
+            errors.push('Taak aanmaken mislukt');
+          }
+        } catch (err) {
+          console.error('[Enquête] createTask exception:', err);
+          errors.push('Taak mislukt');
+        }
+
+        // 3c: Save custom fields (non-blocking, may fail if fields not configured)
         const customFields = [
           { id: 'beltool_uren_per_week', field_value: answers.uren },
           { id: 'beltool_taken', field_value: allTaken },
@@ -219,35 +265,33 @@ export default function ProspectSurvey() {
           { id: 'beltool_ai_status', field_value: answers.ai },
         ].filter(f => f.field_value);
 
-        // Save custom fields (non-blocking)
         if (customFields.length > 0) {
           supabase.functions.invoke('ghl-proxy', {
             body: { action: 'saveCustomFields', contactId: ghlContactId, customFields },
-          }).catch(() => {});
+          }).catch(err => console.warn('[Enquête] Custom fields failed (may not be configured):', err));
         }
 
-        // Create note with full summary
-        const noteBody = `📋 Digitale Enquête Ingevuld:\n⏱️ Uren/week: ${answers.uren}\n🔄 Taken: ${allTaken}\n📈 Groeifase: ${answers.groei}\n🤖 AI status: ${answers.ai}\n\n👤 ${answers.naam} — ${answers.bedrijf}\n📧 ${answers.email}\n📞 ${answers.telefoon}`;
-        supabase.functions.invoke('ghl-proxy', {
-          body: { action: 'createNote', contactId: ghlContactId, body: noteBody },
-        }).catch(() => {});
-
-        // Update contact info
+        // 3d: Update contact info (non-blocking)
         supabase.functions.invoke('ghl-proxy', {
           body: {
             action: 'updateContact', contactId: ghlContactId,
             email: answers.email, phone: answers.telefoon,
             name: answers.naam, companyName: answers.bedrijf,
           },
-        }).catch(() => {});
+        }).catch(err => console.warn('[Enquête] updateContact failed:', err));
 
-        // Add tag (if contact was pre-existing, tag wasn't added yet)
+        // 3e: Add tag (non-blocking, may already exist from createContact)
         supabase.functions.invoke('ghl-proxy', {
           body: { action: 'addTag', contactId: ghlContactId, tags: ['enquete-digitaal-ingevuld'] },
-        }).catch(() => {});
+        }).catch(err => console.warn('[Enquête] addTag failed:', err));
       }
 
-      // Step 4: Save locally as backup
+      // Log any GHL errors to console for debugging
+      if (errors.length > 0) {
+        console.warn('[Enquête] GHL sync issues:', errors);
+      }
+
+      // Step 4: Save locally as backup (always succeeds)
       const { saveSurvey, createEmptySurvey } = await import('@/lib/survey-store');
       saveSurvey(createEmptySurvey({
         id: ghlContactId || contactId || crypto.randomUUID(),
@@ -263,7 +307,8 @@ export default function ProspectSurvey() {
       }));
 
       setStatus('done');
-    } catch {
+    } catch (err) {
+      console.error('[Enquête] submit failed:', err);
       setStatus('error');
     }
   };
