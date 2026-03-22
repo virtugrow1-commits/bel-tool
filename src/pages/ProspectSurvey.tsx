@@ -271,11 +271,11 @@ export default function ProspectSurvey() {
           }).catch((err) => console.warn('[Enquête] Custom fields failed (may not be configured):', err));
         }
 
-        // 3d: Update contact info (non-blocking)
+        // 3d: Update contact info (non-blocking, skip phone to avoid GHL duplicate error)
         supabase.functions.invoke('ghl-proxy', {
           body: {
             action: 'updateContact', contactId: ghlContactId,
-            email: answers.email, phone: answers.telefoon,
+            email: answers.email,
             name: answers.naam, companyName: answers.bedrijf
           }
         }).catch((err) => console.warn('[Enquête] updateContact failed:', err));
