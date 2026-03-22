@@ -9,7 +9,7 @@ import { useFlash } from '@/hooks/useFlash';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useDarkMode } from '@/hooks/useDarkMode';
 import { useMobileSidebar } from '@/hooks/useMobileSidebar';
-import { useEffect } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { store } from '@/lib/beltool-store';
@@ -33,8 +33,9 @@ import { ShortcutsHelp } from '@/components/beltool/ShortcutsHelp';
 import { CliqErrorBanner } from '@/components/beltool/CliqErrorBanner';
 import { MobileHeader } from '@/components/beltool/MobileHeader';
 import { AuthGuard } from '@/components/beltool/AuthGuard';
+import { AutoDialCountdown } from '@/components/beltool/AutoDialCountdown';
 import { useSoundEffects } from '@/hooks/useSoundEffects';
-import { recordAttempt } from '@/lib/smart-queue';
+import { recordAttempt, smartSort } from '@/lib/smart-queue';
 
 export default function BelTool() {
   // --- Core hooks ---
@@ -76,6 +77,24 @@ export default function BelTool() {
   const activeComp = companies.find(c => c.id === activeCompId) || null;
   const activeContact = activeComp?.contacts.find(c => c.id === activeContactId) || null;
   const contactName = activeContact ? `${activeContact.firstName} ${activeContact.lastName}` : '';
+
+  // Auto-dial state
+  const [autoDialPending, setAutoDialPending] = useState(false);
+  const autoDialEnabled = store.get('autoDialEnabled', true);
+
+  // Get next contact from smart queue (skipping current)
+  const getNextContact = useCallback(() => {
+    const sorted = smartSort(
+      companies.filter(c => c.stage === 'nieuw' || c.stage === 'bellen' || c.stage === 'terugbellenGepland'),
+      callbacks
+    );
+    for (const comp of sorted) {
+      if (comp.id === activeCompId) continue;
+      const ct = comp.contacts[0];
+      if (ct) return { comp, contact: ct };
+    }
+    return null;
+  }, [companies, callbacks, activeCompId]);
 
   // Keep scoring ref in sync
   useEffect(() => {
@@ -150,6 +169,36 @@ export default function BelTool() {
     logout();
     callFlow.resetCallState();
   };
+
+  // After wrap-up, trigger auto-dial countdown
+  const handleNextContact = useCallback(() => {
+    nextContact();
+    if (autoDialEnabled) {
+      const next = getNextContact();
+      if (next) {
+        setAutoDialPending(true);
+      }
+    }
+  }, [nextContact, autoDialEnabled, getNextContact]);
+
+  const handleAutoDial = useCallback(() => {
+    setAutoDialPending(false);
+    const next = getNextContact();
+    if (next) {
+      selectContact(next.comp, next.contact);
+      closeOnAction();
+    }
+  }, [getNextContact, selectContact, closeOnAction]);
+
+  const handleAutoDialPause = useCallback(() => {
+    setAutoDialPending(false);
+  }, []);
+
+  const handleAutoDialSkip = useCallback(() => {
+    setAutoDialPending(false);
+    // Skip current next and get another
+    flash('Contact overgeslagen', 'info');
+  }, [flash]);
 
   // --- Render ---
   if (authLoading) return <AuthGuard loading={true}><div /></AuthGuard>;
@@ -294,6 +343,8 @@ export default function BelTool() {
               theme={darkMode.theme}
               onThemeChange={darkMode.setTheme}
               callbacks={callbacks}
+              soundEnabled={sfx.isEnabled()}
+              onToggleSound={() => { const on = sfx.toggle(); flash(on ? 'Geluid aan' : 'Geluid uit', 'info'); }}
             />
           </div>
 
@@ -306,7 +357,7 @@ export default function BelTool() {
                     phase={phase} callState={callState} setPhase={setPhase}
                     answers={answers} setAnswers={setAnswers} taskString={taskString}
                     onEndCall={(ph, stage) => endCall(ph, stage, answers, notes, activeContact, activeComp)}
-                    onNextContact={nextContact}
+                    onNextContact={handleNextContact}
                     showToast={flash} updateStage={updateCompStage} addScore={addScoreWithSfx}
                     bookDate={bookDate} setBookDate={setBookDate}
                     bookTime={bookTime} setBookTime={setBookTime}
@@ -343,9 +394,23 @@ export default function BelTool() {
               </div>
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center text-center gap-3">
-                <div className="text-5xl mb-2">📞</div>
-                <div className="text-lg font-bold text-foreground/40">{t.selectContact}</div>
-                <div className="text-[13px] text-foreground/20">{t.clickName}</div>
+                {autoDialPending ? (
+                  <div className="w-full max-w-xs">
+                    <AutoDialCountdown
+                      active={true}
+                      nextContactName={(() => { const n = getNextContact(); return n ? `${n.contact.firstName} ${n.contact.lastName} — ${n.comp.name}` : 'Geen leads meer'; })()}
+                      onDial={handleAutoDial}
+                      onPause={handleAutoDialPause}
+                      onSkip={handleAutoDialSkip}
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-5xl mb-2">📞</div>
+                    <div className="text-lg font-bold text-foreground/40">{t.selectContact}</div>
+                    <div className="text-[13px] text-foreground/20">{t.clickName}</div>
+                  </>
+                )}
               </div>
             )}
           </div>

@@ -11,9 +11,10 @@ interface EndViewProps {
   taskString?: string;
   scores?: Scores;
   onNext: () => void;
+  hideNextButton?: boolean;
 }
 
-export function EndView({ icon, title, sub, items, answers, taskString, scores, onNext }: EndViewProps) {
+export function EndView({ icon, title, sub, items, answers, taskString, scores, onNext, hideNextButton }: EndViewProps) {
   const { t } = useBelTool();
   const conv = scores && scores.gebeld > 0 ? Math.round(((scores.enquetes + scores.afspraken) / scores.gebeld) * 100) : 0;
   const ls = answers ? calcLeadScore(answers) : 0;
@@ -55,9 +56,11 @@ export function EndView({ icon, title, sub, items, answers, taskString, scores, 
           ))}
         </div>
       )}
-      <div className="mt-2">
-        <button onClick={onNext} className="px-5 py-2.5 rounded-lg bg-primary text-white text-[13px] font-semibold active:scale-[0.97] transition-transform shadow-sm">{t.nextContact}</button>
-      </div>
+      {!hideNextButton && (
+        <div className="mt-2">
+          <button onClick={onNext} className="px-5 py-2.5 rounded-lg bg-primary text-white text-[13px] font-semibold active:scale-[0.97] transition-transform shadow-sm">{t.nextContact}</button>
+        </div>
+      )}
     </div>
   );
 }

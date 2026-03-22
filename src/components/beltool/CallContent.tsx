@@ -15,6 +15,7 @@ import { calcLeadScore, leadLabel, type Scores } from '@/lib/beltool-scoring';
 import { useBelTool } from '@/contexts/BelToolContext';
 import { cliq } from '@/lib/beltool-ghl';
 import { getAttemptCount } from '@/lib/smart-queue';
+import { store } from '@/lib/beltool-store';
 
 function CalendarPicker({ bookDate, setBookDate, bookTime, setBookTime }: { bookDate: string; setBookDate: (v: string) => void; bookTime: string; setBookTime: (v: string) => void }) {
   return (
@@ -365,7 +366,10 @@ export function CallContent({
               <div className="mt-4">
                 <ObjectionPanel
                   contactName={activeContact.firstName}
-                  onUseRebuttal={(text) => onNotesChange(notes ? notes + '\nBezwaar-weerlegging gebruikt: ' + text.substring(0, 50) + '...' : 'Bezwaar-weerlegging gebruikt')}
+                  onUseRebuttal={(text) => {
+                    const short = text.length > 80 ? text.substring(0, 80) + '...' : text;
+                    onNotesChange(notes ? notes + '\n📋 Weerlegging: ' + short : '📋 Weerlegging: ' + short);
+                  }}
                 />
               </div>
             )}
@@ -529,21 +533,20 @@ export function CallContent({
           );
         })()}
 
-        {phase === 'sent' && <EndView icon="📨" title={t.surveySent} sub={`${activeContact.firstName} ${t.surveyAutoSent}`} items={[t.emailSent, t.whatsappSent, t.stageUpdated]} scores={scores} onNext={onNextContact} />}
+        {phase === 'sent' && <EndView icon="📨" title={t.surveySent} sub={`${activeContact.firstName} ${t.surveyAutoSent}`} items={[t.emailSent, t.whatsappSent, t.stageUpdated]} scores={scores} onNext={onNextContact} hideNextButton={store.get('wrapUpEnabled', true)} />}
         {phase === 'done' && <EndView icon="🎉" title={t.appointmentBooked} sub={`${t.appointmentWith} ${activeContact.firstName}.`}
           items={[`${t.chooseDate}: ${bookDate ? fmtDate(bookDate) : '-'}`, `${t.chooseTime}: ${bookTime || '-'}`, `${t.advisor}: ${ADVISORS.find(a => a.id === bookAdvisor)?.name || '-'}`, t.confirmAutoSent, t.reminder24]}
-          answers={answers} taskString={taskString} scores={scores} onNext={onNextContact} />}
-        {phase === 'lost' && <EndView icon="🚫" title={t.notInterestedEnd} sub={`${activeContact.firstName} ${t.markedDropped}`} scores={scores} onNext={onNextContact} />}
-        {phase === 'noanswer' && <EndView icon="📵" title={t.noAnswerEnd} sub={`${activeContact.firstName} ${t.markedCallback}`} scores={scores} onNext={onNextContact} />}
+          answers={answers} taskString={taskString} scores={scores} onNext={onNextContact} hideNextButton={store.get('wrapUpEnabled', true)} />}
+        {phase === 'lost' && <EndView icon="🚫" title={t.notInterestedEnd} sub={`${activeContact.firstName} ${t.markedDropped}`} scores={scores} onNext={onNextContact} hideNextButton={store.get('wrapUpEnabled', true)} />}
+        {phase === 'noanswer' && <EndView icon="📵" title={t.noAnswerEnd} sub={`${activeContact.firstName} ${t.markedCallback}`} scores={scores} onNext={onNextContact} hideNextButton={store.get('wrapUpEnabled', true)} />}
 
         {/* Wrap-up timer: shows on end phases to encourage note-taking */}
-        {['sent', 'done', 'lost', 'noanswer'].includes(phase) && (
+        {['sent', 'done', 'lost', 'noanswer'].includes(phase) && store.get('wrapUpEnabled', true) && (
           <div className="mt-4">
             <WrapUpTimer
               active={true}
               contactName={contactName}
               onComplete={onNextContact}
-              onExtend={() => {}}
             />
           </div>
         )}

@@ -89,9 +89,11 @@ interface ContactSidebarProps {
   onThemeChange?: (t: 'light' | 'dark' | 'system') => void;
   onShowRapportage?: () => void;
   callbacks?: CallbackEntry[];
+  soundEnabled?: boolean;
+  onToggleSound?: () => void;
 }
 
-export function ContactSidebar({ companies, activeCompId, activeContactId, expandedComp, setExpandedComp, search, onSearchChange, onSelectContact, phase, onBusy, scores, convRate, user, onLogout, onShowAgenda, onShowCallbackQueue, onShowLeaderboard, onShowSettings, dueCallbackCount, appointmentCount, hasMoreLeads, loadingMore, onLoadMore, stageFilter, onStageFilterChange, onSelectFromLog, onInsertNote, cliqError, onRetryCliq, theme, onThemeChange, onShowRapportage, callbacks }: ContactSidebarProps) {
+export function ContactSidebar({ companies, activeCompId, activeContactId, expandedComp, setExpandedComp, search, onSearchChange, onSelectContact, phase, onBusy, scores, convRate, user, onLogout, onShowAgenda, onShowCallbackQueue, onShowLeaderboard, onShowSettings, dueCallbackCount, appointmentCount, hasMoreLeads, loadingMore, onLoadMore, stageFilter, onStageFilterChange, onSelectFromLog, onInsertNote, cliqError, onRetryCliq, theme, onThemeChange, onShowRapportage, callbacks, soundEnabled, onToggleSound }: ContactSidebarProps) {
   const { t } = useBelTool();
   const [filterOpen, setFilterOpen] = useState(false);
   const filterRef = useRef<HTMLDivElement>(null);
@@ -166,6 +168,15 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
             <div className="text-[11px] font-semibold text-foreground truncate">{user.name}</div>
           </div>
           {theme && onThemeChange && <DarkModeToggle theme={theme} onChange={onThemeChange} compact />}
+          {onToggleSound && (
+            <button
+              onClick={onToggleSound}
+              className="w-7 h-7 rounded-lg flex items-center justify-center text-[12px] text-muted-foreground hover:bg-muted transition-colors"
+              title={soundEnabled ? 'Geluid uit' : 'Geluid aan'}
+            >
+              {soundEnabled ? '🔊' : '🔇'}
+            </button>
+          )}
           <button onClick={onLogout} className="text-muted-foreground text-[10px] hover:text-foreground transition-colors" title="Uitloggen">↗</button>
         </div>
 

@@ -563,6 +563,46 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
               <p>• Het Device ID bepaalt welk toestel eerst overgaat bij click-to-call</p>
             </div>
           </div>
+
+          <div className="bg-foreground/[0.02] border border-border/30 rounded-xl p-4 space-y-3">
+            <div className="text-xs font-bold text-muted-foreground/50 mb-2">⚙️ BELFUNCTIES</div>
+            <label className="flex items-center justify-between cursor-pointer">
+              <div>
+                <div className="text-[13px] font-semibold text-foreground">Auto-dial</div>
+                <div className="text-[11px] text-muted-foreground">Na elk gesprek automatisch het volgende contact laden (5s countdown)</div>
+              </div>
+              <input
+                type="checkbox"
+                checked={store.get('autoDialEnabled', true)}
+                onChange={e => { store.set('autoDialEnabled', e.target.checked); }}
+                className="w-4 h-4 accent-primary"
+              />
+            </label>
+            <label className="flex items-center justify-between cursor-pointer">
+              <div>
+                <div className="text-[13px] font-semibold text-foreground">Geluidssignalen</div>
+                <div className="text-[11px] text-muted-foreground">Cha-ching bij afspraak, ding bij enquête, streak-sounds</div>
+              </div>
+              <input
+                type="checkbox"
+                checked={store.get('soundEffects', true)}
+                onChange={e => { store.set('soundEffects', e.target.checked); }}
+                className="w-4 h-4 accent-primary"
+              />
+            </label>
+            <label className="flex items-center justify-between cursor-pointer">
+              <div>
+                <div className="text-[13px] font-semibold text-foreground">Wrap-up timer</div>
+                <div className="text-[11px] text-muted-foreground">30 seconden aftelling na elk gesprek voor notities</div>
+              </div>
+              <input
+                type="checkbox"
+                checked={store.get('wrapUpEnabled', true)}
+                onChange={e => { store.set('wrapUpEnabled', e.target.checked); }}
+                className="w-4 h-4 accent-primary"
+              />
+            </label>
+          </div>
         </div>
       )}
 
