@@ -20,7 +20,7 @@ const FILTER_TABS: { key: CompanyStage | 'all'; label: string; icon: string }[] 
   { key: 'geenGehoor', label: 'Geen gehoor', icon: '📵' },
   { key: 'enqueteVerstuurd', label: 'Verstuurd', icon: '📨' },
   { key: 'afspraak', label: 'Afspraak', icon: '📅' },
-  { key: 'nietInteressant', label: 'Afgevallen', icon: '🚫' },
+  { key: 'nietInteressant', label: 'Geen interesse', icon: '🚫' },
 ];
 
 const QUICK_NOTES = [
