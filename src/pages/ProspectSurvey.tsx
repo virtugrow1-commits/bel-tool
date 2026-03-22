@@ -576,10 +576,17 @@ export default function ProspectSurvey() {
       <div className="w-full max-w-lg">
         {/* Header */}
         <div className="text-center mb-6">
-          <img src="/cliqmakers-logo.png" alt="CliqMakers" className="h-16 mx-auto mb-3" />
+          <img src="/cliqmakers-logo.png" alt="CliqMakers" className="h-24 mx-auto mb-4" />
+          <h1 className="text-xl font-bold text-foreground mb-1">Deelname praktijkonderzoek</h1>
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-[13px] font-semibold">
-            Capaciteit & Groei Onderzoek
+            Capaciteit & Groei
           </div>
+          {step === 0 && (
+            <p className="text-[14px] text-muted-foreground mt-4 leading-relaxed max-w-md mx-auto">
+              Wij doen onderzoek naar hoe MKB-bedrijven omgaan met groei, tijdverlies en automatisering. 
+              Uw antwoorden helpen ons om praktische inzichten te verzamelen — en als dank ontvangt u een persoonlijk advies op maat.
+            </p>
+          )}
         </div>
 
         {/* Progress */}
