@@ -106,13 +106,14 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const stageFiltered = stageFilter === 'all' ? companies : companies.filter(c => c.stage === stageFilter);
-  const searched = stageFiltered.filter(c => (c.name + ' ' + c.contacts.map(ct => ct.firstName + ' ' + ct.lastName).join(' ')).toLowerCase().includes(search.toLowerCase()));
+  // Data is already filtered from CLIQ API by stage, so no local stage filtering needed
+  const searched = companies.filter(c => (c.name + ' ' + c.contacts.map(ct => ct.firstName + ' ' + ct.lastName).join(' ')).toLowerCase().includes(search.toLowerCase()));
   const filtered = smartSort(searched, callbacks || []);
 
   const stageCounts: Record<string, number> = {};
   for (const tab of FILTER_TABS) {
-    stageCounts[tab.key] = tab.key === 'all' ? companies.length : companies.filter(c => c.stage === tab.key).length;
+    // Show total loaded count for the active filter, no local counting needed
+    stageCounts[tab.key] = tab.key === stageFilter ? companies.length : (tab.key === 'all' ? companies.length : 0);
   }
 
   const callTimeTip = getBestCallTimeSuggestion(scores);
