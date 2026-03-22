@@ -343,13 +343,13 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
               <button
                 key={i}
                 onClick={() => onSelectFromLog?.(e)}
-                className="flex items-center gap-2 py-1.5 px-2 text-[11px] w-full text-left hover:bg-primary/[0.06] rounded-lg transition-colors cursor-pointer bg-transparent border-none group"
-                title={`Klik om ${e.contact} te selecteren`}
+                className="flex items-center gap-2 py-1.5 px-2 text-[11px] w-full text-left hover:bg-primary/[0.08] rounded-lg transition-colors cursor-pointer bg-transparent border-none group active:scale-[0.98]"
+                title={`Klik om ${e.contact} te selecteren en terug te bellen`}
               >
                 <span className="text-muted-foreground w-9 text-[10px] font-mono tabular-nums shrink-0">{e.time}</span>
                 <span className="text-[13px] shrink-0">{{ afspraak: '📅', enquete: '✅', verstuurd: '📨', afgevallen: '🚫', geenGehoor: '📵', callback: '🔔', gebeld: '📞' }[e.result] || '📞'}</span>
-                <span className="text-foreground/70 truncate group-hover:text-foreground transition-colors">{e.contact || 'Onbekend'}</span>
-                <span className="ml-auto text-[9px] text-muted-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">selecteer →</span>
+                <span className="text-foreground/70 truncate group-hover:text-primary font-medium transition-colors">{e.contact || 'Onbekend'}</span>
+                <span className="ml-auto text-[9px] text-primary/50 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">↗ bel</span>
               </button>
             ))}
           </div>

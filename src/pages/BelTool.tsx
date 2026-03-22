@@ -350,15 +350,39 @@ export default function BelTool() {
               stageFilter={stageFilter}
               onStageFilterChange={setStageFilter}
               onSelectFromLog={(entry) => {
+                let comp = null;
+                let ct = null;
+
+                // Try 1: Match by stored IDs (most reliable)
                 if (entry.contactId && entry.companyId) {
-                  const comp = companies.find(c => c.id === entry.companyId);
-                  const ct = comp?.contacts.find(c => c.id === entry.contactId);
-                  if (comp && ct) { selectContact(comp, ct); closeOnAction(); return; }
+                  comp = companies.find(c => c.id === entry.companyId) || null;
+                  ct = comp?.contacts.find(c => c.id === entry.contactId) || null;
                 }
-                const name = entry.contact;
-                const comp = companies.find(c => c.contacts.some(ct => `${ct.firstName} ${ct.lastName}` === name));
-                const ct = comp?.contacts.find(c => `${c.firstName} ${c.lastName}` === name);
-                if (comp && ct) { selectContact(comp, ct); closeOnAction(); }
+
+                // Try 2: Match by exact name
+                if (!ct && entry.contact) {
+                  const name = entry.contact.trim();
+                  comp = companies.find(c => c.contacts.some(c2 => `${c2.firstName} ${c2.lastName}` === name)) || null;
+                  ct = comp?.contacts.find(c => `${c.firstName} ${c.lastName}` === name) || null;
+                }
+
+                // Try 3: Match by partial name (first name only)
+                if (!ct && entry.contact) {
+                  const firstName = entry.contact.trim().split(' ')[0];
+                  comp = companies.find(c => c.contacts.some(c2 => c2.firstName === firstName)) || null;
+                  ct = comp?.contacts.find(c => c.firstName === firstName) || null;
+                }
+
+                if (comp && ct) {
+                  // Reset stage filter to 'all' so the contact is visible
+                  if (stageFilter !== 'all') setStageFilter('all');
+                  selectContact(comp, ct);
+                  setExpandedComp(comp.id);
+                  closeOnAction();
+                  flash(`${ct.firstName} ${ct.lastName} geselecteerd`, 'info');
+                } else {
+                  flash(`Contact "${entry.contact}" niet gevonden in de huidige bellijst`, 'err');
+                }
               }}
               onInsertNote={(text) => setNotes(prev => prev ? prev + '\n' + text : text)}
               cliqError={cliqError}
