@@ -104,6 +104,30 @@ export default function BelTool() {
     return null;
   }, [companies, callbacks, activeCompId]);
 
+  // Auto-create callbacks for "Enquête Voltooid" leads
+  useEffect(() => {
+    const enqueteLeads = companies.filter(c => c.stage === 'enqueteTel');
+    for (const comp of enqueteLeads) {
+      const ct = comp.contacts[0];
+      if (!ct) continue;
+      const alreadyHasCallback = callbacks.some(cb => cb.contactId === ct.id && cb.status === 'scheduled');
+      if (!alreadyHasCallback) {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(9, 0, 0, 0);
+        rawSaveCallback({
+          contactId: ct.id,
+          contactName: `${ct.firstName} ${ct.lastName}`.trim(),
+          companyName: comp.name,
+          date: tomorrow.toISOString().split('T')[0],
+          time: '09:00',
+          note: '📋 Enquête digitaal ingevuld — terugbellen voor adviesgesprek',
+          status: 'scheduled',
+        }, user?.id);
+      }
+    }
+  }, [companies]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Keep scoring ref in sync
   useEffect(() => {
     setContactInfo(contactName, activeContactId, activeCompId);

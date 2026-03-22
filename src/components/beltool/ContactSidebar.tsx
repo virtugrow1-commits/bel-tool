@@ -12,11 +12,18 @@ import { DarkModeToggle } from './DarkModeToggle';
 import { DailyProgress } from './DailyProgress';
 import { ConnectionStatus } from './ConnectionStatus';
 import { smartSort } from '@/lib/smart-queue';
-import { Snowflake } from 'lucide-react';
+import { Snowflake, CheckCircle2 } from 'lucide-react';
 
-const FILTER_TABS: { key: CompanyStage | 'all'; label: string; icon: string | 'snowflake' }[] = [
+function renderFilterIcon(icon: string) {
+  if (icon === 'snowflake') return <Snowflake size={14} className="text-blue-400" />;
+  if (icon === 'checkCircle') return <CheckCircle2 size={14} className="text-emerald-500" />;
+  return icon;
+}
+
+const FILTER_TABS: { key: CompanyStage | 'all'; label: string; icon: string | 'snowflake' | 'checkCircle' }[] = [
   { key: 'all', label: 'Alles', icon: '📋' },
   { key: 'nieuw', label: 'Koud', icon: 'snowflake' },
+  { key: 'enqueteTel', label: 'Enquête voltooid', icon: 'checkCircle' },
   { key: 'terugbellenGepland', label: 'Terugbellen', icon: '🔔' },
   { key: 'geenGehoor', label: 'Geen gehoor', icon: '📵' },
   { key: 'enqueteVerstuurd', label: 'Verstuurd', icon: '📨' },
@@ -206,7 +213,7 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
             className="w-full flex items-center justify-between px-3 py-2 rounded-lg border border-border bg-card text-[12px] font-semibold transition-colors hover:border-primary/40"
           >
             <span className="flex items-center gap-1.5">
-              <span className="text-[13px]">{(() => { const ico = FILTER_TABS.find(f => f.key === stageFilter)?.icon; return ico === 'snowflake' ? <Snowflake size={14} className="text-blue-400" /> : ico; })()}</span>
+              <span className="text-[13px]">{renderFilterIcon(FILTER_TABS.find(f => f.key === stageFilter)?.icon || '')}</span>
               <span className="text-foreground">{FILTER_TABS.find(f => f.key === stageFilter)?.label}</span>
               <span className="text-[10px] text-muted-foreground">({displayCounts[stageFilter] ?? 0})</span>
             </span>
@@ -227,7 +234,7 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
                       isActive ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted/50'
                     )}
                   >
-                    <span className="text-[13px]">{tab.icon === 'snowflake' ? <Snowflake size={14} className="text-blue-400" /> : tab.icon}</span>
+                    <span className="text-[13px]">{renderFilterIcon(tab.icon)}</span>
                     <span className="flex-1">{tab.label}</span>
                     {count > 0 && (
                       <span
