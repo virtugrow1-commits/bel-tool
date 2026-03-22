@@ -157,6 +157,7 @@ interface CallContentProps {
   notes: string;
   onNotesChange: (v: string) => void;
   dailyTargets: DailyTargets;
+  onShowWhatsApp?: (context: string) => void;
 }
 
 function ActionBtn({ children, variant = 'primary', wide, onClick }: { children: React.ReactNode; variant?: 'primary' | 'ghost' | 'warning' | 'danger' | 'muted'; wide?: boolean; onClick: () => void }) {
@@ -199,7 +200,7 @@ export function CallContent({
   onEndCall, onNextContact, showToast, updateStage, addScore,
   bookDate, setBookDate, bookTime, setBookTime, bookAdvisor, setBookAdvisor,
   scores, onShowCallback, onStartDialing, onHangup, onConfirmConnected, activeCompId, onShowDetail,
-  notes, onNotesChange, dailyTargets,
+  notes, onNotesChange, dailyTargets, onShowWhatsApp,
 }: CallContentProps) {
   const { t, surveyConfig, user } = useBelTool();
   const [locationType, setLocationType] = useState<LocationType>('');
@@ -534,6 +535,34 @@ export function CallContent({
           answers={answers} taskString={taskString} scores={scores} onNext={onNextContact} hideNextButton={store.get('wrapUpEnabled', true)} />}
         {phase === 'lost' && <EndView icon="🚫" title={t.notInterestedEnd} sub={`${activeContact.firstName} ${t.markedDropped}`} scores={scores} onNext={onNextContact} hideNextButton={store.get('wrapUpEnabled', true)} />}
         {phase === 'noanswer' && <EndView icon="📵" title={t.noAnswerEnd} sub={`${activeContact.firstName} ${t.markedCallback}`} scores={scores} onNext={onNextContact} hideNextButton={store.get('wrapUpEnabled', true)} />}
+
+        {/* Quick WhatsApp/SMS send button on end phases */}
+        {['sent', 'done', 'lost', 'noanswer'].includes(phase) && onShowWhatsApp && (
+          <div className="flex justify-center gap-2 mt-3">
+            <button
+              onClick={() => onShowWhatsApp(
+                phase === 'sent' ? 'enquete'
+                : phase === 'done' ? 'afspraak'
+                : phase === 'noanswer' ? 'geen-gehoor'
+                : 'interesse'
+              )}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#25D366]/10 text-[#25D366] border border-[#25D366]/20 text-[12px] font-semibold hover:bg-[#25D366]/20 active:scale-[0.97] transition-all"
+            >
+              💬 Stuur WhatsApp
+            </button>
+            <button
+              onClick={() => onShowWhatsApp(
+                phase === 'sent' ? 'enquete'
+                : phase === 'done' ? 'afspraak'
+                : phase === 'noanswer' ? 'geen-gehoor'
+                : 'interesse'
+              )}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-info/10 text-info border border-info/20 text-[12px] font-semibold hover:bg-info/20 active:scale-[0.97] transition-all"
+            >
+              📧 Stuur email
+            </button>
+          </div>
+        )}
 
         {/* Wrap-up timer: shows on end phases to encourage note-taking */}
         {['sent', 'done', 'lost', 'noanswer'].includes(phase) && store.get('wrapUpEnabled', true) && (

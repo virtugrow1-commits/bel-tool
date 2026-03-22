@@ -34,6 +34,7 @@ import { CliqErrorBanner } from '@/components/beltool/CliqErrorBanner';
 import { MobileHeader } from '@/components/beltool/MobileHeader';
 import { AuthGuard } from '@/components/beltool/AuthGuard';
 import { AutoDialCountdown } from '@/components/beltool/AutoDialCountdown';
+import { WhatsAppComposer } from '@/components/beltool/WhatsAppComposer';
 import { useSoundEffects } from '@/hooks/useSoundEffects';
 import { recordAttempt, smartSort } from '@/lib/smart-queue';
 
@@ -81,6 +82,9 @@ export default function BelTool() {
   // Auto-dial state
   const [autoDialPending, setAutoDialPending] = useState(false);
   const autoDialEnabled = store.get('autoDialEnabled', true);
+
+  // WhatsApp composer state
+  const [showWhatsApp, setShowWhatsApp] = useState<string | null>(null); // context string or null
 
   // Get next contact from smart queue (skipping current)
   const getNextContact = useCallback(() => {
@@ -250,6 +254,25 @@ export default function BelTool() {
             />
           )}
 
+          {/* WhatsApp / SMS / Email composer overlay */}
+          {showWhatsApp && activeContact && activeComp && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+              <div className="w-full max-w-lg">
+                <WhatsAppComposer
+                  contact={activeContact}
+                  company={activeComp}
+                  callerName={user?.name || 'Beller'}
+                  answers={answers}
+                  context={showWhatsApp as 'enquete' | 'geen-gehoor' | 'interesse' | 'afspraak' | 'terugbellen'}
+                  onSent={(channel, templateId) => {
+                    flash(`${channel === 'whatsapp' ? 'WhatsApp' : channel === 'sms' ? 'SMS' : 'Email'} verstuurd naar ${activeContact.firstName}!`);
+                  }}
+                  onClose={() => setShowWhatsApp(null)}
+                />
+              </div>
+            </div>
+          )}
+
           <Modal open={showCallbackQueue} onClose={() => setShowCallbackQueue(false)} title={t.callbackQueue}>
             {scheduledCallbacks.length === 0 ? (
               <div className="text-center text-muted-foreground/30 py-6">{t.noCallbacks}</div>
@@ -371,6 +394,7 @@ export default function BelTool() {
                     notes={notes}
                     onNotesChange={setNotes}
                     dailyTargets={store.get('dailyTargets', { calls: 50, appointments: 5, surveys: 10 })}
+                    onShowWhatsApp={(ctx) => setShowWhatsApp(ctx)}
                   />
                 </div>
                 {curStep >= 1 && !isMobile && (

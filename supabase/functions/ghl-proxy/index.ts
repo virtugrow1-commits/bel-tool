@@ -265,6 +265,47 @@ serve(async (req) => {
         break;
       }
 
+      // ─── SEND MESSAGE (WhatsApp / SMS / Email via Conversations) ───
+      case 'sendMessage': {
+        const res = await fetch(`${GHL_BASE}/conversations/messages`, {
+          method: 'POST', headers: ghlHeaders,
+          body: JSON.stringify({
+            type: params.type || 'WhatsApp',
+            contactId: params.contactId,
+            message: params.message,
+            ...(params.subject ? { subject: params.subject } : {}),
+            ...(params.html ? { html: params.html } : {}),
+            ...(params.templateId ? { templateId: params.templateId } : {}),
+          }),
+        });
+        if (!res.ok) throw new Error(`GHL send message error [${res.status}]: ${await res.text()}`);
+        result = await res.json();
+        break;
+      }
+
+      // ─── GET CONVERSATION BY CONTACT ───
+      case 'getConversation': {
+        const res = await fetch(
+          `${GHL_BASE}/conversations/search?locationId=${GHL_LOCATION_ID}&contactId=${params.contactId}`,
+          { headers: ghlHeaders }
+        );
+        if (!res.ok) throw new Error(`GHL conversation search error [${res.status}]: ${await res.text()}`);
+        result = await res.json();
+        break;
+      }
+
+      // ─── GET MESSAGES IN CONVERSATION ───
+      case 'getMessages': {
+        const limit = params.limit || 20;
+        const res = await fetch(
+          `${GHL_BASE}/conversations/${params.conversationId}/messages?limit=${limit}`,
+          { headers: ghlHeaders }
+        );
+        if (!res.ok) throw new Error(`GHL messages error [${res.status}]: ${await res.text()}`);
+        result = await res.json();
+        break;
+      }
+
       default:
         return new Response(JSON.stringify({ error: `Unknown action: ${action}` }), {
           status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },

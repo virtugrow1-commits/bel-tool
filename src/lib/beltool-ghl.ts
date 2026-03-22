@@ -126,9 +126,71 @@ export const cliq = {
     await callCliq('addTag', { contactId, tags: ['beltool-send-survey'] });
   },
 
-  async sendWhatsApp(contactId: string, _template: string) {
-    // Trigger via GHL workflow/automation - add tag to trigger
-    await callCliq('addTag', { contactId, tags: ['beltool-send-whatsapp'] });
+  /**
+   * Send a WhatsApp message via GHL Conversations API.
+   * Falls back to tag-based workflow trigger if Conversations API is not available.
+   */
+  async sendWhatsAppMessage(contactId: string, message: string): Promise<{ success: boolean; messageId?: string }> {
+    try {
+      const result = await callCliq('sendMessage', {
+        type: 'WhatsApp',
+        contactId,
+        message,
+      });
+      return { success: true, messageId: result?.messageId || result?.id };
+    } catch (err) {
+      // Fallback: trigger via workflow tag
+      console.warn('[CLIQ] WhatsApp Conversations API failed, falling back to tag:', err);
+      await callCliq('addTag', { contactId, tags: ['beltool-send-whatsapp'] });
+      return { success: true };
+    }
+  },
+
+  /**
+   * Send an SMS via GHL Conversations API.
+   */
+  async sendSMS(contactId: string, message: string): Promise<{ success: boolean }> {
+    try {
+      await callCliq('sendMessage', {
+        type: 'SMS',
+        contactId,
+        message,
+      });
+      return { success: true };
+    } catch (err) {
+      console.warn('[CLIQ] SMS send failed:', err);
+      return { success: false };
+    }
+  },
+
+  /**
+   * Send an email via GHL Conversations API.
+   */
+  async sendEmailMessage(contactId: string, subject: string, html: string): Promise<{ success: boolean }> {
+    try {
+      await callCliq('sendMessage', {
+        type: 'Email',
+        contactId,
+        subject,
+        html,
+        message: html.replace(/<[^>]*>/g, ''), // plain text fallback
+      });
+      return { success: true };
+    } catch (err) {
+      console.warn('[CLIQ] Email send failed:', err);
+      return { success: false };
+    }
+  },
+
+  /**
+   * Get conversation history for a contact.
+   */
+  async getConversation(contactId: string) {
+    return callCliq('getConversation', { contactId });
+  },
+
+  async getMessages(conversationId: string, limit = 20) {
+    return callCliq('getMessages', { conversationId, limit });
   },
 
   async triggerWebhook(url: string, payload?: unknown) {
