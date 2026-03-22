@@ -262,6 +262,7 @@ export function CallContent({
   const { t, surveyConfig, user } = useBelTool();
   const [locationType, setLocationType] = useState<LocationType>('');
   const [customAddress, setCustomAddress] = useState('');
+  const [selectedCalId, setSelectedCalId] = useState('');
   const [showVoicemail, setShowVoicemail] = useState(false);
   const [showWrapUp, setShowWrapUp] = useState(false);
   const stepIndex: Record<string, number> = { intro: 0, q1: 1, q2: 2, q3: 3, q4: 4, bridge: 5 };
