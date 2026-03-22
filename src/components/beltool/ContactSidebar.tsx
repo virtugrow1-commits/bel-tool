@@ -212,7 +212,7 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
           {filterOpen && (
             <div className="absolute left-0 right-0 top-full mt-1 z-50 rounded-xl border border-border bg-card shadow-lg overflow-hidden">
               {FILTER_TABS.map(tab => {
-                const count = stageCounts[tab.key];
+                const count = displayCounts[tab.key] ?? 0;
                 const isActive = stageFilter === tab.key;
                 const meta = tab.key !== 'all' ? STAGE_META[tab.key] : null;
                 return (
