@@ -9,7 +9,7 @@ import { useState, useEffect } from 'react';
 import { StepLayout } from './StepLayout';
 import { EndView } from './EndView';
 import { renderScript, getWorkdays, fmtDate, TIMES } from '@/lib/beltool-data';
-import { ADVISORS } from '@/lib/beltool-data';
+import type { Advisor } from '@/lib/beltool-data';
 import { calcLeadScore, leadLabel, type Scores } from '@/lib/beltool-scoring';
 import { useBelTool } from '@/contexts/BelToolContext';
 import { cliq } from '@/lib/beltool-ghl';
@@ -158,6 +158,7 @@ interface CallContentProps {
   onNotesChange: (v: string) => void;
   dailyTargets: DailyTargets;
   onShowWhatsApp?: (context: string) => void;
+  advisors: Advisor[];
 }
 
 function ActionBtn({ children, variant = 'primary', wide, onClick }: { children: React.ReactNode; variant?: 'primary' | 'ghost' | 'warning' | 'danger' | 'muted'; wide?: boolean; onClick: () => void }) {
@@ -200,7 +201,7 @@ export function CallContent({
   onEndCall, onNextContact, showToast, updateStage, addScore,
   bookDate, setBookDate, bookTime, setBookTime, bookAdvisor, setBookAdvisor,
   scores, onShowCallback, onStartDialing, onHangup, onConfirmConnected, activeCompId, onShowDetail,
-  notes, onNotesChange, dailyTargets, onShowWhatsApp,
+  notes, onNotesChange, dailyTargets, onShowWhatsApp, advisors,
 }: CallContentProps) {
   const { t, surveyConfig, user } = useBelTool();
   const [locationType, setLocationType] = useState<LocationType>('');
@@ -483,7 +484,7 @@ export function CallContent({
                   <div className="text-[11px] font-semibold text-muted-foreground mb-1">{t.advisor}</div>
                   <select value={bookAdvisor} onChange={e => setBookAdvisor(e.target.value)} className="w-full px-3 py-2.5 rounded-lg border border-border bg-card text-foreground text-[13px] outline-none focus:border-primary">
                     <option value="">{t.selectAdvisor}</option>
-                    {ADVISORS.map(a => <option key={a.id} value={a.id}>{a.name} — {a.specialty}</option>)}
+                    {advisors.map(a => <option key={a.id} value={a.id}>{a.name} — {a.specialty}</option>)}
                   </select>
                 </div>
                 <LocationSelect
@@ -514,7 +515,7 @@ export function CallContent({
                   }).catch(console.error);
                   onEndCall('done', 'afspraak');
                   addScore('afspraak');
-                  const adv = ADVISORS.find(a => a.id === bookAdvisor);
+                  const adv = advisors.find(a => a.id === bookAdvisor);
                   showToast(`${t.appointmentPlanned} — ${fmtDate(bookDate)} ${bookTime}${adv ? ` (${adv.name})` : ''}`);
                 }}>{t.bookConfirm}</ActionBtn>
               </div>
@@ -531,7 +532,7 @@ export function CallContent({
 
         {phase === 'sent' && <EndView icon="📨" title={t.surveySent} sub={`${activeContact.firstName} ${t.surveyAutoSent}`} items={[t.emailSent, t.whatsappSent, t.stageUpdated]} scores={scores} onNext={onNextContact} hideNextButton={store.get('wrapUpEnabled', true)} />}
         {phase === 'done' && <EndView icon="🎉" title={t.appointmentBooked} sub={`${t.appointmentWith} ${activeContact.firstName}.`}
-          items={[`${t.chooseDate}: ${bookDate ? fmtDate(bookDate) : '-'}`, `${t.chooseTime}: ${bookTime || '-'}`, `${t.advisor}: ${ADVISORS.find(a => a.id === bookAdvisor)?.name || '-'}`, t.confirmAutoSent, t.reminder24]}
+          items={[`${t.chooseDate}: ${bookDate ? fmtDate(bookDate) : '-'}`, `${t.chooseTime}: ${bookTime || '-'}`, `${t.advisor}: ${advisors.find(a => a.id === bookAdvisor)?.name || '-'}`, t.confirmAutoSent, t.reminder24]}
           answers={answers} taskString={taskString} scores={scores} onNext={onNextContact} hideNextButton={store.get('wrapUpEnabled', true)} />}
         {phase === 'lost' && <EndView icon="🚫" title={t.notInterestedEnd} sub={`${activeContact.firstName} ${t.markedDropped}`} scores={scores} onNext={onNextContact} hideNextButton={store.get('wrapUpEnabled', true)} />}
         {phase === 'noanswer' && <EndView icon="📵" title={t.noAnswerEnd} sub={`${activeContact.firstName} ${t.markedCallback}`} scores={scores} onNext={onNextContact} hideNextButton={store.get('wrapUpEnabled', true)} />}

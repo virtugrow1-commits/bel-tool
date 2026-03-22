@@ -6,6 +6,7 @@ import { initScores } from '@/lib/beltool-scoring';
 import { store } from '@/lib/beltool-store';
 import { cliq } from '@/lib/beltool-ghl';
 import { cn } from '@/lib/utils';
+import { useAdvisors } from '@/hooks/useAdvisors';
 import type { SelectOption } from '@/types/beltool';
 
 const DEFAULT_CUSTOM_FIELDS = [
@@ -37,6 +38,7 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
   onUpdateUsers: (users: User[]) => void;
 }) {
   const { lang, setLang, user, allScores, setAllScores, webhooks, setWebhooks, apiKey, setApiKey, t, surveyConfig, setSurveyConfig, cliqConfig, setCliqConfig } = useBelTool();
+  const { advisors, loading: advisorsLoading, refresh: refreshAdvisors } = useAdvisors();
   const [tab, setTab] = useState('cliq');
   const [confirmReset, setConfirmReset] = useState<string | null>(null);
   const [newWh, setNewWh] = useState('');
@@ -602,6 +604,41 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
                 className="w-4 h-4 accent-primary"
               />
             </label>
+          </div>
+
+          <div className="bg-foreground/[0.02] border border-border/30 rounded-xl p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="text-xs font-bold text-muted-foreground/50">👥 ADVISEURS</div>
+              <button
+                onClick={refreshAdvisors}
+                disabled={advisorsLoading}
+                className="text-[11px] text-primary font-semibold hover:underline disabled:opacity-50"
+              >
+                {advisorsLoading ? 'Laden...' : '🔄 Ververs uit CLIQ'}
+              </button>
+            </div>
+            <p className="text-[11px] text-muted-foreground/60">
+              Adviseurs worden automatisch opgehaald uit je CLIQ-account. Deze verschijnen als opties bij het inplannen van afspraken.
+            </p>
+            <div className="space-y-1.5">
+              {advisors.map(a => (
+                <div key={a.id} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-card border border-border">
+                  <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary">
+                    {a.name.split(' ').map(n => n[0]).join('').substring(0, 2)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[12px] font-semibold text-foreground truncate">{a.name}</div>
+                    {a.specialty && <div className="text-[10px] text-muted-foreground truncate">{a.specialty}</div>}
+                  </div>
+                  <div className="text-[9px] text-muted-foreground/40 font-mono">{a.id.substring(0, 8)}...</div>
+                </div>
+              ))}
+              {advisors.length === 0 && (
+                <div className="text-center text-muted-foreground/30 text-[12px] py-4">
+                  Geen adviseurs gevonden. Klik "Ververs uit CLIQ" of voeg gebruikers toe in GHL.
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

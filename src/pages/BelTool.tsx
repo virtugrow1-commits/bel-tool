@@ -36,6 +36,7 @@ import { AuthGuard } from '@/components/beltool/AuthGuard';
 import { AutoDialCountdown } from '@/components/beltool/AutoDialCountdown';
 import { WhatsAppComposer } from '@/components/beltool/WhatsAppComposer';
 import { useSoundEffects } from '@/hooks/useSoundEffects';
+import { useAdvisors } from '@/hooks/useAdvisors';
 import { recordAttempt, smartSort } from '@/lib/smart-queue';
 
 export default function BelTool() {
@@ -51,6 +52,7 @@ export default function BelTool() {
   const scoring = useScoring(user);
   const { scores, convRate, addScore, allScores, setAllScores, setContactInfo } = scoring;
   const sfx = useSoundEffects();
+  const { advisors } = useAdvisors();
 
   const leads = useLeads(user);
   const { companies, cliqLoading, cliqError, hasMoreLeads, stageFilter, setStageFilter, search, setSearch, reloadLeads, loadMoreLeads, updateCompStage, updateContact, updateCompany } = leads;
@@ -421,6 +423,7 @@ export default function BelTool() {
                     onNotesChange={setNotes}
                     dailyTargets={store.get('dailyTargets', { calls: 50, appointments: 5, surveys: 10 })}
                     onShowWhatsApp={(ctx) => setShowWhatsApp(ctx)}
+                    advisors={advisors}
                   />
                 </div>
                 {curStep >= 0 && !isMobile && (

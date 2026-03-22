@@ -109,6 +109,10 @@ export const cliq = {
     return callCliq('getCalendars');
   },
 
+  async getUsers() {
+    return callCliq('getUsers');
+  },
+
   async getPipelines() {
     return callCliq('getPipelines');
   },
