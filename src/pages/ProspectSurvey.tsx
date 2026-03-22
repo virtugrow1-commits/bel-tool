@@ -121,7 +121,7 @@ export default function ProspectSurvey() {
   // Try to load contact info from CLIQ via Supabase
   useEffect(() => {
     const loadContact = async () => {
-      if (!id) { setStatus('active'); return; }
+      if (!id || id === ':id' || id.startsWith(':')) { setStatus('active'); return; }
       try {
         const { data, error } = await supabase.functions.invoke('ghl-proxy', {
           body: { action: 'getContact', contactId: id },

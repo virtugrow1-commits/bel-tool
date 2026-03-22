@@ -296,7 +296,7 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
                       <button
                         key={ct.id}
                         onClick={() => {
-                          const canSwitch = phase === 'idle' || phase === 'precall' || phase === 'intro' && callState === 'idle'
+                          const canSwitch = phase === 'idle' || phase === 'precall' || phase === 'intro'
                             || ['sent', 'done', 'lost', 'noanswer'].includes(phase);
                           if (!canSwitch && activeContactId !== ct.id) { onBusy(); return; }
                           onSelectContact(comp, ct);
