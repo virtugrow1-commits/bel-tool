@@ -37,6 +37,12 @@ const AI_OPTIES = [
 ];
 const BOOKING_URL = 'https://cliqmakers.nl/afspraak';
 
+const isValidContactId = (value?: string) => {
+  if (!value) return false;
+  const normalized = value.trim();
+  return normalized.length > 0 && normalized !== ':id' && !normalized.startsWith(':');
+};
+
 /* ─── Components ─── */
 function ProgressBar({ step, total }: { step: number; total: number }) {
   return (
@@ -113,6 +119,7 @@ function MultiChoiceButton({ selected, label, onClick }: {
 /* ─── Main Page ─── */
 export default function ProspectSurvey() {
   const { id } = useParams<{ id: string }>();
+  const contactId = isValidContactId(id) ? id!.trim() : null;
   const [answers, setAnswers] = useState<Answers>(EMPTY_ANSWERS);
   const [step, setStep] = useState(0);
   const [status, setStatus] = useState<'loading' | 'active' | 'submitting' | 'done' | 'error'>('loading');
@@ -121,10 +128,14 @@ export default function ProspectSurvey() {
   // Try to load contact info from CLIQ via Supabase
   useEffect(() => {
     const loadContact = async () => {
-      if (!id || id === ':id' || id.startsWith(':')) { setStatus('active'); return; }
+      if (!contactId) {
+        setStatus('active');
+        return;
+      }
+
       try {
         const { data, error } = await supabase.functions.invoke('ghl-proxy', {
-          body: { action: 'getContact', contactId: id },
+          body: { action: 'getContact', contactId },
         });
         if (!error && data?.contact) {
           const c = data.contact;
@@ -143,7 +154,7 @@ export default function ProspectSurvey() {
       setStatus('active');
     };
     loadContact();
-  }, [id]);
+  }, [contactId]);
 
   const update = <K extends keyof Answers>(key: K, value: Answers[K]) => {
     setAnswers(prev => ({ ...prev, [key]: value }));
@@ -160,7 +171,7 @@ export default function ProspectSurvey() {
     setStatus('submitting');
     try {
       // Save to CLIQ if we have a contact ID
-      if (id) {
+      if (contactId) {
         const allTaken = answers.taken.concat(answers.takenOverig ? [answers.takenOverig] : []).join(', ');
         const customFields = [
           { id: 'beltool_uren_per_week', field_value: answers.uren },
@@ -172,20 +183,20 @@ export default function ProspectSurvey() {
         // Save custom fields
         if (customFields.length > 0) {
           await supabase.functions.invoke('ghl-proxy', {
-            body: { action: 'saveCustomFields', contactId: id, customFields },
+            body: { action: 'saveCustomFields', contactId, customFields },
           }).catch(() => {});
         }
 
         // Create note with full summary
         const noteBody = `📋 Digitale Enquête Ingevuld:\n⏱️ Uren/week: ${answers.uren}\n🔄 Taken: ${allTaken}\n📈 Groeifase: ${answers.groei}\n🤖 AI status: ${answers.ai}\n\n👤 ${answers.naam} — ${answers.bedrijf}\n📧 ${answers.email}\n📞 ${answers.telefoon}`;
         await supabase.functions.invoke('ghl-proxy', {
-          body: { action: 'createNote', contactId: id, body: noteBody },
+          body: { action: 'createNote', contactId, body: noteBody },
         }).catch(() => {});
 
         // Update contact info if changed
         await supabase.functions.invoke('ghl-proxy', {
           body: {
-            action: 'updateContact', contactId: id,
+            action: 'updateContact', contactId,
             email: answers.email, phone: answers.telefoon,
             name: answers.naam, companyName: answers.bedrijf,
           },
@@ -193,14 +204,14 @@ export default function ProspectSurvey() {
 
         // Add tag for workflow trigger
         await supabase.functions.invoke('ghl-proxy', {
-          body: { action: 'addTag', contactId: id, tags: ['enquete-digitaal-ingevuld'] },
+          body: { action: 'addTag', contactId, tags: ['enquete-digitaal-ingevuld'] },
         }).catch(() => {});
       }
 
       // Also save locally
       const { saveSurvey, createEmptySurvey } = await import('@/lib/survey-store');
       saveSurvey(createEmptySurvey({
-        id: id || crypto.randomUUID(),
+        id: contactId || crypto.randomUUID(),
         contactName: answers.naam,
         contactEmail: answers.email,
         contactPhone: answers.telefoon,
