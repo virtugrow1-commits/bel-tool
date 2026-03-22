@@ -56,7 +56,7 @@ export default function BelTool() {
   const { advisors } = useAdvisors();
 
   const leads = useLeads(user);
-  const { companies, cliqLoading, cliqError, hasMoreLeads, stageFilter, setStageFilter, search, setSearch, reloadLeads, loadMoreLeads, updateCompStage, updateContact, updateCompany } = leads;
+  const { companies, cliqLoading, cliqError, stageCounts, stageFilter, setStageFilter, search, setSearch, reloadLeads, updateCompStage, updateContact, updateCompany } = leads;
 
   const callFlow = useCallFlow({
     updateCompStage,
@@ -357,9 +357,8 @@ export default function BelTool() {
               onShowSurveyResults={() => { navigate('/resultaten'); closeOnAction(); }}
               dueCallbackCount={dueCallbacks.length}
               appointmentCount={settings.appts.length}
-              hasMoreLeads={hasMoreLeads}
+              stageCounts={stageCounts}
               loadingMore={cliqLoading}
-              onLoadMore={loadMoreLeads}
               stageFilter={stageFilter}
               onStageFilterChange={setStageFilter}
               onSelectFromLog={(entry) => {

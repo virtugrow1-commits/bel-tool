@@ -20,7 +20,7 @@ const FILTER_TABS: { key: CompanyStage | 'all'; label: string; icon: string }[] 
   { key: 'geenGehoor', label: 'Geen gehoor', icon: '📵' },
   { key: 'enqueteVerstuurd', label: 'Verstuurd', icon: '📨' },
   { key: 'afspraak', label: 'Afspraak', icon: '📅' },
-  { key: 'nietInteressant', label: 'Afgevallen', icon: '🚫' },
+  { key: 'nietInteressant', label: 'Geen interesse', icon: '🚫' },
 ];
 
 const QUICK_NOTES = [
@@ -75,9 +75,8 @@ interface ContactSidebarProps {
   onShowSettings?: () => void;
   dueCallbackCount: number;
   appointmentCount: number;
-  hasMoreLeads?: boolean;
+  stageCounts?: Record<string, number>;
   loadingMore?: boolean;
-  onLoadMore?: () => void;
   stageFilter: CompanyStage | 'all';
   onStageFilterChange: (f: CompanyStage | 'all') => void;
   onSelectFromLog?: (entry: { contact: string; contactId?: string; companyId?: string }) => void;
@@ -93,7 +92,7 @@ interface ContactSidebarProps {
   onToggleSound?: () => void;
 }
 
-export function ContactSidebar({ companies, activeCompId, activeContactId, expandedComp, setExpandedComp, search, onSearchChange, onSelectContact, phase, onBusy, scores, convRate, user, onLogout, onShowAgenda, onShowCallbackQueue, onShowLeaderboard, onShowSettings, dueCallbackCount, appointmentCount, hasMoreLeads, loadingMore, onLoadMore, stageFilter, onStageFilterChange, onSelectFromLog, onInsertNote, cliqError, onRetryCliq, theme, onThemeChange, onShowRapportage, onShowSurveyResults, callbacks, soundEnabled, onToggleSound }: ContactSidebarProps) {
+export function ContactSidebar({ companies, activeCompId, activeContactId, expandedComp, setExpandedComp, search, onSearchChange, onSelectContact, phase, onBusy, scores, convRate, user, onLogout, onShowAgenda, onShowCallbackQueue, onShowLeaderboard, onShowSettings, dueCallbackCount, appointmentCount, stageCounts: propStageCounts, loadingMore, stageFilter, onStageFilterChange, onSelectFromLog, onInsertNote, cliqError, onRetryCliq, theme, onThemeChange, onShowRapportage, onShowSurveyResults, callbacks, soundEnabled, onToggleSound }: ContactSidebarProps) {
   const { t } = useBelTool();
   const [filterOpen, setFilterOpen] = useState(false);
   const filterRef = useRef<HTMLDivElement>(null);
@@ -110,10 +109,10 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
   const searched = companies.filter(c => (c.name + ' ' + c.contacts.map(ct => ct.firstName + ' ' + ct.lastName).join(' ')).toLowerCase().includes(search.toLowerCase()));
   const filtered = smartSort(searched, callbacks || []);
 
-  const stageCounts: Record<string, number> = {};
+  // Use counts from API (propStageCounts) or fall back to loaded companies count
+  const displayCounts: Record<string, number> = {};
   for (const tab of FILTER_TABS) {
-    // Show total loaded count for the active filter, no local counting needed
-    stageCounts[tab.key] = tab.key === stageFilter ? companies.length : (tab.key === 'all' ? companies.length : 0);
+    displayCounts[tab.key] = propStageCounts?.[tab.key] ?? (tab.key === stageFilter ? companies.length : 0);
   }
 
   const callTimeTip = getBestCallTimeSuggestion(scores);
@@ -206,14 +205,14 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
             <span className="flex items-center gap-1.5">
               <span className="text-[13px]">{FILTER_TABS.find(f => f.key === stageFilter)?.icon}</span>
               <span className="text-foreground">{FILTER_TABS.find(f => f.key === stageFilter)?.label}</span>
-              <span className="text-[10px] text-muted-foreground">({stageCounts[stageFilter]})</span>
+              <span className="text-[10px] text-muted-foreground">({displayCounts[stageFilter] ?? 0})</span>
             </span>
             <span className={cn('text-muted-foreground text-[9px] transition-transform', filterOpen && 'rotate-180')}>▼</span>
           </button>
           {filterOpen && (
             <div className="absolute left-0 right-0 top-full mt-1 z-50 rounded-xl border border-border bg-card shadow-lg overflow-hidden">
               {FILTER_TABS.map(tab => {
-                const count = stageCounts[tab.key];
+                const count = displayCounts[tab.key] ?? 0;
                 const isActive = stageFilter === tab.key;
                 const meta = tab.key !== 'all' ? STAGE_META[tab.key] : null;
                 return (
@@ -324,20 +323,11 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
             </div>
           );
         })}
-        {(() => {
-          const totalLeads = companies.length;
-          const actionedLeads = companies.filter(c => c.stage !== 'nieuw').length;
-          const pct = totalLeads > 0 ? (actionedLeads / totalLeads) * 100 : 0;
-          return hasMoreLeads && onLoadMore && pct >= 60 ? (
-            <button
-              onClick={onLoadMore}
-              disabled={loadingMore}
-              className="w-full py-2.5 mt-2 rounded-xl border border-primary/20 bg-primary/[0.05] text-primary text-[11px] font-semibold hover:bg-primary/10 active:scale-[0.97] transition-all disabled:opacity-40"
-            >
-              {loadingMore ? 'Laden...' : `Volgende 25 laden → (${actionedLeads}/${totalLeads})`}
-            </button>
-          ) : null;
-        })()}
+        {loadingMore && filtered.length > 0 && (
+          <div className="text-center py-2">
+            <span className="text-[10px] text-muted-foreground">Meer leads laden...</span>
+          </div>
+        )}
       </div>
 
       {/* Activity log — fixed height at bottom, independently scrollable */}

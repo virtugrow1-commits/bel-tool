@@ -59,7 +59,7 @@ export const STAGE_META: Record<CompanyStage, StageMeta> = {
   enqueteVerstuurd: { label: 'Verstuurd', color: 'hsl(265 83% 57%)' },
   terugbellenGepland: { label: 'Callback', color: 'hsl(38 92% 50%)' },
   afspraak: { label: 'Afspraak', color: 'hsl(152 56% 42%)' },
-  nietInteressant: { label: 'Afgevallen', color: 'hsl(0 84% 60%)' },
+  nietInteressant: { label: 'Geen interesse', color: 'hsl(0 84% 60%)' },
   geenGehoor: { label: 'Geen Gehoor', color: 'hsl(220 9% 46%)' },
   anderMoment: { label: 'Ander moment', color: 'hsl(280 60% 55%)' },
 };

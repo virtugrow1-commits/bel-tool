@@ -9,11 +9,6 @@ interface PipelineInfo {
   stageId: string;
 }
 
-interface PageCursor {
-  startAfter?: number;
-  startAfterId?: string;
-}
-
 // Maps internal CompanyStage to CLIQ pipeline stage name (lowercase)
 const STAGE_TO_CLIQ_NAME: Record<string, string> = {
   nieuw: 'nieuwe lead',
@@ -49,7 +44,6 @@ function mapOpportunitiesToCompanies(opportunities: Array<{
   contactId?: string;
   pipelineStageId?: string;
 }>, stageMap: Record<string, string>, defaultStage: CompanyStage = 'nieuw'): Company[] {
-  // Build reverse stageMap: stageId → cliq stage name
   const stageIdToName: Record<string, string> = {};
   for (const [name, id] of Object.entries(stageMap)) {
     stageIdToName[id] = name;
@@ -66,7 +60,6 @@ function mapOpportunitiesToCompanies(opportunities: Array<{
     const firstName = nameParts[0] || '';
     const lastName = nameParts.slice(1).join(' ') || '';
 
-    // Determine internal stage from the opportunity's pipeline stage
     let stage: CompanyStage = defaultStage;
     if (opp.pipelineStageId && stageIdToName[opp.pipelineStageId]) {
       const cliqName = stageIdToName[opp.pipelineStageId];
@@ -100,13 +93,12 @@ export function useLeads(user: User | null) {
   const [cliqError, setCliqError] = useState<string | null>(null);
   const [pipelineInfo, setPipelineInfo] = useState<PipelineInfo | null>(null);
   const [stageMap, setStageMap] = useState<Record<string, string>>({});
-  const [pageCursor, setPageCursor] = useState<PageCursor | null>(null);
-  const [hasMoreLeads, setHasMoreLeads] = useState(false);
+  const [stageCounts, setStageCounts] = useState<Record<string, number>>({});
   const [stageFilter, setStageFilter] = useState<CompanyStage | 'all'>('nieuw');
   const [search, setSearch] = useState('');
   const stageMapRef = useRef<Record<string, string>>({});
+  const loadAbortRef = useRef(0); // Incremented to cancel stale loads
 
-  // Keep ref in sync for use in callbacks
   useEffect(() => { stageMapRef.current = stageMap; }, [stageMap]);
 
   // Shared pipeline loading logic
@@ -139,33 +131,85 @@ export function useLeads(user: User | null) {
 
   // Resolve internal stage filter to CLIQ stage ID
   const resolveStageId = useCallback((filter: CompanyStage | 'all', stages: Record<string, string>): string | undefined => {
-    if (filter === 'all') return undefined; // no stage filter = all stages
+    if (filter === 'all') return undefined;
     const cliqName = STAGE_TO_CLIQ_NAME[filter];
     if (!cliqName) return undefined;
     return stages[cliqName];
   }, []);
 
-  const loadOpportunities = useCallback(async (
+  // Load ALL pages for a given stage (auto-pagination)
+  const loadAllOpportunities = useCallback(async (
     pipelineId: string,
     stageId?: string,
-    startAfter?: number,
-    startAfterId?: string,
     defaultStage: CompanyStage = 'nieuw',
     currentStageMap?: Record<string, string>,
+    loadId?: number,
   ) => {
-    const oppData = await cliq.searchOpportunities(pipelineId, stageId, 25, startAfter, startAfterId);
-    const opportunities = oppData?.opportunities || [];
-    const meta = oppData?.meta;
-
     const sMap = currentStageMap || stageMapRef.current;
-    setCompanies(mapOpportunitiesToCompanies(opportunities, sMap, defaultStage));
-    setHasMoreLeads(!!meta?.nextPage);
+    let allOpportunities: any[] = [];
+    let startAfter: number | undefined;
+    let startAfterId: string | undefined;
+    let hasMore = true;
 
-    if (meta?.startAfter && meta?.startAfterId) {
-      setPageCursor({ startAfter: meta.startAfter, startAfterId: meta.startAfterId });
-    } else {
-      setPageCursor(null);
+    while (hasMore) {
+      // Check if this load has been superseded
+      if (loadId !== undefined && loadId !== loadAbortRef.current) return;
+
+      const oppData = await cliq.searchOpportunities(pipelineId, stageId, 25, startAfter, startAfterId);
+      const opportunities = oppData?.opportunities || [];
+      const meta = oppData?.meta;
+
+      allOpportunities = allOpportunities.concat(opportunities);
+
+      // Update companies progressively so user sees results immediately
+      if (loadId !== undefined && loadId !== loadAbortRef.current) return;
+      setCompanies(mapOpportunitiesToCompanies(allOpportunities, sMap, defaultStage));
+
+      hasMore = !!meta?.nextPage && !!meta?.startAfter && !!meta?.startAfterId;
+      if (hasMore) {
+        startAfter = meta.startAfter;
+        startAfterId = meta.startAfterId;
+      }
     }
+
+    return allOpportunities.length;
+  }, []);
+
+  // Fetch counts for all stages (lightweight — just first page with limit=1 to get meta.total)
+  const loadStageCounts = useCallback(async (pipelineId: string, stages: Record<string, string>) => {
+    const stageKeys = Object.keys(STAGE_TO_CLIQ_NAME).filter(k => k !== 'bellen' && k !== 'terugbellen');
+    const uniqueCliqNames = [...new Set(stageKeys.map(k => STAGE_TO_CLIQ_NAME[k]))];
+
+    const counts: Record<string, number> = {};
+    
+    // Fetch counts in parallel (max ~10 requests)
+    const results = await Promise.allSettled(
+      uniqueCliqNames.map(async (cliqName) => {
+        const stageId = stages[cliqName];
+        if (!stageId) return { cliqName, total: 0 };
+        const data = await cliq.searchOpportunities(pipelineId, stageId, 1);
+        return { cliqName, total: data?.meta?.total || 0 };
+      })
+    );
+
+    for (const r of results) {
+      if (r.status === 'fulfilled') {
+        const internalStage = CLIQ_NAME_TO_STAGE[r.value.cliqName];
+        if (internalStage) {
+          counts[internalStage] = r.value.total;
+        }
+      }
+    }
+
+    // Also set terugbellenGepland = same as terugbellen
+    if (counts['terugbellen'] !== undefined) {
+      counts['terugbellenGepland'] = counts['terugbellen'];
+    }
+
+    // 'all' = sum of all
+    counts['all'] = Object.values(counts).reduce((sum, n) => sum + n, 0);
+
+    setStageCounts(counts);
   }, []);
 
   // Initial load
@@ -174,17 +218,24 @@ export function useLeads(user: User | null) {
     setCliqLoading(true);
     setCliqError(null);
 
+    const loadId = ++loadAbortRef.current;
+
     (async () => {
       try {
         const { info, stages } = await loadPipeline();
         const stId = resolveStageId(stageFilter, stages);
         const defaultStage: CompanyStage = stageFilter === 'all' ? 'nieuw' : stageFilter;
-        await loadOpportunities(info.pipelineId, stId, undefined, undefined, defaultStage, stages);
+        
+        // Load all pages + counts in parallel
+        await Promise.all([
+          loadAllOpportunities(info.pipelineId, stId, defaultStage, stages, loadId),
+          loadStageCounts(info.pipelineId, stages),
+        ]);
       } catch (err: any) {
         console.warn('CLIQ pipeline load failed:', err.message);
         setCliqError(err.message);
       } finally {
-        setCliqLoading(false);
+        if (loadId === loadAbortRef.current) setCliqLoading(false);
       }
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -201,55 +252,41 @@ export function useLeads(user: User | null) {
 
     setCliqLoading(true);
     setCliqError(null);
-    setPageCursor(null);
 
+    const loadId = ++loadAbortRef.current;
     const stId = resolveStageId(stageFilter, stageMapRef.current);
     const defaultStage: CompanyStage = stageFilter === 'all' ? 'nieuw' : stageFilter;
 
-    loadOpportunities(pipelineInfo.pipelineId, stId, undefined, undefined, defaultStage)
+    loadAllOpportunities(pipelineInfo.pipelineId, stId, defaultStage, undefined, loadId)
       .catch((err: any) => {
         console.warn('CLIQ stage load failed:', err.message);
         setCliqError(err.message);
       })
-      .finally(() => setCliqLoading(false));
+      .finally(() => {
+        if (loadId === loadAbortRef.current) setCliqLoading(false);
+      });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stageFilter]);
 
   const reloadLeads = useCallback(async () => {
     setCliqLoading(true);
     setCliqError(null);
+    const loadId = ++loadAbortRef.current;
     try {
       const { info, stages } = await loadPipeline();
       const stId = resolveStageId(stageFilter, stages);
       const defaultStage: CompanyStage = stageFilter === 'all' ? 'nieuw' : stageFilter;
-      await loadOpportunities(info.pipelineId, stId, undefined, undefined, defaultStage, stages);
+      await Promise.all([
+        loadAllOpportunities(info.pipelineId, stId, defaultStage, stages, loadId),
+        loadStageCounts(info.pipelineId, stages),
+      ]);
     } catch (err: any) {
       setCliqError(err.message);
       throw err;
     } finally {
-      setCliqLoading(false);
+      if (loadId === loadAbortRef.current) setCliqLoading(false);
     }
-  }, [loadPipeline, loadOpportunities, resolveStageId, stageFilter]);
-
-  const loadMoreLeads = useCallback(async () => {
-    if (!pipelineInfo || !pageCursor || !hasMoreLeads || cliqLoading) return;
-    setCliqLoading(true);
-    try {
-      const stId = resolveStageId(stageFilter, stageMapRef.current);
-      const defaultStage: CompanyStage = stageFilter === 'all' ? 'nieuw' : stageFilter;
-      await loadOpportunities(
-        pipelineInfo.pipelineId,
-        stId,
-        pageCursor.startAfter,
-        pageCursor.startAfterId,
-        defaultStage,
-      );
-    } catch (err: any) {
-      console.warn('Load more failed:', err.message);
-    } finally {
-      setCliqLoading(false);
-    }
-  }, [pipelineInfo, pageCursor, hasMoreLeads, cliqLoading, loadOpportunities, resolveStageId, stageFilter]);
+  }, [loadPipeline, loadAllOpportunities, loadStageCounts, resolveStageId, stageFilter]);
 
   const updateCompStage = useCallback((compId: string, stage: Company['stage']) => {
     setCompanies(p => p.map(c => c.id === compId ? { ...c, stage } : c));
@@ -273,13 +310,12 @@ export function useLeads(user: User | null) {
     cliqError,
     pipelineInfo,
     stageMap,
-    hasMoreLeads,
+    stageCounts,
     stageFilter,
     setStageFilter,
     search,
     setSearch,
     reloadLeads,
-    loadMoreLeads,
     updateCompStage,
     updateContact,
     updateCompany,
