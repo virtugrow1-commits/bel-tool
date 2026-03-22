@@ -1,6 +1,32 @@
 import { supabase } from '@/integrations/supabase/client';
 import { withRetry, isRetryableError } from '@/lib/retry';
 
+function getAmsterdamOffset(date: string) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Europe/Amsterdam',
+    timeZoneName: 'shortOffset',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date(`${date}T12:00:00Z`));
+
+  const offsetValue = parts.find((part) => part.type === 'timeZoneName')?.value ?? 'GMT+1';
+  const match = offsetValue.match(/GMT([+-])(\d{1,2})(?::(\d{2}))?/);
+
+  if (!match) return '+01:00';
+
+  const [, sign, hours, minutes = '00'] = match;
+  return `${sign}${hours.padStart(2, '0')}:${minutes}`;
+}
+
+function addMinutesToTime(time: string, minutesToAdd: number) {
+  const [hh, mm] = time.split(':').map(Number);
+  const totalMin = hh * 60 + mm + minutesToAdd;
+  const endHH = String(Math.floor(totalMin / 60) % 24).padStart(2, '0');
+  const endMM = String(totalMin % 60).padStart(2, '0');
+  return `${endHH}:${endMM}`;
+}
+
 async function callCliq(action: string, params: Record<string, unknown> = {}) {
   return withRetry(
     async () => {
@@ -64,14 +90,9 @@ export const cliq = {
   },
 
   async bookAppointment(contactId: string, date: string, time: string, advisor: string, calendarId?: string, notes?: string, title?: string) {
-    // Build ISO strings keeping the +02:00 offset explicitly so GHL doesn't shift the hour
-    const startTime = `${date}T${time}:00+02:00`;
-    // Calculate end time by parsing the HH:MM and adding 30 minutes arithmetically (avoids Date UTC issues)
-    const [hh, mm] = time.split(':').map(Number);
-    const totalMin = hh * 60 + mm + 30;
-    const endHH = String(Math.floor(totalMin / 60) % 24).padStart(2, '0');
-    const endMM = String(totalMin % 60).padStart(2, '0');
-    const endTime = `${date}T${endHH}:${endMM}:00+02:00`;
+    const offset = getAmsterdamOffset(date);
+    const startTime = `${date}T${time}:00${offset}`;
+    const endTime = `${date}T${addMinutesToTime(time, 30)}:00${offset}`;
 
     return callCliq('createAppointment', {
       contactId,
