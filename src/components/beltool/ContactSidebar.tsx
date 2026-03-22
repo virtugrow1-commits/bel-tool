@@ -125,8 +125,8 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
   }, [scores.log]);
 
   return (
-    <div className="w-[280px] border-r border-border flex flex-col flex-shrink-0 bg-card">
-      <div className="px-3 pt-3 pb-2">
+    <div className="w-[280px] h-full border-r border-border flex flex-col flex-shrink-0 bg-card overflow-hidden">
+      <div className="px-3 pt-3 pb-2 shrink-0">
         {/* Row 1: Action icons */}
         <div className="flex items-center gap-2 mb-2">
           <div className="flex-1" />
@@ -228,15 +228,17 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
       </div>
 
       {/* Daily progress rings */}
-      <DailyProgress scores={scores} />
+      <div className="shrink-0">
+        <DailyProgress scores={scores} />
+      </div>
 
       {/* Connection status */}
-      <div className="px-3 pb-2">
+      <div className="px-3 pb-2 shrink-0">
         <ConnectionStatus />
       </div>
 
-      {/* Contact list */}
-      <div className="flex-1 overflow-y-auto px-2 pb-2">
+      {/* Contact list — scrollable */}
+      <div className="flex-1 overflow-y-auto px-2 pb-2 min-h-0">
         {cliqError && onRetryCliq && (
           <CliqErrorBanner error={cliqError} loading={!!loadingMore} onRetry={onRetryCliq} />
         )}
@@ -316,45 +318,29 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
         })()}
       </div>
 
-      {/* Activity log — clickable to re-select contacts */}
-      <div className="border-t border-border flex flex-col bg-muted/20" style={{ minHeight: scores.log.length > 0 ? '140px' : '0' }}>
-        {scores.log.length > 0 && (
-          <>
-            <div className="flex items-center justify-between px-3 pt-2 pb-1 sticky top-0 bg-muted/20">
-              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t.activity} ({scores.log.length})</div>
-              {onInsertNote && (
-                <div className="flex gap-0.5">
-                  {QUICK_NOTES.slice(0, 3).map(n => (
-                    <button
-                      key={n.label}
-                      onClick={() => onInsertNote(n.label)}
-                      className="px-1.5 py-0.5 rounded border border-border bg-card text-[8px] text-foreground/50 hover:bg-primary/10 hover:text-primary transition-colors"
-                      title={n.label}
-                    >
-                      {n.icon}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-            <div className="flex-1 overflow-y-auto px-2 pb-2">
-              {scores.log.map((e, i) => (
-                <button
-                  key={i}
-                  onClick={() => onSelectFromLog?.(e)}
-                  className="flex items-center gap-2 py-1.5 px-2 text-[11px] w-full text-left hover:bg-primary/[0.06] rounded-lg transition-colors cursor-pointer bg-transparent border-none group"
-                  title={`Klik om ${e.contact} te selecteren`}
-                >
-                  <span className="text-muted-foreground w-9 text-[10px] font-mono tabular-nums shrink-0">{e.time}</span>
-                  <span className="text-[13px] shrink-0">{{ afspraak: '📅', enquete: '✅', verstuurd: '📨', afgevallen: '🚫', geenGehoor: '📵', callback: '🔔', gebeld: '📞' }[e.result] || '📞'}</span>
-                  <span className="text-foreground/70 truncate group-hover:text-foreground transition-colors">{e.contact || 'Onbekend'}</span>
-                  <span className="ml-auto text-[9px] text-muted-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">selecteer →</span>
-                </button>
-              ))}
-            </div>
-          </>
-        )}
-      </div>
+      {/* Activity log — fixed height at bottom, independently scrollable */}
+      {scores.log.length > 0 && (
+        <div className="border-t border-border flex flex-col shrink-0 bg-muted/20" style={{ height: '180px' }}>
+          <div className="flex items-center justify-between px-3 pt-2 pb-1 shrink-0">
+            <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t.activity} ({scores.log.length})</div>
+          </div>
+          <div className="overflow-y-auto px-2 pb-2 flex-1 min-h-0">
+            {scores.log.map((e, i) => (
+              <button
+                key={i}
+                onClick={() => onSelectFromLog?.(e)}
+                className="flex items-center gap-2 py-1.5 px-2 text-[11px] w-full text-left hover:bg-primary/[0.06] rounded-lg transition-colors cursor-pointer bg-transparent border-none group"
+                title={`Klik om ${e.contact} te selecteren`}
+              >
+                <span className="text-muted-foreground w-9 text-[10px] font-mono tabular-nums shrink-0">{e.time}</span>
+                <span className="text-[13px] shrink-0">{{ afspraak: '📅', enquete: '✅', verstuurd: '📨', afgevallen: '🚫', geenGehoor: '📵', callback: '🔔', gebeld: '📞' }[e.result] || '📞'}</span>
+                <span className="text-foreground/70 truncate group-hover:text-foreground transition-colors">{e.contact || 'Onbekend'}</span>
+                <span className="ml-auto text-[9px] text-muted-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">selecteer →</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
