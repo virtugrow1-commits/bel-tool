@@ -129,6 +129,10 @@ export const cliq = {
     return callCliq('removeTag', { contactId, tags });
   },
 
+  async addTag(contactId: string, tags: string[]) {
+    return callCliq('addTag', { contactId, tags });
+  },
+
   async sendEmail(contactId: string, _template: string) {
     // Trigger via GHL workflow/automation - add tag to trigger
     await callCliq('addTag', { contactId, tags: ['beltool-send-survey'] });

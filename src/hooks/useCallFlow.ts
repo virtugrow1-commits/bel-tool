@@ -125,6 +125,23 @@ export function useCallFlow({ updateCompStage, updateContact, addScore, pipeline
       if (['done', 'sent'].includes(ph) && currentAnswers.hours) {
         cliq.saveSurveyAnswers(activeContactId || '', currentAnswers).catch(console.error);
       }
+
+      // Add workflow-trigger tags based on result
+      const contactId = activeContactId || '';
+      const WORKFLOW_TAGS: Record<string, string[]> = {
+        nietInteressant: ['beltool-afgevallen'],
+        geenGehoor: ['beltool-geen-gehoor'],
+        terugbellenGepland: ['beltool-terugbellen'],
+        afspraak: ['beltool-afspraak-gepland'],
+        enqueteVerstuurd: ['beltool-enquete-verstuurd'],
+        enqueteTel: ['beltool-enquete-voltooid'],
+        anderMoment: ['beltool-ander-moment'],
+      };
+      const wfTags = WORKFLOW_TAGS[stage];
+      if (wfTags && contactId) {
+        cliq.removeTag(contactId, ['beltool-geen-gehoor', 'beltool-terugbellen', 'beltool-ander-moment']).catch(() => {});
+        cliq.addTag(contactId, wfTags).catch(err => console.warn('Workflow tag failed:', err));
+      }
     }
 
     resetCallState();

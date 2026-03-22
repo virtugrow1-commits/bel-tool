@@ -13,6 +13,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { store } from '@/lib/beltool-store';
+import { cliq } from '@/lib/beltool-ghl';
 import { fmtDate } from '@/lib/beltool-data';
 import { BelToolContext } from '@/contexts/BelToolContext';
 import { ContactSidebar } from '@/components/beltool/ContactSidebar';
@@ -37,7 +38,7 @@ import { AutoDialCountdown } from '@/components/beltool/AutoDialCountdown';
 import { WhatsAppComposer } from '@/components/beltool/WhatsAppComposer';
 import { useSoundEffects } from '@/hooks/useSoundEffects';
 import { useAdvisors } from '@/hooks/useAdvisors';
-import { recordAttempt, smartSort } from '@/lib/smart-queue';
+import { recordAttempt, smartSort, getAttemptCount } from '@/lib/smart-queue';
 
 export default function BelTool() {
   // --- Core hooks ---
@@ -147,6 +148,14 @@ export default function BelTool() {
     // Record call attempt for smart queue
     if (activeContactId && activeCompId && ['gebeld', 'geenGehoor', 'afgevallen', 'enquete', 'afspraak', 'verstuurd', 'callback'].includes(type)) {
       recordAttempt(activeContactId, activeCompId, type);
+
+      // After 3x geen gehoor: trigger drip sequence
+      if (type === 'geenGehoor') {
+        const geenGehoorCount = getAttemptCount(activeContactId);
+        if (geenGehoorCount >= 3) {
+          cliq.addTag(activeContactId, ['beltool-drip-noanswer']).catch(() => {});
+        }
+      }
     }
   };
 
