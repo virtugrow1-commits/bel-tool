@@ -134,6 +134,7 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
       <div className="px-3 pt-3 pb-2 shrink-0">
         {/* Row 1: Action icons */}
         <div className="flex items-center gap-2 mb-2">
+          <img src="/cliqmakers-logo.png" alt="CliqMakers" className="h-7 object-contain" />
           <div className="flex-1" />
           <div className="flex gap-0.5">
             {[
