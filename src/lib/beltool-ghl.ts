@@ -30,6 +30,10 @@ export const cliq = {
     return callCliq('getContact', { contactId });
   },
 
+  async createContact(data: { name: string; email?: string; phone?: string; companyName?: string; tags?: string[]; source?: string }) {
+    return callCliq('createContact', data);
+  },
+
   async updateContactStage(contactId: string, stage: string) {
     // Legacy: Add tag for the stage
     await callCliq('addTag', { contactId, tags: [stage] });

@@ -85,6 +85,26 @@ serve(async (req) => {
         break;
       }
 
+      // ─── CREATE CONTACT ───
+      case 'createContact': {
+        const res = await fetch(`${GHL_BASE}/contacts/`, {
+          method: 'POST', headers: ghlHeaders,
+          body: JSON.stringify({
+            locationId: GHL_LOCATION_ID,
+            name: params.name || '',
+            email: params.email || '',
+            phone: params.phone || '',
+            companyName: params.companyName || '',
+            tags: params.tags || [],
+            source: params.source || 'Bel-Tool Enquête',
+            ...(params.customFields ? { customFields: params.customFields } : {}),
+          }),
+        });
+        if (!res.ok) throw new Error(`GHL create contact error [${res.status}]: ${await res.text()}`);
+        result = await res.json();
+        break;
+      }
+
       // ─── ADD TAG ───
       case 'addTag': {
         const contactId = requireContactId(params);

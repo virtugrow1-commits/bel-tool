@@ -170,9 +170,48 @@ export default function ProspectSurvey() {
   const submit = async () => {
     setStatus('submitting');
     try {
-      // Save to CLIQ if we have a contact ID
-      if (contactId) {
-        const allTaken = answers.taken.concat(answers.takenOverig ? [answers.takenOverig] : []).join(', ');
+      const allTaken = answers.taken.concat(answers.takenOverig ? [answers.takenOverig] : []).join(', ');
+      let ghlContactId = contactId;
+
+      // Step 1: Ensure we have a valid GHL contact
+      if (ghlContactId) {
+        // Verify the contact exists in GHL
+        try {
+          const { data, error } = await supabase.functions.invoke('ghl-proxy', {
+            body: { action: 'getContact', contactId: ghlContactId },
+          });
+          if (error || !data?.contact) {
+            ghlContactId = null; // Contact doesn't exist, will create new
+          }
+        } catch {
+          ghlContactId = null;
+        }
+      }
+
+      // Step 2: Create contact if we don't have a valid one
+      if (!ghlContactId) {
+        try {
+          const { data, error } = await supabase.functions.invoke('ghl-proxy', {
+            body: {
+              action: 'createContact',
+              name: answers.naam,
+              email: answers.email,
+              phone: answers.telefoon,
+              companyName: answers.bedrijf,
+              tags: ['enquete-digitaal-ingevuld', 'beltool-lead'],
+              source: 'Bel-Tool Enquête (digitaal)',
+            },
+          });
+          if (!error && data?.contact?.id) {
+            ghlContactId = data.contact.id;
+          }
+        } catch {
+          // GHL not available — continue with local save
+        }
+      }
+
+      // Step 3: Save survey data to GHL contact
+      if (ghlContactId) {
         const customFields = [
           { id: 'beltool_uren_per_week', field_value: answers.uren },
           { id: 'beltool_taken', field_value: allTaken },
@@ -180,38 +219,38 @@ export default function ProspectSurvey() {
           { id: 'beltool_ai_status', field_value: answers.ai },
         ].filter(f => f.field_value);
 
-        // Save custom fields
+        // Save custom fields (non-blocking)
         if (customFields.length > 0) {
-          await supabase.functions.invoke('ghl-proxy', {
-            body: { action: 'saveCustomFields', contactId, customFields },
+          supabase.functions.invoke('ghl-proxy', {
+            body: { action: 'saveCustomFields', contactId: ghlContactId, customFields },
           }).catch(() => {});
         }
 
         // Create note with full summary
         const noteBody = `📋 Digitale Enquête Ingevuld:\n⏱️ Uren/week: ${answers.uren}\n🔄 Taken: ${allTaken}\n📈 Groeifase: ${answers.groei}\n🤖 AI status: ${answers.ai}\n\n👤 ${answers.naam} — ${answers.bedrijf}\n📧 ${answers.email}\n📞 ${answers.telefoon}`;
-        await supabase.functions.invoke('ghl-proxy', {
-          body: { action: 'createNote', contactId, body: noteBody },
+        supabase.functions.invoke('ghl-proxy', {
+          body: { action: 'createNote', contactId: ghlContactId, body: noteBody },
         }).catch(() => {});
 
-        // Update contact info if changed
-        await supabase.functions.invoke('ghl-proxy', {
+        // Update contact info
+        supabase.functions.invoke('ghl-proxy', {
           body: {
-            action: 'updateContact', contactId,
+            action: 'updateContact', contactId: ghlContactId,
             email: answers.email, phone: answers.telefoon,
             name: answers.naam, companyName: answers.bedrijf,
           },
         }).catch(() => {});
 
-        // Add tag for workflow trigger
-        await supabase.functions.invoke('ghl-proxy', {
-          body: { action: 'addTag', contactId, tags: ['enquete-digitaal-ingevuld'] },
+        // Add tag (if contact was pre-existing, tag wasn't added yet)
+        supabase.functions.invoke('ghl-proxy', {
+          body: { action: 'addTag', contactId: ghlContactId, tags: ['enquete-digitaal-ingevuld'] },
         }).catch(() => {});
       }
 
-      // Also save locally
+      // Step 4: Save locally as backup
       const { saveSurvey, createEmptySurvey } = await import('@/lib/survey-store');
       saveSurvey(createEmptySurvey({
-        id: contactId || crypto.randomUUID(),
+        id: ghlContactId || contactId || crypto.randomUUID(),
         contactName: answers.naam,
         contactEmail: answers.email,
         contactPhone: answers.telefoon,
@@ -458,12 +497,10 @@ export default function ProspectSurvey() {
       <div className="w-full max-w-lg">
         {/* Header */}
         <div className="text-center mb-6">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-[13px] font-semibold mb-3">
+          <img src="/cliqmakers-logo.png" alt="CliqMakers" className="h-16 mx-auto mb-3" />
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-[13px] font-semibold">
             Capaciteit & Groei Onderzoek
           </div>
-          <h1 className="text-2xl font-bold text-foreground">
-            Cliq<span className="text-primary">Makers</span>
-          </h1>
         </div>
 
         {/* Progress */}
