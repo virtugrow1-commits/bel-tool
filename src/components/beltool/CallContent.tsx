@@ -557,8 +557,8 @@ export function CallContent({
                   if (!bookAdvisor) { showToast(t.selectAdvisor, 'err'); return; }
                   if (!locationType) { showToast('Selecteer een locatie', 'err'); return; }
                   if (locationType === 'op_locatie' && !customAddress.trim()) { showToast('Vul een adres in', 'err'); return; }
-                  const calId = (document.getElementById('cliq-calendar-select') as HTMLSelectElement)?.value;
-                  if (!calId) { showToast('Selecteer een kalender', 'err'); return; }
+                  if (!selectedCalId) { showToast('Selecteer een kalender', 'err'); return; }
+                  const calId = selectedCalId;
                   const locationStr = locationType === 'google_meet' ? 'Google Meet'
                     : locationType === 'bedrijf' ? `Bedrijfslocatie: ${activeComp.address || 'Adres onbekend'}`
                     : `Op locatie: ${customAddress.trim()}`;
