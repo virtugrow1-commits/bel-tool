@@ -26,7 +26,7 @@ const CHANNEL_CONFIG: Record<Channel, { icon: string; label: string; color: stri
 };
 
 const CONTEXT_TO_TEMPLATE: Record<string, string> = {
-  'enquete': 'opvolg-enquete',
+  'enquete': 'stuur-enquete',
   'geen-gehoor': 'opvolg-geen-gehoor',
   'interesse': 'opvolg-interesse',
   'afspraak': 'bedankt-afspraak',
@@ -47,6 +47,8 @@ export function WhatsAppComposer({ contact, company, callerName, answers, bookin
     ? answers.tasks.concat(answers.tasksOther ? [answers.tasksOther] : []).filter(Boolean).join(', ')
     : '';
 
+  const enqueteLink = `${window.location.origin}/enquete/${contact.id}`;
+
   const vars = {
     voornaam: contact.firstName,
     bedrijf: company.name,
@@ -54,6 +56,7 @@ export function WhatsAppComposer({ contact, company, callerName, answers, bookin
     uren: answers?.hours || '',
     taken: taskString,
     bookingLink: bookingLink || 'https://cliqmakers.nl/afspraak',
+    enqueteLink,
   };
 
   const renderedMessage = editing ? editedMessage : renderTemplate(template, vars);
