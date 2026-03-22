@@ -15,7 +15,51 @@ import { useBelTool } from '@/contexts/BelToolContext';
 import { cliq } from '@/lib/beltool-ghl';
 import { store } from '@/lib/beltool-store';
 
-function CalendarPicker({ bookDate, setBookDate, bookTime, setBookTime }: { bookDate: string; setBookDate: (v: string) => void; bookTime: string; setBookTime: (v: string) => void }) {
+function CalendarPicker({ bookDate, setBookDate, bookTime, setBookTime, calendarId }: { bookDate: string; setBookDate: (v: string) => void; bookTime: string; setBookTime: (v: string) => void; calendarId: string }) {
+  const [freeSlots, setFreeSlots] = useState<string[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+
+  // Fetch free slots when date + calendar change
+  useEffect(() => {
+    if (!bookDate || !calendarId) {
+      setFreeSlots([]);
+      setBookTime('');
+      return;
+    }
+    setLoadingSlots(true);
+    setBookTime('');
+    cliq.getFreeSlots(calendarId, bookDate)
+      .then((data: any) => {
+        // GHL returns { [date]: { slots: ["2026-03-23T09:00:00+02:00", ...] } } or similar
+        const dateSlots = data?.[bookDate]?.slots || data?.slots || [];
+        // Also check for nested format: data.<date>.slots
+        const allSlots: string[] = [];
+        if (Array.isArray(dateSlots)) {
+          dateSlots.forEach((s: string) => {
+            const time = s.includes('T') ? s.split('T')[1]?.substring(0, 5) : s;
+            if (time) allSlots.push(time);
+          });
+        } else if (typeof data === 'object') {
+          // Try to extract from any date key
+          Object.values(data).forEach((v: any) => {
+            const slots = v?.slots || (Array.isArray(v) ? v : []);
+            slots.forEach((s: string) => {
+              if (typeof s === 'string') {
+                const time = s.includes('T') ? s.split('T')[1]?.substring(0, 5) : s;
+                if (time) allSlots.push(time);
+              }
+            });
+          });
+        }
+        setFreeSlots(allSlots.sort());
+      })
+      .catch(() => {
+        // Fallback to static times if free slots API fails
+        setFreeSlots(TIMES);
+      })
+      .finally(() => setLoadingSlots(false));
+  }, [bookDate, calendarId]);
+
   return (
     <>
       <div className="flex-1">
@@ -30,16 +74,26 @@ function CalendarPicker({ bookDate, setBookDate, bookTime, setBookTime }: { book
       </div>
       <div className="flex-1">
         <div className="text-[11px] font-semibold text-muted-foreground mb-1">Tijd</div>
-        <select value={bookTime} onChange={e => setBookTime(e.target.value)} className="w-full px-3 py-2.5 rounded-lg border border-border bg-card text-foreground text-[13px] outline-none focus:border-primary">
-          <option value="">Kies tijd...</option>
-          {TIMES.map(tm => <option key={tm} value={tm}>{tm}</option>)}
+        <select value={bookTime} onChange={e => setBookTime(e.target.value)} className="w-full px-3 py-2.5 rounded-lg border border-border bg-card text-foreground text-[13px] outline-none focus:border-primary" disabled={!bookDate || !calendarId}>
+          {!bookDate || !calendarId ? (
+            <option value="">Kies eerst datum & kalender</option>
+          ) : loadingSlots ? (
+            <option value="">Slots laden...</option>
+          ) : freeSlots.length === 0 ? (
+            <option value="">Geen beschikbare tijden</option>
+          ) : (
+            <>
+              <option value="">Kies tijd...</option>
+              {freeSlots.map(tm => <option key={tm} value={tm}>{tm}</option>)}
+            </>
+          )}
         </select>
       </div>
     </>
   );
 }
 
-function CliqCalendarSelect() {
+function CliqCalendarSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const [calendars, setCalendars] = useState<{ id: string; name: string; isActive?: boolean }[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -48,6 +102,8 @@ function CliqCalendarSelect() {
       .then((data: any) => {
         const cals = (data?.calendars || []).filter((c: any) => c.isActive !== false);
         setCalendars(cals);
+        // Auto-select first calendar
+        if (cals.length === 1 && !value) onChange(cals[0].id);
       })
       .catch(() => setCalendars([]))
       .finally(() => setLoading(false));
@@ -56,7 +112,7 @@ function CliqCalendarSelect() {
   return (
     <div className="mb-3">
       <div className="text-[11px] font-semibold text-muted-foreground mb-1">CLIQ Kalender</div>
-      <select id="cliq-calendar-select" className="w-full px-3 py-2.5 rounded-lg border border-border bg-card text-foreground text-[13px] outline-none focus:border-primary">
+      <select value={value} onChange={e => onChange(e.target.value)} className="w-full px-3 py-2.5 rounded-lg border border-border bg-card text-foreground text-[13px] outline-none focus:border-primary">
         {loading ? (
           <option value="">Laden...</option>
         ) : calendars.length === 0 ? (
@@ -206,6 +262,7 @@ export function CallContent({
   const { t, surveyConfig, user } = useBelTool();
   const [locationType, setLocationType] = useState<LocationType>('');
   const [customAddress, setCustomAddress] = useState('');
+  const [selectedCalId, setSelectedCalId] = useState('');
   const [showVoicemail, setShowVoicemail] = useState(false);
   const [showWrapUp, setShowWrapUp] = useState(false);
   const stepIndex: Record<string, number> = { intro: 0, q1: 1, q2: 2, q3: 3, q4: 4, bridge: 5 };
@@ -477,8 +534,9 @@ export function CallContent({
 
               <div className="bg-primary/[0.04] border border-primary/15 rounded-xl p-4 mb-3.5 shadow-sm">
                 <div className="text-xs font-bold text-primary uppercase tracking-wider mb-3">{t.bookAppointment}</div>
+                <CliqCalendarSelect value={selectedCalId} onChange={setSelectedCalId} />
                 <div className="flex gap-2.5 mb-2.5">
-                  <CalendarPicker bookDate={bookDate} setBookDate={setBookDate} bookTime={bookTime} setBookTime={setBookTime} />
+                  <CalendarPicker bookDate={bookDate} setBookDate={setBookDate} bookTime={bookTime} setBookTime={setBookTime} calendarId={selectedCalId} />
                 </div>
                 <div className="mb-3">
                   <div className="text-[11px] font-semibold text-muted-foreground mb-1">{t.advisor}</div>
@@ -494,14 +552,13 @@ export function CallContent({
                   onCustomChange={setCustomAddress}
                   companyAddress={activeComp.address || ''}
                 />
-                <CliqCalendarSelect />
                 <ActionBtn wide onClick={() => {
                   if (!bookDate || !bookTime) { showToast(t.pickDateTime, 'err'); return; }
                   if (!bookAdvisor) { showToast(t.selectAdvisor, 'err'); return; }
                   if (!locationType) { showToast('Selecteer een locatie', 'err'); return; }
                   if (locationType === 'op_locatie' && !customAddress.trim()) { showToast('Vul een adres in', 'err'); return; }
-                  const calId = (document.getElementById('cliq-calendar-select') as HTMLSelectElement)?.value;
-                  if (!calId) { showToast('Selecteer een kalender', 'err'); return; }
+                  if (!selectedCalId) { showToast('Selecteer een kalender', 'err'); return; }
+                  const calId = selectedCalId;
                   const locationStr = locationType === 'google_meet' ? 'Google Meet'
                     : locationType === 'bedrijf' ? `Bedrijfslocatie: ${activeComp.address || 'Adres onbekend'}`
                     : `Op locatie: ${customAddress.trim()}`;
