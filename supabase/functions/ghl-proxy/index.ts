@@ -100,7 +100,18 @@ serve(async (req) => {
             ...(params.customFields ? { customFields: params.customFields } : {}),
           }),
         });
-        if (!res.ok) throw new Error(`GHL create contact error [${res.status}]: ${await res.text()}`);
+        if (!res.ok) {
+          const errorText = await res.text();
+          // Handle duplicate contact: return existing contact info
+          try {
+            const errorJson = JSON.parse(errorText);
+            if (errorJson?.meta?.contactId) {
+              result = { contact: { id: errorJson.meta.contactId, name: errorJson.meta.contactName }, duplicate: true };
+              break;
+            }
+          } catch { /* not JSON, fall through */ }
+          throw new Error(`GHL create contact error [${res.status}]: ${errorText}`);
+        }
         result = await res.json();
         break;
       }
