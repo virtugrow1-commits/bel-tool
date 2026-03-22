@@ -9,7 +9,7 @@ import { renderScript, getWorkdays, fmtDate, TIMES } from '@/lib/beltool-data';
 import { ADVISORS } from '@/lib/beltool-data';
 import { calcLeadScore, leadLabel, type Scores } from '@/lib/beltool-scoring';
 import { useBelTool } from '@/contexts/BelToolContext';
-import { ghl } from '@/lib/beltool-ghl';
+import { cliq } from '@/lib/beltool-ghl';
 
 function CalendarPicker({ bookDate, setBookDate, bookTime, setBookTime }: { bookDate: string; setBookDate: (v: string) => void; bookTime: string; setBookTime: (v: string) => void }) {
   return (
@@ -35,12 +35,12 @@ function CalendarPicker({ bookDate, setBookDate, bookTime, setBookTime }: { book
   );
 }
 
-function GhlCalendarSelect() {
+function CliqCalendarSelect() {
   const [calendars, setCalendars] = useState<{ id: string; name: string; isActive?: boolean }[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    ghl.getCalendars()
+    cliq.getCalendars()
       .then((data: any) => {
         const cals = (data?.calendars || []).filter((c: any) => c.isActive !== false);
         setCalendars(cals);
@@ -51,8 +51,8 @@ function GhlCalendarSelect() {
 
   return (
     <div className="mb-3">
-      <div className="text-[11px] font-semibold text-muted-foreground mb-1">GHL Kalender</div>
-      <select id="ghl-calendar-select" className="w-full px-3 py-2.5 rounded-lg border border-border bg-card text-foreground text-[13px] outline-none focus:border-primary">
+      <div className="text-[11px] font-semibold text-muted-foreground mb-1">CLIQ Kalender</div>
+      <select id="cliq-calendar-select" className="w-full px-3 py-2.5 rounded-lg border border-border bg-card text-foreground text-[13px] outline-none focus:border-primary">
         {loading ? (
           <option value="">Laden...</option>
         ) : calendars.length === 0 ? (
@@ -458,26 +458,26 @@ export function CallContent({
                   onCustomChange={setCustomAddress}
                   companyAddress={activeComp.address || ''}
                 />
-                <GhlCalendarSelect />
+                <CliqCalendarSelect />
                 <ActionBtn wide onClick={() => {
                   if (!bookDate || !bookTime) { showToast(t.pickDateTime, 'err'); return; }
                   if (!bookAdvisor) { showToast(t.selectAdvisor, 'err'); return; }
                   if (!locationType) { showToast('Selecteer een locatie', 'err'); return; }
                   if (locationType === 'op_locatie' && !customAddress.trim()) { showToast('Vul een adres in', 'err'); return; }
-                  const calId = (document.getElementById('ghl-calendar-select') as HTMLSelectElement)?.value;
+                  const calId = (document.getElementById('cliq-calendar-select') as HTMLSelectElement)?.value;
                   if (!calId) { showToast('Selecteer een kalender', 'err'); return; }
                   const locationStr = locationType === 'google_meet' ? 'Google Meet'
                     : locationType === 'bedrijf' ? `Bedrijfslocatie: ${activeComp.address || 'Adres onbekend'}`
                     : `Op locatie: ${customAddress.trim()}`;
-                  ghl.bookAppointment(activeContact.id, bookDate, bookTime, bookAdvisor, calId, locationStr).catch(err => {
+                  cliq.bookAppointment(activeContact.id, bookDate, bookTime, bookAdvisor, calId, locationStr).catch(err => {
                     console.error('Appointment error:', err);
                     showToast('Fout bij inplannen: ' + err.message, 'err');
                   });
-                  ghl.createTask(activeContact.id, `Adviesgesprek ${activeContact.firstName} ${activeContact.lastName}`, {
+                  cliq.createTask(activeContact.id, `Adviesgesprek ${activeContact.firstName} ${activeContact.lastName}`, {
                     body: `Afspraak op ${fmtDate(bookDate)} om ${bookTime}\n📍 ${locationStr}`,
                     dueDate: `${bookDate}T${bookTime}:00`,
                   }).catch(console.error);
-                  ghl.upsertOpportunity(activeContact.id, '', '', `${activeComp.name} - Adviesgesprek`).catch(console.error);
+                  cliq.upsertOpportunity(activeContact.id, '', '', `${activeComp.name} - Adviesgesprek`).catch(console.error);
                   onEndCall('done', 'afspraak');
                   addScore('afspraak');
                   const adv = ADVISORS.find(a => a.id === bookAdvisor);

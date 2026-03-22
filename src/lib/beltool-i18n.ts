@@ -51,7 +51,7 @@ export const i18n = {
     markedCallback: 'staat op terugbellen.',
     emailSent: 'Email met link verstuurd',
     whatsappSent: 'WhatsApp met link verstuurd',
-    stageUpdated: 'Stadium bijgewerkt in GHL',
+    stageUpdated: 'Stadium bijgewerkt in CLIQ',
     confirmAutoSent: 'Bevestiging automatisch verstuurd',
     reminder24: 'Herinnering 24u + 1u voor gesprek',
     surveyCompleted: 'Enquête voltooid! +1',

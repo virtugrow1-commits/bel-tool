@@ -4,7 +4,6 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  password: string;
   role: 'admin' | 'caller' | 'manager';
   avatar: string;
   deviceId?: string;
@@ -16,10 +15,11 @@ export interface Advisor {
   specialty: string;
 }
 
+/** Fallback users when Supabase profiles table is not yet configured */
 export const USERS: User[] = [
-  { id: 'u1', name: 'Willem', email: 'willem@cliqmakers.nl', password: 'demo', role: 'admin', avatar: 'WC' },
-  { id: 'u2', name: 'Sophie', email: 'sophie@cliqmakers.nl', password: 'demo', role: 'caller', avatar: 'SV' },
-  { id: 'u3', name: 'Mark', email: 'mark@cliqmakers.nl', password: 'demo', role: 'manager', avatar: 'MB' },
+  { id: 'u1', name: 'Willem', email: 'willem@cliqmakers.nl', role: 'admin', avatar: 'WC' },
+  { id: 'u2', name: 'Sophie', email: 'sophie@cliqmakers.nl', role: 'caller', avatar: 'SV' },
+  { id: 'u3', name: 'Mark', email: 'mark@cliqmakers.nl', role: 'manager', avatar: 'MB' },
 ];
 
 export const ADVISORS: Advisor[] = [

@@ -1,25 +1,38 @@
 import { supabase } from '@/integrations/supabase/client';
+import { withRetry, isRetryableError } from '@/lib/retry';
 
-async function callGHL(action: string, params: Record<string, unknown> = {}) {
-  const { data, error } = await supabase.functions.invoke('ghl-proxy', {
-    body: { action, ...params },
-  });
-  if (error) throw new Error(`GHL ${action} failed: ${error.message}`);
-  return data;
+async function callCliq(action: string, params: Record<string, unknown> = {}) {
+  return withRetry(
+    async () => {
+      const { data, error } = await supabase.functions.invoke('ghl-proxy', {
+        body: { action, ...params },
+      });
+      if (error) throw new Error(`CLIQ ${action} failed: ${error.message}`);
+      return data;
+    },
+    {
+      maxRetries: 2,
+      baseDelay: 800,
+      shouldRetry: (err) => isRetryableError(err),
+      onRetry: (err, attempt) => {
+        console.warn(`[CLIQ] Retrying ${action} (attempt ${attempt + 1}):`, err);
+      },
+    }
+  );
 }
 
-export const ghl = {
+export const cliq = {
   async getContacts(query?: string) {
-    return callGHL('getContacts', { query, limit: 100 });
+    return callCliq('getContacts', { query, limit: 100 });
   },
 
   async getContact(contactId: string) {
-    return callGHL('getContact', { contactId });
+    return callCliq('getContact', { contactId });
   },
 
   async updateContactStage(contactId: string, stage: string) {
     // Legacy: Add tag for the stage
-    await callGHL('addTag', { contactId, tags: [stage] });
+    await callCliq('addTag', { contactId, tags: [stage] });
   },
 
   async saveSurveyAnswers(contactId: string, answers: unknown) {
@@ -35,12 +48,12 @@ export const ghl = {
     if (fields.ai) customFields.push({ id: 'beltool_ai_status', field_value: fields.ai });
 
     if (customFields.length > 0) {
-      await callGHL('saveCustomFields', { contactId, customFields });
+      await callCliq('saveCustomFields', { contactId, customFields });
     }
 
     // Also create a note with the full survey summary
     const noteBody = `📋 Bel-Tool Enquête Resultaten:\n⏱️ Uren/week: ${fields.hours || '-'}\n🔄 Taken: ${Array.isArray(fields.tasks) ? fields.tasks.join(', ') : fields.tasks || '-'}\n📈 Groeifase: ${fields.growth || '-'}\n🤖 AI status: ${fields.ai || '-'}`;
-    await callGHL('createNote', { contactId, body: noteBody });
+    await callCliq('createNote', { contactId, body: noteBody });
   },
 
   async bookAppointment(contactId: string, date: string, time: string, advisor: string, calendarId?: string, notes?: string) {
@@ -49,7 +62,7 @@ export const ghl = {
     endDate.setMinutes(endDate.getMinutes() + 15);
     const endTime = `${date}T${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}:00+02:00`;
 
-    return callGHL('createAppointment', {
+    return callCliq('createAppointment', {
       contactId,
       calendarId: calendarId || 'default',
       startTime,
@@ -61,7 +74,7 @@ export const ghl = {
   },
 
   async createTask(contactId: string, title: string, data?: { body?: string; dueDate?: string; assignedTo?: string }) {
-    return callGHL('createTask', {
+    return callCliq('createTask', {
       contactId,
       title,
       body: data?.body || '',
@@ -71,48 +84,48 @@ export const ghl = {
   },
 
   async createNote(contactId: string, note: string) {
-    return callGHL('createNote', { contactId, body: note });
+    return callCliq('createNote', { contactId, body: note });
   },
 
   async logCall(contactId: string, result: string) {
-    await callGHL('createNote', {
+    await callCliq('createNote', {
       contactId,
       body: `📞 Belresultaat: ${result}\n📅 ${new Date().toLocaleString('nl-NL')}`,
     });
   },
 
   async upsertOpportunity(contactId: string, pipelineId: string, stageId: string, name: string, opportunityId?: string) {
-    return callGHL('upsertOpportunity', { contactId, pipelineId, stageId, name, opportunityId });
+    return callCliq('upsertOpportunity', { contactId, pipelineId, stageId, name, opportunityId });
   },
 
   async getCalendars() {
-    return callGHL('getCalendars');
+    return callCliq('getCalendars');
   },
 
   async getPipelines() {
-    return callGHL('getPipelines');
+    return callCliq('getPipelines');
   },
 
   async searchOpportunities(pipelineId: string, stageId?: string, limit = 25, startAfter?: number, startAfterId?: string) {
-    return callGHL('searchOpportunities', { pipelineId, stageId, limit, startAfter, startAfterId });
+    return callCliq('searchOpportunities', { pipelineId, stageId, limit, startAfter, startAfterId });
   },
 
   async triggerCall(contactId: string) {
-    return callGHL('triggerCall', { contactId });
+    return callCliq('triggerCall', { contactId });
   },
 
   async removeTag(contactId: string, tags: string[]) {
-    return callGHL('removeTag', { contactId, tags });
+    return callCliq('removeTag', { contactId, tags });
   },
 
   async sendEmail(contactId: string, _template: string) {
     // Trigger via GHL workflow/automation - add tag to trigger
-    await callGHL('addTag', { contactId, tags: ['beltool-send-survey'] });
+    await callCliq('addTag', { contactId, tags: ['beltool-send-survey'] });
   },
 
   async sendWhatsApp(contactId: string, _template: string) {
     // Trigger via GHL workflow/automation - add tag to trigger
-    await callGHL('addTag', { contactId, tags: ['beltool-send-whatsapp'] });
+    await callCliq('addTag', { contactId, tags: ['beltool-send-whatsapp'] });
   },
 
   async triggerWebhook(url: string, payload?: unknown) {
@@ -123,7 +136,7 @@ export const ghl = {
         body: JSON.stringify(payload),
       });
     } catch (e) {
-      console.error('[GHL] Webhook error:', e);
+      console.error('[CLIQ] Webhook error:', e);
     }
   },
 };

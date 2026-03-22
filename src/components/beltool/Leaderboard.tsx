@@ -1,12 +1,13 @@
 import { Modal } from './Modal';
 import { useBelTool } from '@/contexts/BelToolContext';
-import { USERS } from '@/lib/beltool-data';
+import { useTeamProfiles } from '@/hooks/useTeamProfiles';
 import { initScores } from '@/lib/beltool-scoring';
 
 export function Leaderboard({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { allScores, t } = useBelTool();
+  const { profiles } = useTeamProfiles();
 
-  const rows = USERS.map(u => {
+  const rows = profiles.map(u => {
     const s = allScores[u.id] || initScores();
     return {
       ...u,

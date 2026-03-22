@@ -6,6 +6,11 @@ import { useBelTool } from '@/contexts/BelToolContext';
 import type { Scores } from '@/lib/beltool-scoring';
 import type { User } from '@/lib/beltool-data';
 import { store } from '@/lib/beltool-store';
+import { CliqErrorBanner } from './CliqErrorBanner';
+import { ContactSkeleton } from './Skeletons';
+import { DarkModeToggle } from './DarkModeToggle';
+import { DailyProgress } from './DailyProgress';
+import { ConnectionStatus } from './ConnectionStatus';
 
 const FILTER_TABS: { key: CompanyStage | 'all'; label: string; icon: string }[] = [
   { key: 'all', label: 'Alles', icon: '📋' },
@@ -111,9 +116,14 @@ interface ContactSidebarProps {
   onStageFilterChange: (f: CompanyStage | 'all') => void;
   onSelectFromLog?: (entry: { contact: string; contactId?: string; companyId?: string }) => void;
   onInsertNote?: (text: string) => void;
+  cliqError?: string | null;
+  onRetryCliq?: () => void;
+  theme?: 'light' | 'dark' | 'system';
+  onThemeChange?: (t: 'light' | 'dark' | 'system') => void;
+  onShowRapportage?: () => void;
 }
 
-export function ContactSidebar({ companies, activeCompId, activeContactId, expandedComp, setExpandedComp, search, onSearchChange, onSelectContact, phase, onBusy, scores, convRate, user, onLogout, onShowAgenda, onShowCallbackQueue, onShowLeaderboard, onShowSettings, dueCallbackCount, appointmentCount, hasMoreLeads, loadingMore, onLoadMore, stageFilter, onStageFilterChange, onSelectFromLog, onInsertNote }: ContactSidebarProps) {
+export function ContactSidebar({ companies, activeCompId, activeContactId, expandedComp, setExpandedComp, search, onSearchChange, onSelectContact, phase, onBusy, scores, convRate, user, onLogout, onShowAgenda, onShowCallbackQueue, onShowLeaderboard, onShowSettings, dueCallbackCount, appointmentCount, hasMoreLeads, loadingMore, onLoadMore, stageFilter, onStageFilterChange, onSelectFromLog, onInsertNote, cliqError, onRetryCliq, theme, onThemeChange, onShowRapportage }: ContactSidebarProps) {
   const { t } = useBelTool();
   const [filterOpen, setFilterOpen] = useState(false);
   const filterRef = useRef<HTMLDivElement>(null);
@@ -160,6 +170,7 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
               { fn: onShowAgenda, icon: '📅', active: appointmentCount > 0, title: t.agenda },
               { fn: onShowCallbackQueue, icon: '🔔', badge: dueCallbackCount, title: 'Callbacks' },
               { fn: onShowLeaderboard, icon: '🏆', title: 'Leaderboard' },
+              { fn: onShowRapportage, icon: '📊', title: 'Rapportage' },
               { fn: exportCSV, icon: '📤', title: 'Exporteer' },
               { fn: onShowSettings, icon: '⚙️', title: 'Instellingen' },
             ].map((btn, i) => (
@@ -186,6 +197,7 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
             <div className="text-[11px] font-semibold text-foreground truncate">{user.name}</div>
           </div>
           <PauseTimerInline />
+          {theme && onThemeChange && <DarkModeToggle theme={theme} onChange={onThemeChange} compact />}
           <button onClick={onLogout} className="text-muted-foreground text-[10px] hover:text-foreground transition-colors" title="Uitloggen">↗</button>
         </div>
 
@@ -256,12 +268,28 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
         <div className="flex flex-wrap gap-1 text-[9px] text-muted-foreground/50">
           <span className="px-1.5 py-0.5 rounded bg-muted/50 font-mono">Space</span><span>bellen</span>
           <span className="px-1.5 py-0.5 rounded bg-muted/50 font-mono">Esc</span><span>ophangen</span>
+          <span className="px-1.5 py-0.5 rounded bg-muted/50 font-mono">N</span><span>notities</span>
+          <span className="px-1.5 py-0.5 rounded bg-muted/50 font-mono">?</span><span>alle sneltoetsen</span>
         </div>
+      </div>
+
+      {/* Daily progress rings */}
+      <DailyProgress scores={scores} />
+
+      {/* Connection status */}
+      <div className="px-3 pb-2">
+        <ConnectionStatus />
       </div>
 
       {/* Contact list */}
       <div className="flex-1 overflow-y-auto px-2 pb-2">
-        {filtered.length === 0 && (
+        {cliqError && onRetryCliq && (
+          <CliqErrorBanner error={cliqError} loading={!!loadingMore} onRetry={onRetryCliq} />
+        )}
+        {!cliqError && loadingMore && filtered.length === 0 && (
+          <ContactSkeleton count={6} />
+        )}
+        {!loadingMore && filtered.length === 0 && !cliqError && (
           <div className="text-center text-muted-foreground text-[12px] py-6">Geen contacten in deze lijst</div>
         )}
         {filtered.map(comp => {

@@ -21,7 +21,7 @@ export interface Company {
   notes?: string;
 }
 
-export interface GhlConfig {
+export interface CliqConfig {
   apiKey: string;
   locationId: string;
   pipelineId: string;

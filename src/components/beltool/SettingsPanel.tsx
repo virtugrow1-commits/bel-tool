@@ -4,7 +4,7 @@ import { useBelTool } from '@/contexts/BelToolContext';
 import { USERS, defaultSurvey, type User } from '@/lib/beltool-data';
 import { initScores } from '@/lib/beltool-scoring';
 import { store } from '@/lib/beltool-store';
-import { ghl } from '@/lib/beltool-ghl';
+import { cliq } from '@/lib/beltool-ghl';
 import { cn } from '@/lib/utils';
 import type { SelectOption } from '@/types/beltool';
 
@@ -36,8 +36,8 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
   managedUsers: User[];
   onUpdateUsers: (users: User[]) => void;
 }) {
-  const { lang, setLang, user, allScores, setAllScores, webhooks, setWebhooks, apiKey, setApiKey, t, surveyConfig, setSurveyConfig, ghlConfig, setGhlConfig } = useBelTool();
-  const [tab, setTab] = useState('ghl');
+  const { lang, setLang, user, allScores, setAllScores, webhooks, setWebhooks, apiKey, setApiKey, t, surveyConfig, setSurveyConfig, cliqConfig, setCliqConfig } = useBelTool();
+  const [tab, setTab] = useState('cliq');
   const [confirmReset, setConfirmReset] = useState<string | null>(null);
   const [newWh, setNewWh] = useState('');
   const [editQ, setEditQ] = useState<string | null>(null);
@@ -45,7 +45,7 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
   const [newOpt, setNewOpt] = useState('');
   const [testStatus, setTestStatus] = useState<string | null>(null);
   const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [newUser, setNewUser] = useState<Partial<User> & { name: string; email: string }>({ name: '', email: '', password: 'demo', role: 'caller', deviceId: '' });
+  const [newUser, setNewUser] = useState<Partial<User> & { name: string; email: string }>({ name: '', email: '', role: 'caller', deviceId: '' });
 
   const qKeys = ['intro', 'q1', 'q2', 'q3', 'q4', 'bridge'];
   const qLabels: Record<string, string> = { intro: 'Introductie', q1: 'Vraag 1', q2: 'Vraag 2', q3: 'Vraag 3', q4: 'Vraag 4', bridge: 'Aanbod' };
@@ -65,22 +65,22 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
     setDraft(null);
   };
 
-  const updateGhlConfig = (partial: Partial<typeof ghlConfig>) => {
-    const next = { ...ghlConfig, ...partial };
-    setGhlConfig(next);
-    store.set('ghlConfig', next);
+  const updateCliqConfig = (partial: Partial<typeof cliqConfig>) => {
+    const next = { ...cliqConfig, ...partial };
+    setCliqConfig(next);
+    store.set('cliqConfig', next);
   };
 
   const testConnection = () => {
     setTestStatus('testing');
     setTimeout(() => {
-      setTestStatus(ghlConfig.apiKey && ghlConfig.locationId ? 'success' : 'error');
+      setTestStatus(cliqConfig.apiKey && cliqConfig.locationId ? 'success' : 'error');
       setTimeout(() => setTestStatus(null), 3000);
     }, 1500);
   };
 
   const tabs = [
-    { id: 'ghl', label: '🔗 GHL Integratie' },
+    { id: 'cliq', label: '🔗 CLIQ Integratie' },
     { id: 'telefonie', label: '📞 Telefonie' },
     { id: 'vragen', label: '❓ Enquêtevragen' },
     { id: 'pipeline', label: '📊 Pipeline' },
@@ -111,43 +111,43 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
         ))}
       </div>
 
-      {/* GHL INTEGRATIE TAB */}
-      {tab === 'ghl' && (
+      {/* CLIQ INTEGRATIE TAB */}
+      {tab === 'cliq' && (
         <div className="space-y-5">
           <div className="bg-primary/[0.06] border border-primary/15 rounded-xl p-4">
             <h3 className="text-sm font-bold text-primary mb-2">🔗 GoHighLevel Integratie</h3>
-            <p className="text-muted-foreground text-sm">Koppel je GHL account om leads, contacten en afspraken te synchroniseren.</p>
+            <p className="text-muted-foreground text-sm">Koppel je CLIQ account om leads, contacten en afspraken te synchroniseren.</p>
           </div>
 
           <div className="grid gap-4">
             <div>
-              <label className="text-sm text-muted-foreground mb-2 block">GHL API Key (Private Integration)</label>
+              <label className="text-sm text-muted-foreground mb-2 block">CLIQ API Key (Private Integration)</label>
               <input
                 type="password"
-                value={ghlConfig.apiKey}
-                onChange={e => updateGhlConfig({ apiKey: e.target.value })}
+                value={cliqConfig.apiKey}
+                onChange={e => updateCliqConfig({ apiKey: e.target.value })}
                 placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
                 className={cn(inputCls, 'font-mono')}
               />
-              <p className="text-xs text-muted-foreground/40 mt-1">Vind deze in GHL → Settings → Integrations → Private Integrations</p>
+              <p className="text-xs text-muted-foreground/40 mt-1">Vind deze in CLIQ → Settings → Integrations → Private Integrations</p>
             </div>
 
             <div>
               <label className="text-sm text-muted-foreground mb-2 block">Location ID</label>
               <input
-                value={ghlConfig.locationId}
-                onChange={e => updateGhlConfig({ locationId: e.target.value })}
+                value={cliqConfig.locationId}
+                onChange={e => updateCliqConfig({ locationId: e.target.value })}
                 placeholder="abc123xyz789"
                 className={cn(inputCls, 'font-mono')}
               />
-              <p className="text-xs text-muted-foreground/40 mt-1">Vind deze in GHL → Settings → Business Profile → Location ID</p>
+              <p className="text-xs text-muted-foreground/40 mt-1">Vind deze in CLIQ → Settings → Business Profile → Location ID</p>
             </div>
 
             <div>
               <label className="text-sm text-muted-foreground mb-2 block">Pipeline ID (optioneel)</label>
               <input
-                value={ghlConfig.pipelineId}
-                onChange={e => updateGhlConfig({ pipelineId: e.target.value })}
+                value={cliqConfig.pipelineId}
+                onChange={e => updateCliqConfig({ pipelineId: e.target.value })}
                 placeholder="Wordt automatisch gevonden"
                 className={cn(inputCls, 'font-mono')}
               />
@@ -156,8 +156,8 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
             <div>
               <label className="text-sm text-muted-foreground mb-2 block">Calendar ID (optioneel)</label>
               <input
-                value={ghlConfig.calendarId}
-                onChange={e => updateGhlConfig({ calendarId: e.target.value })}
+                value={cliqConfig.calendarId}
+                onChange={e => updateCliqConfig({ calendarId: e.target.value })}
                 placeholder="Wordt automatisch gevonden"
                 className={cn(inputCls, 'font-mono')}
               />
@@ -179,13 +179,13 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
                 ['syncContacts', 'Contacten synchroniseren'],
                 ['syncOpportunities', 'Opportunities synchroniseren'],
                 ['syncAppointments', 'Afspraken synchroniseren'],
-                ['createNotes', 'Notities aanmaken in GHL'],
+                ['createNotes', 'Notities aanmaken in CLIQ'],
               ] as const).map(([key, label]) => (
                 <label key={key} className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
-                    checked={ghlConfig[key]}
-                    onChange={e => updateGhlConfig({ [key]: e.target.checked })}
+                    checked={cliqConfig[key]}
+                    onChange={e => updateCliqConfig({ [key]: e.target.checked })}
                     className="w-4 h-4 rounded border-border accent-primary"
                   />
                   <span className="text-sm text-foreground/70">{label}</span>
@@ -207,7 +207,7 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
           <div className="space-y-3">
             {([
               { key: 'leads', icon: '📋', label: 'Leads synchroniseren', desc: 'Haal de nieuwste leads op uit de Bellen pipeline' },
-              { key: 'calendars', icon: '📅', label: 'Kalenders synchroniseren', desc: 'Haal beschikbare kalenders op uit GHL' },
+              { key: 'calendars', icon: '📅', label: 'Kalenders synchroniseren', desc: 'Haal beschikbare kalenders op uit CLIQ' },
             ] as const).map(item => (
               <div key={item.key} className="flex items-center gap-3 p-4 rounded-xl bg-foreground/[0.02] border border-border/40">
                 <span className="text-2xl">{item.icon}</span>
@@ -222,7 +222,7 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
                       if (item.key === 'leads') {
                         await onSyncLeads();
                       } else if (item.key === 'calendars') {
-                        await ghl.getCalendars();
+                        await cliq.getCalendars();
                       }
                       setTestStatus(`synced-${item.key}`);
                     } catch {
@@ -256,9 +256,9 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
             {testStatus === 'syncing-all' ? '⏳ Alles synchroniseren...' : testStatus === 'synced-all' ? '✅ Alles gesynchroniseerd!' : testStatus === 'error-all' ? '❌ Synchronisatie mislukt' : '🔄 Alles synchroniseren'}
           </button>
 
-          {!ghlConfig.apiKey && (
+          {!cliqConfig.apiKey && (
             <div className="bg-warning/[0.08] border border-warning/15 rounded-xl p-4">
-              <p className="text-warning text-sm">⚠️ Stel eerst de GHL API koppeling in via het GHL Integratie tabblad.</p>
+              <p className="text-warning text-sm">⚠️ Stel eerst de CLIQ API koppeling in via het CLIQ Integratie tabblad.</p>
             </div>
           )}
         </div>
@@ -269,7 +269,7 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
         <div className="space-y-4">
           <div className="bg-primary/[0.06] border border-primary/15 rounded-xl p-4">
             <h3 className="text-sm font-bold text-primary mb-2">📊 Pipeline Stages</h3>
-            <p className="text-muted-foreground text-sm">De Bel-Tool gebruikt deze stages om leads te categoriseren in GHL.</p>
+            <p className="text-muted-foreground text-sm">De Bel-Tool gebruikt deze stages om leads te categoriseren in CLIQ.</p>
           </div>
 
           <div className="space-y-2">
@@ -288,7 +288,7 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
             onClick={() => { setTestStatus('creating-pipeline'); setTimeout(() => { setTestStatus('pipeline-created'); setTimeout(() => setTestStatus(null), 3000); }, 2000); }}
             className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold active:scale-[0.97] transition-transform"
           >
-            {testStatus === 'creating-pipeline' ? '⏳ Aanmaken...' : testStatus === 'pipeline-created' ? '✅ Pipeline aangemaakt!' : '📊 Pipeline aanmaken in GHL'}
+            {testStatus === 'creating-pipeline' ? '⏳ Aanmaken...' : testStatus === 'pipeline-created' ? '✅ Pipeline aangemaakt!' : '📊 Pipeline aanmaken in CLIQ'}
           </button>
         </div>
       )}
@@ -298,7 +298,7 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
         <div className="space-y-4">
           <div className="bg-primary/[0.06] border border-primary/15 rounded-xl p-4">
             <h3 className="text-sm font-bold text-primary mb-2">📝 Custom Fields</h3>
-            <p className="text-muted-foreground text-sm">De Bel-Tool slaat enquêteresultaten op in deze custom fields op het GHL contact.</p>
+            <p className="text-muted-foreground text-sm">De Bel-Tool slaat enquêteresultaten op in deze custom fields op het CLIQ contact.</p>
           </div>
 
           <div className="space-y-2">
@@ -318,11 +318,11 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
             onClick={() => { setTestStatus('creating-fields'); setTimeout(() => { setTestStatus('fields-created'); setTimeout(() => setTestStatus(null), 3000); }, 2000); }}
             className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold active:scale-[0.97] transition-transform"
           >
-            {testStatus === 'creating-fields' ? '⏳ Aanmaken...' : testStatus === 'fields-created' ? '✅ Fields aangemaakt!' : '📝 Custom Fields aanmaken in GHL'}
+            {testStatus === 'creating-fields' ? '⏳ Aanmaken...' : testStatus === 'fields-created' ? '✅ Fields aangemaakt!' : '📝 Custom Fields aanmaken in CLIQ'}
           </button>
 
           <div className="bg-warning/[0.08] border border-warning/15 rounded-xl p-4">
-            <p className="text-warning text-sm">⚠️ Zorg dat je eerst de GHL API koppeling hebt ingesteld voordat je custom fields aanmaakt.</p>
+            <p className="text-warning text-sm">⚠️ Zorg dat je eerst de CLIQ API koppeling hebt ingesteld voordat je custom fields aanmaakt.</p>
           </div>
         </div>
       )}
@@ -461,7 +461,7 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
       {tab === 'api' && (
         <div>
           <div className="text-[11px] text-muted-foreground mb-1">API Key</div>
-          <input value={apiKey} onChange={e => { setApiKey(e.target.value); store.set('apiKey', e.target.value); }} placeholder="ghl-api-key-..." className={cn(inputCls, 'mb-3.5')} />
+          <input value={apiKey} onChange={e => { setApiKey(e.target.value); store.set('apiKey', e.target.value); }} placeholder="cliq-api-key-..." className={cn(inputCls, 'mb-3.5')} />
           <div className="text-[11px] text-muted-foreground mb-1.5">Webhooks</div>
           {webhooks.map((wh, i) => (
             <div key={i} className="flex gap-1.5 mb-1 items-center">
@@ -571,7 +571,14 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
         <div className="space-y-4">
           <div className="bg-primary/[0.06] border border-primary/15 rounded-xl p-4">
             <h3 className="text-sm font-bold text-primary mb-2">👥 Gebruikersbeheer</h3>
-            <p className="text-muted-foreground text-sm">Voeg bellers toe, wijzig rollen of verwijder gebruikers.</p>
+            <p className="text-muted-foreground text-sm">Beheer teamleden en hun rollen. Authenticatie loopt via Supabase Auth — wachtwoorden worden veilig beheerd door Supabase.</p>
+          </div>
+
+          <div className="bg-info/[0.06] border border-info/15 rounded-xl p-3">
+            <div className="text-[11px] font-semibold text-info mb-1">🔒 Beveiligde authenticatie</div>
+            <div className="text-[10px] text-muted-foreground">
+              Wachtwoorden worden gehasht opgeslagen in Supabase Auth. Gebruikers kunnen hun wachtwoord herstellen via de "Wachtwoord vergeten" link op het loginscherm.
+            </div>
           </div>
 
           {/* Existing users */}
@@ -640,10 +647,6 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
                   <label className="text-[11px] text-muted-foreground mb-1 block">Device ID</label>
                   <input value={editingUser.deviceId || ''} onChange={e => setEditingUser({ ...editingUser, deviceId: e.target.value })} placeholder="bijv. 201" className={cn(inputCls, 'font-mono')} />
                 </div>
-                <div>
-                  <label className="text-[11px] text-muted-foreground mb-1 block">Wachtwoord</label>
-                  <input value={editingUser.password} onChange={e => setEditingUser({ ...editingUser, password: e.target.value })} className={inputCls} />
-                </div>
               </div>
               <div className="flex gap-2 pt-2">
                 <button onClick={() => setEditingUser(null)} className="px-4 py-2 rounded-lg border border-border text-muted-foreground text-[12px] font-semibold">Annuleren</button>
@@ -693,11 +696,11 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
                 const avatar = newUser.name.trim().substring(0, 2).toUpperCase();
                 const created: User = {
                   id, name: newUser.name.trim(), email: newUser.email.trim(),
-                  password: newUser.password || 'demo', role: newUser.role || 'caller',
+                  role: newUser.role || 'caller',
                   avatar, deviceId: newUser.deviceId || '',
                 };
                 onUpdateUsers([...managedUsers, created]);
-                setNewUser({ name: '', email: '', password: 'demo', role: 'caller', deviceId: '' });
+                setNewUser({ name: '', email: '', role: 'caller', deviceId: '' });
               }}
               disabled={!newUser.name.trim() || !newUser.email.trim()}
               className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-[12px] font-semibold active:scale-[0.97] transition-transform disabled:opacity-40"
