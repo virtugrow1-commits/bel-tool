@@ -171,29 +171,29 @@ export default function ProspectSurvey() {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         // No CLIQ data — that's fine, prospect fills it in
-      }setStatus('active');};loadContact();}, [contactId]);const update = <K extends keyof Answers,>(key: K, value: Answers[K]) => {setAnswers((prev) => ({ ...prev, [key]: value }));};const toggleTask = (task: string) => {setAnswers((prev) => ({ ...prev, taken: prev.taken.includes(task) ? prev.taken.filter((t) => t !== task) : [...prev.taken, task] }));};const submit = async () => {setStatus('submitting');const errors: string[] = [];try {const allTaken = answers.taken.concat(answers.takenOverig ? [answers.takenOverig] : []).join(', ');let ghlContactId = contactId;
-
-      // Step 1: Ensure we have a valid GHL contact
-      if (ghlContactId) {
-        try {
-          const { data, error } = await supabase.functions.invoke('ghl-proxy', {
-            body: { action: 'getContact', contactId: ghlContactId }
-          });
-          if (error || !data?.contact) {
-            console.warn('[Enquête] Contact ID niet gevonden in GHL:', ghlContactId, error);
-            ghlContactId = null;
-          }
-        } catch (err) {
-          console.warn('[Enquête] GHL getContact failed:', err);
-          ghlContactId = null;
-        }
-      }
-
-      // Step 2: Create contact if we don't have a valid one
-      if (!ghlContactId) {
-        try {
-          const { data, error } = await supabase.functions.invoke('ghl-proxy', {
+      }setStatus('active');};loadContact();}, [contactId]);const update = <K extends keyof Answers,>(key: K, value: Answers[K]) => {setAnswers((prev) => ({ ...prev, [key]: value }));};const toggleTask = (task: string) => {setAnswers((prev) => ({ ...prev, taken: prev.taken.includes(task) ? prev.taken.filter((t) => t !== task) : [...prev.taken, task] }));};const submit = async () => {setStatus('submitting');const errors: string[] = [];try {const allTaken = answers.taken.concat(answers.takenOverig ? [answers.takenOverig] : []).join(', ');let ghlContactId = contactId; // Step 1: Ensure we have a valid GHL contact
+      if (ghlContactId) {try {const { data, error } = await supabase.functions.invoke('ghl-proxy', { body: { action: 'getContact', contactId: ghlContactId } });if (error || !data?.contact) {console.warn('[Enquête] Contact ID niet gevonden in GHL:', ghlContactId, error);ghlContactId = null;}} catch (err) {console.warn('[Enquête] GHL getContact failed:', err);ghlContactId = null;}} // Step 2: Create contact if we don't have a valid one
+      if (!ghlContactId) {try {const { data, error } = await supabase.functions.invoke('ghl-proxy', {
             body: {
               action: 'createContact',
               name: answers.naam,
@@ -576,10 +576,10 @@ export default function ProspectSurvey() {
       <div className="w-full max-w-lg">
         {/* Header */}
         <div className="text-center mb-6">
-          <img src="/cliqmakers-logo.png" alt="CliqMakers" className="h-24 mx-auto mb-4" />
-          <h1 className="text-xl font-bold text-foreground mb-1">Deelname praktijkonderzoek</h1>
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-[13px] font-semibold">
-            Capaciteit & Groei
+          <img src="/cliqmakers-logo.png" alt="CliqMakers" className="h-24 mx-auto mb-4 py-0 px-0" />
+          <h1 className="text-xl font-bold text-foreground mb-1">​</h1>
+          <div className="inline-flex items-center gap-2 px-4 rounded-full bg-primary/10 text-primary font-semibold py-0 text-2xl">
+            Deelname Praktijkonderzoek
           </div>
           {step === 0 &&
           <p className="text-[14px] text-muted-foreground mt-4 leading-relaxed max-w-md mx-auto">
