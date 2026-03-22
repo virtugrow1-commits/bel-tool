@@ -357,9 +357,8 @@ export default function BelTool() {
               onShowSurveyResults={() => { navigate('/resultaten'); closeOnAction(); }}
               dueCallbackCount={dueCallbacks.length}
               appointmentCount={settings.appts.length}
-              hasMoreLeads={hasMoreLeads}
+              stageCounts={stageCounts}
               loadingMore={cliqLoading}
-              onLoadMore={loadMoreLeads}
               stageFilter={stageFilter}
               onStageFilterChange={setStageFilter}
               onSelectFromLog={(entry) => {
