@@ -33,6 +33,8 @@ import { ShortcutsHelp } from '@/components/beltool/ShortcutsHelp';
 import { CliqErrorBanner } from '@/components/beltool/CliqErrorBanner';
 import { MobileHeader } from '@/components/beltool/MobileHeader';
 import { AuthGuard } from '@/components/beltool/AuthGuard';
+import { useSoundEffects } from '@/hooks/useSoundEffects';
+import { recordAttempt } from '@/lib/smart-queue';
 
 export default function BelTool() {
   // --- Core hooks ---
@@ -46,6 +48,7 @@ export default function BelTool() {
 
   const scoring = useScoring(user);
   const { scores, convRate, addScore, allScores, setAllScores, setContactInfo } = scoring;
+  const sfx = useSoundEffects();
 
   const leads = useLeads(user);
   const { companies, cliqLoading, cliqError, hasMoreLeads, stageFilter, setStageFilter, search, setSearch, reloadLeads, loadMoreLeads, updateCompStage, updateContact, updateCompany } = leads;
@@ -105,9 +108,20 @@ export default function BelTool() {
   const handleSaveCallback = (cb: Omit<import('@/types/beltool').CallbackEntry, 'id' | 'userId'>) => {
     rawSaveCallback(cb, user?.id);
     if (activeCompId) updateCompStage(activeCompId, 'terugbellenGepland');
-    addScore('callback');
+    addScoreWithSfx('callback');
     flash(t.callbackSaved, 'info');
     callFlow.resetCallState();
+  };
+
+  // Enhanced addScore with sound effects + call attempt recording
+  const addScoreWithSfx = (type: string) => {
+    addScore(type);
+    sfx.playForResult(type, scores.reeks + 1);
+
+    // Record call attempt for smart queue
+    if (activeContactId && activeCompId && ['gebeld', 'geenGehoor', 'afgevallen', 'enquete', 'afspraak', 'verstuurd', 'callback'].includes(type)) {
+      recordAttempt(activeContactId, activeCompId, type);
+    }
   };
 
   const handleCompleteCallback = (cbId: number) => {
@@ -279,6 +293,7 @@ export default function BelTool() {
               onRetryCliq={reloadLeads}
               theme={darkMode.theme}
               onThemeChange={darkMode.setTheme}
+              callbacks={callbacks}
             />
           </div>
 
@@ -292,7 +307,7 @@ export default function BelTool() {
                     answers={answers} setAnswers={setAnswers} taskString={taskString}
                     onEndCall={(ph, stage) => endCall(ph, stage, answers, notes, activeContact, activeComp)}
                     onNextContact={nextContact}
-                    showToast={flash} updateStage={updateCompStage} addScore={addScore}
+                    showToast={flash} updateStage={updateCompStage} addScore={addScoreWithSfx}
                     bookDate={bookDate} setBookDate={setBookDate}
                     bookTime={bookTime} setBookTime={setBookTime}
                     bookAdvisor={bookAdvisor} setBookAdvisor={setBookAdvisor}
@@ -310,9 +325,9 @@ export default function BelTool() {
                 {curStep >= 1 && !isMobile && (
                   <AnswersSidebar
                     answers={answers} taskString={taskString} notes={notes} onNotesChange={setNotes}
-                    onSendDigital={() => { endCall('sent', 'enqueteVerstuurd', answers, notes, activeContact, activeComp); addScore('verstuurd'); flash(t.surveyDigitalSent, 'info'); }}
-                    onNoAnswer={() => { endCall('noanswer', 'geenGehoor', answers, notes, activeContact, activeComp); addScore('geenGehoor'); flash(t.noAnswerNoted); }}
-                    onGoToAppointment={() => { if (activeCompId) updateCompStage(activeCompId, 'enqueteTel'); addScore('enquete'); setPhase('bridge'); }}
+                    onSendDigital={() => { endCall('sent', 'enqueteVerstuurd', answers, notes, activeContact, activeComp); addScoreWithSfx('verstuurd'); flash(t.surveyDigitalSent, 'info'); }}
+                    onNoAnswer={() => { endCall('noanswer', 'geenGehoor', answers, notes, activeContact, activeComp); addScoreWithSfx('geenGehoor'); flash(t.noAnswerNoted); }}
+                    onGoToAppointment={() => { if (activeCompId) updateCompStage(activeCompId, 'enqueteTel'); addScoreWithSfx('enquete'); setPhase('bridge'); }}
                     onShowCallback={() => settings.setShowCallback(true)}
                   />
                 )}

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { cn } from '@/lib/utils';
-import type { Company, CompanyContact, CallPhase, CompanyStage } from '@/types/beltool';
+import type { Company, CompanyContact, CallPhase, CompanyStage, CallbackEntry } from '@/types/beltool';
 import { STAGE_META } from '@/types/beltool';
 import { useBelTool } from '@/contexts/BelToolContext';
 import type { Scores } from '@/lib/beltool-scoring';
@@ -11,6 +11,8 @@ import { ContactSkeleton } from './Skeletons';
 import { DarkModeToggle } from './DarkModeToggle';
 import { DailyProgress } from './DailyProgress';
 import { ConnectionStatus } from './ConnectionStatus';
+import { AttemptBadge } from './AttemptBadge';
+import { smartSort } from '@/lib/smart-queue';
 
 const FILTER_TABS: { key: CompanyStage | 'all'; label: string; icon: string }[] = [
   { key: 'all', label: 'Alles', icon: '📋' },
@@ -86,9 +88,10 @@ interface ContactSidebarProps {
   theme?: 'light' | 'dark' | 'system';
   onThemeChange?: (t: 'light' | 'dark' | 'system') => void;
   onShowRapportage?: () => void;
+  callbacks?: CallbackEntry[];
 }
 
-export function ContactSidebar({ companies, activeCompId, activeContactId, expandedComp, setExpandedComp, search, onSearchChange, onSelectContact, phase, onBusy, scores, convRate, user, onLogout, onShowAgenda, onShowCallbackQueue, onShowLeaderboard, onShowSettings, dueCallbackCount, appointmentCount, hasMoreLeads, loadingMore, onLoadMore, stageFilter, onStageFilterChange, onSelectFromLog, onInsertNote, cliqError, onRetryCliq, theme, onThemeChange, onShowRapportage }: ContactSidebarProps) {
+export function ContactSidebar({ companies, activeCompId, activeContactId, expandedComp, setExpandedComp, search, onSearchChange, onSelectContact, phase, onBusy, scores, convRate, user, onLogout, onShowAgenda, onShowCallbackQueue, onShowLeaderboard, onShowSettings, dueCallbackCount, appointmentCount, hasMoreLeads, loadingMore, onLoadMore, stageFilter, onStageFilterChange, onSelectFromLog, onInsertNote, cliqError, onRetryCliq, theme, onThemeChange, onShowRapportage, callbacks }: ContactSidebarProps) {
   const { t } = useBelTool();
   const [filterOpen, setFilterOpen] = useState(false);
   const filterRef = useRef<HTMLDivElement>(null);
@@ -102,7 +105,8 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
   }, []);
 
   const stageFiltered = stageFilter === 'all' ? companies : companies.filter(c => c.stage === stageFilter);
-  const filtered = stageFiltered.filter(c => (c.name + ' ' + c.contacts.map(ct => ct.firstName + ' ' + ct.lastName).join(' ')).toLowerCase().includes(search.toLowerCase()));
+  const searched = stageFiltered.filter(c => (c.name + ' ' + c.contacts.map(ct => ct.firstName + ' ' + ct.lastName).join(' ')).toLowerCase().includes(search.toLowerCase()));
+  const filtered = smartSort(searched, callbacks || []);
 
   const stageCounts: Record<string, number> = {};
   for (const tab of FILTER_TABS) {
@@ -294,6 +298,7 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
                         <div className="flex-1 min-w-0">
                           <div className={cn('text-[12px] font-semibold truncate', isSel ? 'text-foreground' : 'text-foreground/70')}>{ct.firstName} {ct.lastName}</div>
                         </div>
+                        <AttemptBadge contactId={ct.id} compact />
                       </button>
                     );
                   })}

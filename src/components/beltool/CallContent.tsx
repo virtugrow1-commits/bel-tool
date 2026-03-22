@@ -2,6 +2,10 @@ import { cn } from '@/lib/utils';
 import type { CompanyContact, Company, CallPhase, CallState, SurveyAnswers, SelectOption, SurveyConfig } from '@/types/beltool';
 import { CallButton } from './CallButton';
 import { CallDisplay } from './CallDisplay';
+import { ObjectionPanel } from './ObjectionPanel';
+import { VoicemailScript } from './VoicemailScript';
+import { WrapUpTimer } from './WrapUpTimer';
+import { AttemptBadge } from './AttemptBadge';
 import { useState, useEffect } from 'react';
 import { StepLayout } from './StepLayout';
 import { EndView } from './EndView';
@@ -10,6 +14,7 @@ import { ADVISORS } from '@/lib/beltool-data';
 import { calcLeadScore, leadLabel, type Scores } from '@/lib/beltool-scoring';
 import { useBelTool } from '@/contexts/BelToolContext';
 import { cliq } from '@/lib/beltool-ghl';
+import { getAttemptCount } from '@/lib/smart-queue';
 
 function CalendarPicker({ bookDate, setBookDate, bookTime, setBookTime }: { bookDate: string; setBookDate: (v: string) => void; bookTime: string; setBookTime: (v: string) => void }) {
   return (
@@ -200,9 +205,12 @@ export function CallContent({
   const { t, surveyConfig, user } = useBelTool();
   const [locationType, setLocationType] = useState<LocationType>('');
   const [customAddress, setCustomAddress] = useState('');
+  const [showVoicemail, setShowVoicemail] = useState(false);
+  const [showWrapUp, setShowWrapUp] = useState(false);
   const stepIndex: Record<string, number> = { intro: 0, q1: 1, q2: 2, q3: 3, q4: 4, bridge: 5 };
   const currentStepNum = stepIndex[phase] ?? -1;
   const contactName = `${activeContact.firstName} ${activeContact.lastName}`;
+  const attemptCount = getAttemptCount(activeContact.id);
 
   // Idle screen — show scores in the center
   if (phase === 'idle') {
@@ -252,7 +260,10 @@ export function CallContent({
             <div className="font-bold text-[14px] text-foreground">
               {contactName} {activeContact.role && <span className="font-normal text-muted-foreground text-[12px]">• {activeContact.role}</span>}
             </div>
-            <div className="text-[12px] text-muted-foreground">{activeComp.name}</div>
+            <div className="text-[12px] text-muted-foreground flex items-center gap-2">
+              {activeComp.name}
+              <AttemptBadge contactId={activeContact.id} compact />
+            </div>
           </div>
           <div className="text-right mr-2 hidden sm:block">
             <div className="text-[12px] text-foreground/70 font-mono tabular-nums">{activeContact.phone}</div>
@@ -329,12 +340,35 @@ export function CallContent({
               <ActionBtn onClick={() => { setPhase('q1'); updateStage(activeCompId, 'enqueteGestart'); }}>{t.agree}</ActionBtn>
               <ActionBtn variant="warning" onClick={() => { onEndCall('sent', 'enqueteVerstuurd'); addScore('verstuurd'); showToast(t.surveyDigitalSent, 'info'); }}>{t.noTime}</ActionBtn>
               <ActionBtn variant="warning" onClick={onShowCallback}>{t.callback}</ActionBtn>
-              <ActionBtn variant="muted" onClick={() => { onEndCall('noanswer', 'geenGehoor'); addScore('geenGehoor'); showToast(t.noAnswerNoted); }}>{t.noAnswerAction}</ActionBtn>
+              <ActionBtn variant="muted" onClick={() => { setShowVoicemail(true); }}>{t.noAnswerAction}</ActionBtn>
               <ActionBtn variant="danger" onClick={() => { onEndCall('lost', 'nietInteressant'); addScore('afgevallen'); }}>{t.notInterested}</ActionBtn>
               {user?.role === 'admin' && (
                 <ActionBtn variant="ghost" onClick={() => { onEndCall('idle' as any, 'nieuw'); showToast('Lead gereset', 'info'); }}>✕ Annuleren</ActionBtn>
               )}
             </div>
+
+            {/* Voicemail script overlay */}
+            {showVoicemail && (
+              <div className="mt-4">
+                <VoicemailScript
+                  contactName={activeContact.firstName}
+                  companyName={activeComp.name}
+                  callerName={user?.name || 'Beller'}
+                  onDone={() => { setShowVoicemail(false); onEndCall('noanswer', 'geenGehoor'); addScore('geenGehoor'); showToast('VM ingesproken + geen gehoor genoteerd'); }}
+                  onSkip={() => { setShowVoicemail(false); onEndCall('noanswer', 'geenGehoor'); addScore('geenGehoor'); showToast(t.noAnswerNoted); }}
+                />
+              </div>
+            )}
+
+            {/* Objection handling panel */}
+            {!showVoicemail && (
+              <div className="mt-4">
+                <ObjectionPanel
+                  contactName={activeContact.firstName}
+                  onUseRebuttal={(text) => onNotesChange(notes ? notes + '\nBezwaar-weerlegging gebruikt: ' + text.substring(0, 50) + '...' : 'Bezwaar-weerlegging gebruikt')}
+                />
+              </div>
+            )}
           </StepLayout>
         )}
 
@@ -501,6 +535,18 @@ export function CallContent({
           answers={answers} taskString={taskString} scores={scores} onNext={onNextContact} />}
         {phase === 'lost' && <EndView icon="🚫" title={t.notInterestedEnd} sub={`${activeContact.firstName} ${t.markedDropped}`} scores={scores} onNext={onNextContact} />}
         {phase === 'noanswer' && <EndView icon="📵" title={t.noAnswerEnd} sub={`${activeContact.firstName} ${t.markedCallback}`} scores={scores} onNext={onNextContact} />}
+
+        {/* Wrap-up timer: shows on end phases to encourage note-taking */}
+        {['sent', 'done', 'lost', 'noanswer'].includes(phase) && (
+          <div className="mt-4">
+            <WrapUpTimer
+              active={true}
+              contactName={contactName}
+              onComplete={onNextContact}
+              onExtend={() => {}}
+            />
+          </div>
+        )}
       </div>
 
       {/* Floating call display */}
