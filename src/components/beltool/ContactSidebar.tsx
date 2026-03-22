@@ -12,7 +12,13 @@ import { DarkModeToggle } from './DarkModeToggle';
 import { DailyProgress } from './DailyProgress';
 import { ConnectionStatus } from './ConnectionStatus';
 import { smartSort } from '@/lib/smart-queue';
-import { Snowflake } from 'lucide-react';
+import { Snowflake, CheckCircle2 } from 'lucide-react';
+
+function renderFilterIcon(icon: string) {
+  if (icon === 'snowflake') return <Snowflake size={14} className="text-blue-400" />;
+  if (icon === 'checkCircle') return <CheckCircle2 size={14} className="text-emerald-500" />;
+  return icon;
+}
 
 const FILTER_TABS: { key: CompanyStage | 'all'; label: string; icon: string | 'snowflake' | 'checkCircle' }[] = [
   { key: 'all', label: 'Alles', icon: '📋' },
