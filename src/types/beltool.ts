@@ -51,7 +51,7 @@ export interface StageMeta {
 }
 
 export const STAGE_META: Record<CompanyStage, StageMeta> = {
-  nieuw: { label: 'Nieuw', color: 'hsl(217 91% 60%)' },
+  nieuw: { label: 'Koud', color: 'hsl(217 91% 60%)' },
   bellen: { label: 'In Gesprek', color: 'hsl(152 56% 42%)' },
   terugbellen: { label: 'Terugbellen', color: 'hsl(38 92% 50%)' },
   enqueteGestart: { label: 'Enquête gestart', color: 'hsl(188 78% 41%)' },
