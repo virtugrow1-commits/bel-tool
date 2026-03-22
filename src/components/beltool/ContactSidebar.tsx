@@ -76,7 +76,9 @@ interface ContactSidebarProps {
   dueCallbackCount: number;
   appointmentCount: number;
   stageCounts?: Record<string, number>;
+  hasMoreLeads?: boolean;
   loadingMore?: boolean;
+  onLoadMore?: () => void;
   stageFilter: CompanyStage | 'all';
   onStageFilterChange: (f: CompanyStage | 'all') => void;
   onSelectFromLog?: (entry: { contact: string; contactId?: string; companyId?: string }) => void;
