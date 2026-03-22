@@ -343,6 +343,7 @@ export default function BelTool() {
               onShowLeaderboard={() => { settings.setShowLeaderboard(true); closeOnAction(); }}
               onShowSettings={() => { settings.setShowSettings(true); closeOnAction(); }}
               onShowRapportage={() => { navigate('/rapportage'); closeOnAction(); }}
+              onShowSurveyResults={() => { navigate('/resultaten'); closeOnAction(); }}
               dueCallbackCount={dueCallbacks.length}
               appointmentCount={settings.appts.length}
               hasMoreLeads={hasMoreLeads}

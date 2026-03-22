@@ -87,12 +87,13 @@ interface ContactSidebarProps {
   theme?: 'light' | 'dark' | 'system';
   onThemeChange?: (t: 'light' | 'dark' | 'system') => void;
   onShowRapportage?: () => void;
+  onShowSurveyResults?: () => void;
   callbacks?: CallbackEntry[];
   soundEnabled?: boolean;
   onToggleSound?: () => void;
 }
 
-export function ContactSidebar({ companies, activeCompId, activeContactId, expandedComp, setExpandedComp, search, onSearchChange, onSelectContact, phase, onBusy, scores, convRate, user, onLogout, onShowAgenda, onShowCallbackQueue, onShowLeaderboard, onShowSettings, dueCallbackCount, appointmentCount, hasMoreLeads, loadingMore, onLoadMore, stageFilter, onStageFilterChange, onSelectFromLog, onInsertNote, cliqError, onRetryCliq, theme, onThemeChange, onShowRapportage, callbacks, soundEnabled, onToggleSound }: ContactSidebarProps) {
+export function ContactSidebar({ companies, activeCompId, activeContactId, expandedComp, setExpandedComp, search, onSearchChange, onSelectContact, phase, onBusy, scores, convRate, user, onLogout, onShowAgenda, onShowCallbackQueue, onShowLeaderboard, onShowSettings, dueCallbackCount, appointmentCount, hasMoreLeads, loadingMore, onLoadMore, stageFilter, onStageFilterChange, onSelectFromLog, onInsertNote, cliqError, onRetryCliq, theme, onThemeChange, onShowRapportage, onShowSurveyResults, callbacks, soundEnabled, onToggleSound }: ContactSidebarProps) {
   const { t } = useBelTool();
   const [filterOpen, setFilterOpen] = useState(false);
   const filterRef = useRef<HTMLDivElement>(null);
@@ -134,7 +135,6 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
       <div className="px-3 pt-3 pb-2 shrink-0">
         {/* Row 1: Action icons */}
         <div className="flex items-center gap-2 mb-2">
-          <img src="/cliqmakers-logo.png" alt="CliqMakers" className="h-7 object-contain" />
           <div className="flex-1" />
           <div className="flex gap-0.5">
             {[
@@ -142,6 +142,7 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
               { fn: onShowCallbackQueue, icon: '🔔', badge: dueCallbackCount, title: 'Callbacks' },
               { fn: onShowLeaderboard, icon: '🏆', title: 'Leaderboard' },
               { fn: onShowRapportage, icon: '📊', title: 'Rapportage' },
+              { fn: onShowSurveyResults, icon: '📋', title: 'Enquête inzendingen' },
               { fn: exportCSV, icon: '📤', title: 'Exporteer' },
               { fn: onShowSettings, icon: '⚙️', title: 'Instellingen' },
             ].map((btn, i) => (
