@@ -53,41 +53,6 @@ interface DailyTargets {
 
 // DailyTargets type for target state
 
-
-function PauseTimerInline() {
-  const [paused, setPaused] = useState(false);
-  const [elapsed, setElapsed] = useState(0);
-  const [sessionSeconds, setSessionSeconds] = useState(0);
-
-  useEffect(() => {
-    const iv = setInterval(() => {
-      setSessionSeconds(s => s + 1);
-      if (paused) setElapsed(e => e + 1);
-    }, 1000);
-    return () => clearInterval(iv);
-  }, [paused]);
-
-  const fmt = (s: number) => `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
-
-  return (
-    <div className="flex items-center gap-1.5">
-      <button
-        onClick={() => setPaused(!paused)}
-        className={cn(
-          'w-5 h-5 rounded flex items-center justify-center text-[10px] transition-colors',
-          paused ? 'bg-primary text-white' : 'bg-muted text-muted-foreground'
-        )}
-      >
-        {paused ? '▶' : '⏸'}
-      </button>
-      <span className={cn('text-[10px] font-mono tabular-nums', paused ? 'text-warning' : 'text-muted-foreground')}>
-        {fmt(sessionSeconds)}
-      </span>
-      {elapsed > 0 && <span className="text-[9px] font-mono text-warning/60">({fmt(elapsed)})</span>}
-    </div>
-  );
-}
-
 interface ContactSidebarProps {
   companies: Company[];
   activeCompId: string | null;
@@ -162,9 +127,9 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
   return (
     <div className="w-[280px] border-r border-border flex flex-col flex-shrink-0 bg-card">
       <div className="px-3 pt-3 pb-2">
-        {/* Row 1: Title + action icons */}
+        {/* Row 1: Action icons */}
         <div className="flex items-center gap-2 mb-2">
-          <div className="text-[14px] font-bold tracking-tight text-foreground flex-1">Bel-Tool</div>
+          <div className="flex-1" />
           <div className="flex gap-0.5">
             {[
               { fn: onShowAgenda, icon: '📅', active: appointmentCount > 0, title: t.agenda },
@@ -190,13 +155,12 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
           </div>
         </div>
 
-        {/* Row 2: User + pause timer combined */}
+        {/* Row 2: User */}
         <div className="flex items-center gap-2 mb-2 px-2 py-1.5 rounded-lg bg-muted/40 border border-border">
           <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-[8px] font-extrabold text-white flex-shrink-0">{user.avatar}</div>
           <div className="flex-1 min-w-0">
             <div className="text-[11px] font-semibold text-foreground truncate">{user.name}</div>
           </div>
-          <PauseTimerInline />
           {theme && onThemeChange && <DarkModeToggle theme={theme} onChange={onThemeChange} compact />}
           <button onClick={onLogout} className="text-muted-foreground text-[10px] hover:text-foreground transition-colors" title="Uitloggen">↗</button>
         </div>
@@ -260,16 +224,6 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
               })}
             </div>
           )}
-        </div>
-      </div>
-
-      {/* Keyboard shortcuts hint */}
-      <div className="px-3 pb-1.5">
-        <div className="flex flex-wrap gap-1 text-[9px] text-muted-foreground/50">
-          <span className="px-1.5 py-0.5 rounded bg-muted/50 font-mono">Space</span><span>bellen</span>
-          <span className="px-1.5 py-0.5 rounded bg-muted/50 font-mono">Esc</span><span>ophangen</span>
-          <span className="px-1.5 py-0.5 rounded bg-muted/50 font-mono">N</span><span>notities</span>
-          <span className="px-1.5 py-0.5 rounded bg-muted/50 font-mono">?</span><span>alle sneltoetsen</span>
         </div>
       </div>
 
@@ -362,24 +316,45 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
         })()}
       </div>
 
-      {/* Activity log */}
-      {scores.log.length > 0 && (
-        <div className="border-t border-border max-h-[120px] overflow-y-auto px-3 py-1.5 bg-muted/20">
-          <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5 sticky top-0 bg-muted/20 py-0.5">{t.activity} ({scores.log.length})</div>
-          {scores.log.map((e, i) => (
-            <button
-              key={i}
-              onClick={() => onSelectFromLog?.(e)}
-              className="flex items-center gap-1.5 py-0.5 text-[10px] w-full text-left hover:bg-muted/50 rounded px-1 transition-colors cursor-pointer bg-transparent border-none"
-              title={`Klik om ${e.contact} te selecteren`}
-            >
-              <span className="text-muted-foreground w-8 text-[9px] tabular-nums">{e.time}</span>
-              <span className="text-[11px]">{{ afspraak: '📅', enquete: '✅', verstuurd: '📨', afgevallen: '🚫', geenGehoor: '📵', callback: '🔔', gebeld: '📞' }[e.result]}</span>
-              <span className="text-foreground/60 truncate">{e.contact}</span>
-            </button>
-          ))}
-        </div>
-      )}
+      {/* Activity log — clickable to re-select contacts */}
+      <div className="border-t border-border flex flex-col bg-muted/20" style={{ minHeight: scores.log.length > 0 ? '140px' : '0' }}>
+        {scores.log.length > 0 && (
+          <>
+            <div className="flex items-center justify-between px-3 pt-2 pb-1 sticky top-0 bg-muted/20">
+              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t.activity} ({scores.log.length})</div>
+              {onInsertNote && (
+                <div className="flex gap-0.5">
+                  {QUICK_NOTES.slice(0, 3).map(n => (
+                    <button
+                      key={n.label}
+                      onClick={() => onInsertNote(n.label)}
+                      className="px-1.5 py-0.5 rounded border border-border bg-card text-[8px] text-foreground/50 hover:bg-primary/10 hover:text-primary transition-colors"
+                      title={n.label}
+                    >
+                      {n.icon}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="flex-1 overflow-y-auto px-2 pb-2">
+              {scores.log.map((e, i) => (
+                <button
+                  key={i}
+                  onClick={() => onSelectFromLog?.(e)}
+                  className="flex items-center gap-2 py-1.5 px-2 text-[11px] w-full text-left hover:bg-primary/[0.06] rounded-lg transition-colors cursor-pointer bg-transparent border-none group"
+                  title={`Klik om ${e.contact} te selecteren`}
+                >
+                  <span className="text-muted-foreground w-9 text-[10px] font-mono tabular-nums shrink-0">{e.time}</span>
+                  <span className="text-[13px] shrink-0">{{ afspraak: '📅', enquete: '✅', verstuurd: '📨', afgevallen: '🚫', geenGehoor: '📵', callback: '🔔', gebeld: '📞' }[e.result] || '📞'}</span>
+                  <span className="text-foreground/70 truncate group-hover:text-foreground transition-colors">{e.contact || 'Onbekend'}</span>
+                  <span className="ml-auto text-[9px] text-muted-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">selecteer →</span>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
