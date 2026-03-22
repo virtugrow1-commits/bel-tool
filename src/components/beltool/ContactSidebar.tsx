@@ -76,7 +76,9 @@ interface ContactSidebarProps {
   dueCallbackCount: number;
   appointmentCount: number;
   stageCounts?: Record<string, number>;
+  hasMoreLeads?: boolean;
   loadingMore?: boolean;
+  onLoadMore?: () => void;
   stageFilter: CompanyStage | 'all';
   onStageFilterChange: (f: CompanyStage | 'all') => void;
   onSelectFromLog?: (entry: { contact: string; contactId?: string; companyId?: string }) => void;
@@ -92,7 +94,7 @@ interface ContactSidebarProps {
   onToggleSound?: () => void;
 }
 
-export function ContactSidebar({ companies, activeCompId, activeContactId, expandedComp, setExpandedComp, search, onSearchChange, onSelectContact, phase, onBusy, scores, convRate, user, onLogout, onShowAgenda, onShowCallbackQueue, onShowLeaderboard, onShowSettings, dueCallbackCount, appointmentCount, stageCounts: propStageCounts, loadingMore, stageFilter, onStageFilterChange, onSelectFromLog, onInsertNote, cliqError, onRetryCliq, theme, onThemeChange, onShowRapportage, onShowSurveyResults, callbacks, soundEnabled, onToggleSound }: ContactSidebarProps) {
+export function ContactSidebar({ companies, activeCompId, activeContactId, expandedComp, setExpandedComp, search, onSearchChange, onSelectContact, phase, onBusy, scores, convRate, user, onLogout, onShowAgenda, onShowCallbackQueue, onShowLeaderboard, onShowSettings, dueCallbackCount, appointmentCount, stageCounts: propStageCounts, hasMoreLeads, loadingMore, onLoadMore, stageFilter, onStageFilterChange, onSelectFromLog, onInsertNote, cliqError, onRetryCliq, theme, onThemeChange, onShowRapportage, onShowSurveyResults, callbacks, soundEnabled, onToggleSound }: ContactSidebarProps) {
   const { t } = useBelTool();
   const [filterOpen, setFilterOpen] = useState(false);
   const filterRef = useRef<HTMLDivElement>(null);
@@ -323,10 +325,14 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
             </div>
           );
         })}
-        {loadingMore && filtered.length > 0 && (
-          <div className="text-center py-2">
-            <span className="text-[10px] text-muted-foreground">Meer leads laden...</span>
-          </div>
+        {hasMoreLeads && onLoadMore && (
+          <button
+            onClick={onLoadMore}
+            disabled={loadingMore}
+            className="w-full py-2.5 mt-2 rounded-xl border border-primary/20 bg-primary/[0.05] text-primary text-[11px] font-semibold hover:bg-primary/10 active:scale-[0.97] transition-all disabled:opacity-40"
+          >
+            {loadingMore ? 'Laden...' : `Volgende 25 laden →`}
+          </button>
         )}
       </div>
 
