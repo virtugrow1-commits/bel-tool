@@ -584,7 +584,7 @@ export default function ProspectSurvey() {
           {step === 0 && (
             <p className="text-[14px] text-muted-foreground mt-4 leading-relaxed max-w-md mx-auto">
               Wij doen onderzoek naar hoe ZZP'ers en MKB-bedrijven die toe zijn aan groei omgaan met tijdverlies en automatisering. 
-              Uw antwoorden helpen ons om praktische inzichten te verzamelen — en als dank ontvangt u een persoonlijk advies op maat.
+              Uw antwoorden helpen ons om praktische inzichten te verzamelen. Het invullen duurt slechts 2 minuten.
             </p>
           )}
         </div>
