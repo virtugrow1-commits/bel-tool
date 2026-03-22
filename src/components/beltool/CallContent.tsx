@@ -93,7 +93,7 @@ function CalendarPicker({ bookDate, setBookDate, bookTime, setBookTime, calendar
   );
 }
 
-function CliqCalendarSelect() {
+function CliqCalendarSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const [calendars, setCalendars] = useState<{ id: string; name: string; isActive?: boolean }[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -102,6 +102,8 @@ function CliqCalendarSelect() {
       .then((data: any) => {
         const cals = (data?.calendars || []).filter((c: any) => c.isActive !== false);
         setCalendars(cals);
+        // Auto-select first calendar
+        if (cals.length === 1 && !value) onChange(cals[0].id);
       })
       .catch(() => setCalendars([]))
       .finally(() => setLoading(false));
@@ -110,7 +112,7 @@ function CliqCalendarSelect() {
   return (
     <div className="mb-3">
       <div className="text-[11px] font-semibold text-muted-foreground mb-1">CLIQ Kalender</div>
-      <select id="cliq-calendar-select" className="w-full px-3 py-2.5 rounded-lg border border-border bg-card text-foreground text-[13px] outline-none focus:border-primary">
+      <select value={value} onChange={e => onChange(e.target.value)} className="w-full px-3 py-2.5 rounded-lg border border-border bg-card text-foreground text-[13px] outline-none focus:border-primary">
         {loading ? (
           <option value="">Laden...</option>
         ) : calendars.length === 0 ? (
