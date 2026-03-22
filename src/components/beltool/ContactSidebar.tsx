@@ -109,10 +109,10 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
   const searched = companies.filter(c => (c.name + ' ' + c.contacts.map(ct => ct.firstName + ' ' + ct.lastName).join(' ')).toLowerCase().includes(search.toLowerCase()));
   const filtered = smartSort(searched, callbacks || []);
 
-  const stageCounts: Record<string, number> = {};
+  // Use counts from API (propStageCounts) or fall back to loaded companies count
+  const displayCounts: Record<string, number> = {};
   for (const tab of FILTER_TABS) {
-    // Show total loaded count for the active filter, no local counting needed
-    stageCounts[tab.key] = tab.key === stageFilter ? companies.length : (tab.key === 'all' ? companies.length : 0);
+    displayCounts[tab.key] = propStageCounts?.[tab.key] ?? (tab.key === stageFilter ? companies.length : 0);
   }
 
   const callTimeTip = getBestCallTimeSuggestion(scores);
