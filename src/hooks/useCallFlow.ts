@@ -9,6 +9,7 @@ const STAGE_TO_CLIQ: Record<string, string> = {
   terugbellenGepland: 'terugbellen gepland',
   afspraak: 'afspraak gepland',
   enqueteVerstuurd: 'digitaal verstuurd',
+  enqueteTel: 'enquête voltooid',
   anderMoment: 'op een ander moment',
 };
 

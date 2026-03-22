@@ -511,7 +511,6 @@ export function CallContent({
                     body: `Afspraak op ${fmtDate(bookDate)} om ${bookTime}\n📍 ${locationStr}`,
                     dueDate: `${bookDate}T${bookTime}:00`,
                   }).catch(console.error);
-                  cliq.upsertOpportunity(activeContact.id, '', '', `${activeComp.name} - Adviesgesprek`).catch(console.error);
                   onEndCall('done', 'afspraak');
                   addScore('afspraak');
                   const adv = ADVISORS.find(a => a.id === bookAdvisor);

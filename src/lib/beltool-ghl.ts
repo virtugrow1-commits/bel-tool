@@ -36,24 +36,27 @@ export const cliq = {
   },
 
   async saveSurveyAnswers(contactId: string, answers: unknown) {
-    // Save as custom fields on the contact
     const fields = answers as Record<string, string>;
-    const customFields: { id: string; field_value: string }[] = [];
-    
-    // Map survey answers to custom field keys
-    // These should match your GHL custom fields
-    if (fields.hours) customFields.push({ id: 'beltool_uren_per_week', field_value: fields.hours });
-    if (fields.tasks) customFields.push({ id: 'beltool_taken', field_value: Array.isArray(fields.tasks) ? fields.tasks.join(', ') : String(fields.tasks) });
-    if (fields.growth) customFields.push({ id: 'beltool_groeifase', field_value: fields.growth });
-    if (fields.ai) customFields.push({ id: 'beltool_ai_status', field_value: fields.ai });
 
-    if (customFields.length > 0) {
-      await callCliq('saveCustomFields', { contactId, customFields });
-    }
-
-    // Also create a note with the full survey summary
+    // Always save as a note (reliable, no custom field config needed)
     const noteBody = `📋 Bel-Tool Enquête Resultaten:\n⏱️ Uren/week: ${fields.hours || '-'}\n🔄 Taken: ${Array.isArray(fields.tasks) ? fields.tasks.join(', ') : fields.tasks || '-'}\n📈 Groeifase: ${fields.growth || '-'}\n🤖 AI status: ${fields.ai || '-'}`;
     await callCliq('createNote', { contactId, body: noteBody });
+
+    // Try to save as custom fields (may fail if fields not configured in GHL)
+    try {
+      const customFields: { id: string; field_value: string }[] = [];
+      if (fields.hours) customFields.push({ id: 'beltool_uren_per_week', field_value: fields.hours });
+      if (fields.tasks) customFields.push({ id: 'beltool_taken', field_value: Array.isArray(fields.tasks) ? fields.tasks.join(', ') : String(fields.tasks) });
+      if (fields.growth) customFields.push({ id: 'beltool_groeifase', field_value: fields.growth });
+      if (fields.ai) customFields.push({ id: 'beltool_ai_status', field_value: fields.ai });
+
+      if (customFields.length > 0) {
+        await callCliq('saveCustomFields', { contactId, customFields });
+      }
+    } catch (err) {
+      // Custom fields may not be configured yet — note was already saved
+      console.warn('[CLIQ] Custom fields save failed (fields may not exist in GHL):', err);
+    }
   },
 
   async bookAppointment(contactId: string, date: string, time: string, advisor: string, calendarId?: string, notes?: string) {
