@@ -6,6 +6,17 @@ import { USERS, type User } from '@/lib/beltool-data';
 import type { Webhook, CliqConfig, SurveyConfig, Appointment } from '@/types/beltool';
 
 export function useSettings() {
+  // Migrate old script templates: replace [jouw naam] with {beller}
+  const migrateSurveyConfig = (cfg: SurveyConfig): SurveyConfig => {
+    const raw = JSON.stringify(cfg);
+    if (raw.includes('[jouw naam]')) {
+      const migrated = JSON.parse(raw.replace(/\[jouw naam\]/g, '{beller}')) as SurveyConfig;
+      store.set('surveyConfig', migrated);
+      return migrated;
+    }
+    return cfg;
+  };
+
   const [lang, setLang] = useState(() => store.get('lang', 'nl'));
   const [managedUsers, setManagedUsers] = useState<User[]>(() => store.get('managedUsers', USERS));
   const [showSettings, setShowSettings] = useState(false);
@@ -15,7 +26,7 @@ export function useSettings() {
   const [appts, setAppts] = useState<Appointment[]>(() => store.get('appointments', []));
   const [webhooks, setWebhooks] = useState<Webhook[]>(() => store.get('webhooks', []));
   const [apiKey, setApiKey] = useState(() => store.get('apiKey', ''));
-  const [surveyConfig, setSurveyConfig] = useState<SurveyConfig>(() => store.get('surveyConfig', defaultSurvey()));
+  const [surveyConfig, setSurveyConfig] = useState<SurveyConfig>(() => migrateSurveyConfig(store.get('surveyConfig', defaultSurvey())));
   const [cliqConfig, setCliqConfig] = useState<CliqConfig>(() => store.get('cliqConfig', {
     apiKey: '', locationId: '', pipelineId: '', calendarId: '',
     syncContacts: true, syncOpportunities: true, syncAppointments: true, createNotes: true,
