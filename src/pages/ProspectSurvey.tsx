@@ -285,7 +285,7 @@ export default function ProspectSurvey() {
           body: { action: 'addTag', contactId: ghlContactId, tags: ['enquete-digitaal-ingevuld'] },
         }).catch(err => console.warn('[Enquête] addTag failed:', err));
 
-        // 3f: Move opportunity to "terugbellen gepland" stage in pipeline
+        // 3f: Move opportunity to "enquête voltooid" stage in pipeline
         try {
           const { data: pipelineData } = await supabase.functions.invoke('ghl-proxy', {
             body: { action: 'getPipelines' },
@@ -295,22 +295,22 @@ export default function ProspectSurvey() {
             p.name.toLowerCase().includes('bellen')
           );
           if (bellenPipeline) {
-            const terugbelStage = bellenPipeline.stages?.find((s: { name: string }) =>
-              s.name.toLowerCase().includes('terugbellen')
+            const enqueteStage = bellenPipeline.stages?.find((s: { name: string }) =>
+              s.name.toLowerCase().includes('enquête voltooid')
             );
-            if (terugbelStage) {
+            if (enqueteStage) {
               await supabase.functions.invoke('ghl-proxy', {
                 body: {
                   action: 'upsertOpportunity',
                   contactId: ghlContactId,
                   pipelineId: bellenPipeline.id,
-                  stageId: terugbelStage.id,
+                  stageId: enqueteStage.id,
                   name: `${answers.naam} — ${answers.bedrijf || 'Lead'}`,
                 },
               });
-              console.log('[Enquête] Opportunity verplaatst naar "terugbellen gepland"');
+              console.log('[Enquête] Opportunity verplaatst naar "enquête voltooid"');
             } else {
-              console.warn('[Enquête] Terugbellen stage niet gevonden in pipeline');
+              console.warn('[Enquête] Enquête voltooid stage niet gevonden in pipeline');
             }
           } else {
             console.warn('[Enquête] Bellen pipeline niet gevonden');
