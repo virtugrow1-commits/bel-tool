@@ -534,8 +534,9 @@ export function CallContent({
 
               <div className="bg-primary/[0.04] border border-primary/15 rounded-xl p-4 mb-3.5 shadow-sm">
                 <div className="text-xs font-bold text-primary uppercase tracking-wider mb-3">{t.bookAppointment}</div>
+                <CliqCalendarSelect value={selectedCalId} onChange={setSelectedCalId} />
                 <div className="flex gap-2.5 mb-2.5">
-                  <CalendarPicker bookDate={bookDate} setBookDate={setBookDate} bookTime={bookTime} setBookTime={setBookTime} />
+                  <CalendarPicker bookDate={bookDate} setBookDate={setBookDate} bookTime={bookTime} setBookTime={setBookTime} calendarId={selectedCalId} />
                 </div>
                 <div className="mb-3">
                   <div className="text-[11px] font-semibold text-muted-foreground mb-1">{t.advisor}</div>
@@ -551,7 +552,6 @@ export function CallContent({
                   onCustomChange={setCustomAddress}
                   companyAddress={activeComp.address || ''}
                 />
-                <CliqCalendarSelect />
                 <ActionBtn wide onClick={() => {
                   if (!bookDate || !bookTime) { showToast(t.pickDateTime, 'err'); return; }
                   if (!bookAdvisor) { showToast(t.selectAdvisor, 'err'); return; }
