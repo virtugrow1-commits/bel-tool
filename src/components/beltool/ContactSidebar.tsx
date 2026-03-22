@@ -12,10 +12,11 @@ import { DarkModeToggle } from './DarkModeToggle';
 import { DailyProgress } from './DailyProgress';
 import { ConnectionStatus } from './ConnectionStatus';
 import { smartSort } from '@/lib/smart-queue';
+import { Snowflake } from 'lucide-react';
 
-const FILTER_TABS: { key: CompanyStage | 'all'; label: string; icon: string }[] = [
+const FILTER_TABS: { key: CompanyStage | 'all'; label: string; icon: string | 'snowflake' }[] = [
   { key: 'all', label: 'Alles', icon: '📋' },
-  { key: 'nieuw', label: 'Nieuw', icon: '🆕' },
+  { key: 'nieuw', label: 'Koud', icon: 'snowflake' },
   { key: 'terugbellenGepland', label: 'Terugbellen', icon: '🔔' },
   { key: 'geenGehoor', label: 'Geen gehoor', icon: '📵' },
   { key: 'enqueteVerstuurd', label: 'Verstuurd', icon: '📨' },
