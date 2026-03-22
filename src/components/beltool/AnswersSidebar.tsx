@@ -41,8 +41,14 @@ export function AnswersSidebar({ answers, taskString, notes, onNotesChange, onSe
         </div>
       )}
       <div className="border-t border-border mt-3 pt-2.5">
-        <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">{t.notes}</div>
-        <textarea value={notes} onChange={e => onNotesChange(e.target.value)} placeholder={t.notesPlaceholder} rows={3} className="w-full px-2.5 py-2 rounded-lg text-[11px] border border-border bg-card text-foreground outline-none resize-y leading-relaxed focus:border-primary" />
+        <div className="flex items-center justify-between mb-1.5">
+          <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">{t.notes}</div>
+          {notes.trim() && (
+            <div className="text-[9px] text-muted-foreground/50">{notes.length} tekens</div>
+          )}
+        </div>
+        <textarea value={notes} onChange={e => onNotesChange(e.target.value)} placeholder={t.notesPlaceholder} rows={5} className="w-full px-2.5 py-2 rounded-lg text-[11px] border border-border bg-card text-foreground outline-none resize-y leading-relaxed focus:border-primary" />
+        <div className="text-[8px] text-muted-foreground/40 mt-1">Sneltoetsen en weerleggingen worden hier automatisch toegevoegd</div>
       </div>
       <div className="border-t border-border mt-3 pt-2.5">
         <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">{t.quickActions}</div>

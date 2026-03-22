@@ -438,8 +438,6 @@ export default function BelTool() {
                     onUpdateContact={(uc) => updateContact(activeCompId!, uc)}
                     onUpdateCompany={updateCompany}
                     onClose={() => setShowDetail(false)}
-                    liveNotes={notes}
-                    onNotesChange={setNotes}
                   />
                 )}
               </div>

@@ -8,15 +8,10 @@ interface ContactDetailPanelProps {
   onUpdateContact: (c: CompanyContact) => void;
   onUpdateCompany: (c: Company) => void;
   onClose: () => void;
-  liveNotes?: string;
-  onNotesChange?: (v: string) => void;
 }
 
-export function ContactDetailPanel({ contact, company, onUpdateContact, onUpdateCompany, onClose, liveNotes, onNotesChange }: ContactDetailPanelProps) {
-  const [editContact, setEditContact] = useState<CompanyContact>({
-    ...contact,
-    notes: liveNotes !== undefined ? liveNotes : contact.notes || '',
-  });
+export function ContactDetailPanel({ contact, company, onUpdateContact, onUpdateCompany, onClose }: ContactDetailPanelProps) {
+  const [editContact, setEditContact] = useState<CompanyContact>({ ...contact });
   const [editCompany, setEditCompany] = useState<Company>({ ...company });
   const [tab, setTab] = useState<'contact' | 'company'>('contact');
 
@@ -64,19 +59,6 @@ export function ContactDetailPanel({ contact, company, onUpdateContact, onUpdate
                 />
               </div>
             ))}
-            <div>
-              <label className="text-[10px] text-muted-foreground uppercase font-semibold">Notities</label>
-              <textarea
-                value={editContact.notes || ''}
-                onChange={e => {
-                  const v = e.target.value;
-                  setEditContact(p => ({ ...p, notes: v }));
-                  onNotesChange?.(v);
-                }}
-                rows={3}
-                className={cn(inputCls, 'resize-none')}
-              />
-            </div>
           </div>
         )}
 
@@ -93,11 +75,12 @@ export function ContactDetailPanel({ contact, company, onUpdateContact, onUpdate
               </div>
             ))}
             <div>
-              <label className="text-[10px] text-muted-foreground uppercase font-semibold">Notities</label>
+              <label className="text-[10px] text-muted-foreground uppercase font-semibold">Bedrijfsnotities</label>
               <textarea
                 value={editCompany.notes || ''}
                 onChange={e => setEditCompany(p => ({ ...p, notes: e.target.value }))}
-                rows={3}
+                rows={2}
+                placeholder="Algemene notities over het bedrijf..."
                 className={cn(inputCls, 'resize-none')}
               />
             </div>

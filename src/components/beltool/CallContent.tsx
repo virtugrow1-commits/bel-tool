@@ -336,10 +336,10 @@ export function CallContent({
             script={renderScript(surveyConfig.intro.script, activeContact, answers)} tip={surveyConfig.intro.tip}>
             <div className="flex flex-wrap gap-1.5 mt-3.5">
               <ActionBtn onClick={() => { setPhase('q1'); updateStage(activeCompId, 'enqueteGestart'); }}>{t.agree}</ActionBtn>
-              <ActionBtn variant="warning" onClick={() => { onEndCall('sent', 'enqueteVerstuurd'); addScore('verstuurd'); showToast(t.surveyDigitalSent, 'info'); }}>{t.noTime}</ActionBtn>
+              <ActionBtn variant="warning" onClick={() => { onNotesChange(notes ? notes + '\n📨 Enquête digitaal verstuurd' : '📨 Enquête digitaal verstuurd'); onEndCall('sent', 'enqueteVerstuurd'); addScore('verstuurd'); showToast(t.surveyDigitalSent, 'info'); }}>{t.noTime}</ActionBtn>
               <ActionBtn variant="warning" onClick={onShowCallback}>{t.callback}</ActionBtn>
               <ActionBtn variant="muted" onClick={() => { setShowVoicemail(true); }}>{t.noAnswerAction}</ActionBtn>
-              <ActionBtn variant="danger" onClick={() => { onEndCall('lost', 'nietInteressant'); addScore('afgevallen'); }}>{t.notInterested}</ActionBtn>
+              <ActionBtn variant="danger" onClick={() => { onNotesChange(notes ? notes + '\n🚫 Niet geïnteresseerd' : '🚫 Niet geïnteresseerd'); onEndCall('lost', 'nietInteressant'); addScore('afgevallen'); }}>{t.notInterested}</ActionBtn>
               {user?.role === 'admin' && (
                 <ActionBtn variant="ghost" onClick={() => { onEndCall('idle' as any, 'nieuw'); showToast('Lead gereset', 'info'); }}>✕ Annuleren</ActionBtn>
               )}
@@ -352,8 +352,8 @@ export function CallContent({
                   contactName={activeContact.firstName}
                   companyName={activeComp.name}
                   callerName={user?.name || 'Beller'}
-                  onDone={() => { setShowVoicemail(false); onEndCall('noanswer', 'geenGehoor'); addScore('geenGehoor'); showToast('VM ingesproken + geen gehoor genoteerd'); }}
-                  onSkip={() => { setShowVoicemail(false); onEndCall('noanswer', 'geenGehoor'); addScore('geenGehoor'); showToast(t.noAnswerNoted); }}
+                  onDone={() => { setShowVoicemail(false); onNotesChange(notes ? notes + '\n📩 VM ingesproken' : '📩 VM ingesproken'); onEndCall('noanswer', 'geenGehoor'); addScore('geenGehoor'); showToast('VM ingesproken + geen gehoor genoteerd'); }}
+                  onSkip={() => { setShowVoicemail(false); onNotesChange(notes ? notes + '\n📵 Geen gehoor' : '📵 Geen gehoor'); onEndCall('noanswer', 'geenGehoor'); addScore('geenGehoor'); showToast(t.noAnswerNoted); }}
                 />
               </div>
             )}
@@ -521,9 +521,9 @@ export function CallContent({
 
               <div className="flex flex-wrap gap-1.5">
                 <ActionBtn variant="ghost" onClick={() => setPhase('q4')}>{t.back}</ActionBtn>
-                <ActionBtn variant="warning" onClick={() => { onEndCall('sent', 'enqueteVerstuurd'); addScore('verstuurd'); showToast(t.bookingSent, 'info'); }}>{t.sendBookingDigital}</ActionBtn>
-                <ActionBtn variant="muted" onClick={() => { onEndCall('noanswer', 'anderMoment' as any); showToast('Ander moment genoteerd'); }}>⏳ Niet op dit moment</ActionBtn>
-                <ActionBtn variant="danger" onClick={() => { onEndCall('lost', 'nietInteressant'); addScore('afgevallen'); }}>{t.notInterested}</ActionBtn>
+                <ActionBtn variant="warning" onClick={() => { onNotesChange(notes ? notes + '\n📨 Booking link digitaal verstuurd' : '📨 Booking link digitaal verstuurd'); onEndCall('sent', 'enqueteVerstuurd'); addScore('verstuurd'); showToast(t.bookingSent, 'info'); }}>{t.sendBookingDigital}</ActionBtn>
+                <ActionBtn variant="muted" onClick={() => { onNotesChange(notes ? notes + '\n⏳ Niet op dit moment' : '⏳ Niet op dit moment'); onEndCall('noanswer', 'anderMoment' as any); showToast('Ander moment genoteerd'); }}>⏳ Niet op dit moment</ActionBtn>
+                <ActionBtn variant="danger" onClick={() => { onNotesChange(notes ? notes + '\n🚫 Niet geïnteresseerd' : '🚫 Niet geïnteresseerd'); onEndCall('lost', 'nietInteressant'); addScore('afgevallen'); }}>{t.notInterested}</ActionBtn>
               </div>
             </StepLayout>
           );
