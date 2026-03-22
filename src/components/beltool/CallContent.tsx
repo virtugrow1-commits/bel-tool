@@ -562,7 +562,8 @@ export function CallContent({
                   const locationStr = locationType === 'google_meet' ? 'Google Meet'
                     : locationType === 'bedrijf' ? `Bedrijfslocatie: ${activeComp.address || 'Adres onbekend'}`
                     : `Op locatie: ${customAddress.trim()}`;
-                  cliq.bookAppointment(activeContact.id, bookDate, bookTime, bookAdvisor, calId, locationStr).catch(err => {
+                  const appointmentTitle = activeComp.name ? `Adviesgesprek — ${activeComp.name}` : `Adviesgesprek — ${activeContact.firstName} ${activeContact.lastName}`;
+                  cliq.bookAppointment(activeContact.id, bookDate, bookTime, bookAdvisor, calId, locationStr, appointmentTitle).catch(err => {
                     console.error('Appointment error:', err);
                     showToast('Fout bij inplannen: ' + err.message, 'err');
                   });

@@ -63,18 +63,22 @@ export const cliq = {
     }
   },
 
-  async bookAppointment(contactId: string, date: string, time: string, advisor: string, calendarId?: string, notes?: string) {
+  async bookAppointment(contactId: string, date: string, time: string, advisor: string, calendarId?: string, notes?: string, title?: string) {
+    // Build ISO strings keeping the +02:00 offset explicitly so GHL doesn't shift the hour
     const startTime = `${date}T${time}:00+02:00`;
-    const endDate = new Date(`${date}T${time}:00`);
-    endDate.setMinutes(endDate.getMinutes() + 15);
-    const endTime = `${date}T${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}:00+02:00`;
+    // Calculate end time by parsing the HH:MM and adding 30 minutes arithmetically (avoids Date UTC issues)
+    const [hh, mm] = time.split(':').map(Number);
+    const totalMin = hh * 60 + mm + 30;
+    const endHH = String(Math.floor(totalMin / 60) % 24).padStart(2, '0');
+    const endMM = String(totalMin % 60).padStart(2, '0');
+    const endTime = `${date}T${endHH}:${endMM}:00+02:00`;
 
     return callCliq('createAppointment', {
       contactId,
       calendarId: calendarId || 'default',
       startTime,
       endTime,
-      title: 'Adviesgesprek - Bel-Tool',
+      title: title || 'Adviesgesprek',
       assignedUserId: advisor,
       notes,
     });
