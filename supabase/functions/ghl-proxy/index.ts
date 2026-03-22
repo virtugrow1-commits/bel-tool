@@ -158,6 +158,21 @@ serve(async (req) => {
         break;
       }
 
+      // ─── GET FREE SLOTS ───
+      case 'getFreeSlots': {
+        const calendarId = params.calendarId;
+        const startDate = params.startDate;
+        const endDate = params.endDate || params.startDate;
+        if (!calendarId || !startDate) throw new Error('getFreeSlots requires calendarId and startDate');
+        const startMs = new Date(`${startDate}T00:00:00+02:00`).getTime();
+        const endMs = new Date(`${endDate}T23:59:59+02:00`).getTime();
+        const url = `${GHL_BASE}/calendars/${calendarId}/free-slots?startDate=${startMs}&endDate=${endMs}&timezone=Europe/Amsterdam`;
+        const res = await fetch(url, { headers: ghlHeaders });
+        if (!res.ok) throw new Error(`GHL free-slots error [${res.status}]: ${await res.text()}`);
+        result = await res.json();
+        break;
+      }
+
       // ─── CREATE APPOINTMENT ───
       case 'createAppointment': {
         const res = await fetch(`${GHL_BASE}/calendars/events/appointments`, {
