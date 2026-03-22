@@ -42,7 +42,7 @@ export function useKeyboardShortcuts(config: ShortcutConfig) {
     }
 
     // Space = start call
-    if (e.code === 'Space' && phase === 'precall' && activeContact && callState === 'idle') {
+    if (e.code === 'Space' && (phase === 'precall' || phase === 'intro') && activeContact && callState === 'idle') {
       e.preventDefault();
       if (callButtonRef.current) {
         callButtonRef.current.click();

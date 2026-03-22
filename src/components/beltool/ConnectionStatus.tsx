@@ -8,12 +8,13 @@ export function ConnectionStatus() {
 
   useEffect(() => {
     let mounted = true;
+    let iv: ReturnType<typeof setInterval>;
 
     const check = async () => {
-      if (!mounted) return;
+      if (!mounted || document.hidden) return;
       setCliqStatus('checking');
       try {
-        await cliq.getPipelines();
+        await cliq.getCalendars();
         if (mounted) setCliqStatus('connected');
       } catch {
         if (mounted) setCliqStatus('disconnected');
@@ -21,8 +22,19 @@ export function ConnectionStatus() {
     };
 
     check();
-    const iv = setInterval(check, 120_000); // Re-check every 2 minutes
-    return () => { mounted = false; clearInterval(iv); };
+    iv = setInterval(check, 300_000); // Re-check every 5 minutes
+
+    // Re-check when tab becomes visible again
+    const onVisibility = () => {
+      if (!document.hidden && mounted) check();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      mounted = false;
+      clearInterval(iv);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   }, []);
 
   const statusConfig = {

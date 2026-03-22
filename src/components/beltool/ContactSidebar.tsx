@@ -295,7 +295,12 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
                     return (
                       <button
                         key={ct.id}
-                        onClick={() => { if (phase !== 'idle' && phase !== 'precall' && activeContactId !== ct.id) { onBusy(); return; } onSelectContact(comp, ct); }}
+                        onClick={() => {
+                          const canSwitch = phase === 'idle' || phase === 'precall' || phase === 'intro' && callState === 'idle'
+                            || ['sent', 'done', 'lost', 'noanswer'].includes(phase);
+                          if (!canSwitch && activeContactId !== ct.id) { onBusy(); return; }
+                          onSelectContact(comp, ct);
+                        }}
                         className={cn(
                           'flex items-center gap-2.5 w-full text-left px-2.5 py-2 rounded-lg mt-px transition-all',
                           isSel ? 'border border-primary/30 bg-primary/[0.08] shadow-sm' : 'border border-transparent hover:bg-muted/50'

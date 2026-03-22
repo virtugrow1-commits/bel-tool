@@ -422,11 +422,11 @@ export default function BelTool() {
                     onShowWhatsApp={(ctx) => setShowWhatsApp(ctx)}
                   />
                 </div>
-                {curStep >= 1 && !isMobile && (
+                {curStep >= 0 && !isMobile && (
                   <AnswersSidebar
                     answers={answers} taskString={taskString} notes={notes} onNotesChange={setNotes}
-                    onSendDigital={() => { endCall('sent', 'enqueteVerstuurd', answers, notes, activeContact, activeComp); addScoreWithSfx('verstuurd'); flash(t.surveyDigitalSent, 'info'); }}
-                    onNoAnswer={() => { endCall('noanswer', 'geenGehoor', answers, notes, activeContact, activeComp); addScoreWithSfx('geenGehoor'); flash(t.noAnswerNoted); }}
+                    onSendDigital={() => { setNotes(prev => prev ? prev + '\n📨 Enquête digitaal verstuurd' : '📨 Enquête digitaal verstuurd'); endCall('sent', 'enqueteVerstuurd', answers, notes, activeContact, activeComp); addScoreWithSfx('verstuurd'); flash(t.surveyDigitalSent, 'info'); }}
+                    onNoAnswer={() => { setNotes(prev => prev ? prev + '\n📵 Geen gehoor' : '📵 Geen gehoor'); endCall('noanswer', 'geenGehoor', answers, notes, activeContact, activeComp); addScoreWithSfx('geenGehoor'); flash(t.noAnswerNoted); }}
                     onGoToAppointment={() => { if (activeCompId) updateCompStage(activeCompId, 'enqueteTel'); addScoreWithSfx('enquete'); setPhase('bridge'); }}
                     onShowCallback={() => settings.setShowCallback(true)}
                   />
