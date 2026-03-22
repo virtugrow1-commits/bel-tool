@@ -1,18 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import type { User } from '@/lib/beltool-data';
+import { USERS, type User } from '@/lib/beltool-data';
+import { store } from '@/lib/beltool-store';
 import type { Session } from '@supabase/supabase-js';
 
 interface AuthState {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  authMode: 'supabase' | 'local';
 }
 
-/**
- * Maps a Supabase session + profile row into our app User type.
- * Falls back to auth metadata if profiles table isn't set up yet.
- */
 function sessionToUser(session: Session, profile?: Record<string, unknown> | null): User {
   const meta = session.user.user_metadata || {};
   return {
@@ -32,11 +30,7 @@ async function fetchProfile(userId: string): Promise<Record<string, unknown> | n
       .select('*')
       .eq('id', userId)
       .single();
-    if (error) {
-      // Table might not exist yet — that's OK, we fall back to metadata
-      console.warn('[Auth] Profile fetch failed (table may not exist):', error.message);
-      return null;
-    }
+    if (error) return null;
     return data;
   } catch {
     return null;
@@ -45,42 +39,51 @@ async function fetchProfile(userId: string): Promise<Record<string, unknown> | n
 
 export function useAuth() {
   const [state, setState] = useState<AuthState>({
-    user: null,
+    user: store.get('user', null),
     session: null,
     loading: true,
+    authMode: 'local', // Start with local, upgrade to supabase if available
   });
 
-  // Initialize: check for existing session
+  // Try Supabase Auth first, fall back to local
   useEffect(() => {
     let mounted = true;
 
     const init = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!mounted) return;
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!mounted) return;
 
-      if (session) {
-        const profile = await fetchProfile(session.user.id);
-        if (mounted) {
-          setState({ user: sessionToUser(session, profile), session, loading: false });
+        if (session) {
+          const profile = await fetchProfile(session.user.id);
+          if (mounted) {
+            setState({ user: sessionToUser(session, profile), session, loading: false, authMode: 'supabase' });
+            return;
+          }
         }
-      } else {
-        setState({ user: null, session: null, loading: false });
+      } catch {
+        // Supabase not configured or unreachable — use local mode
+      }
+
+      // Fall back to locally stored user
+      if (mounted) {
+        const localUser = store.get<User | null>('user', null);
+        setState({ user: localUser, session: null, loading: false, authMode: 'local' });
       }
     };
 
     init();
 
-    // Listen for auth state changes (login, logout, token refresh)
+    // Listen for Supabase auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return;
-
       if (session) {
         const profile = await fetchProfile(session.user.id);
         if (mounted) {
-          setState({ user: sessionToUser(session, profile), session, loading: false });
+          setState({ user: sessionToUser(session, profile), session, loading: false, authMode: 'supabase' });
         }
-      } else {
-        setState({ user: null, session: null, loading: false });
+      } else if (state.authMode === 'supabase') {
+        setState({ user: null, session: null, loading: false, authMode: 'supabase' });
       }
     });
 
@@ -93,74 +96,60 @@ export function useAuth() {
   const login = useCallback(async (email: string, password: string): Promise<{ error?: string }> => {
     setState(prev => ({ ...prev, loading: true }));
 
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    // Try Supabase Auth first
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-    if (error) {
-      setState(prev => ({ ...prev, loading: false }));
-      // Map common errors to Dutch
-      if (error.message.includes('Invalid login')) {
-        return { error: 'Ongeldig email of wachtwoord' };
+      if (!error && data.session) {
+        const profile = await fetchProfile(data.session.user.id);
+        setState({ user: sessionToUser(data.session, profile), session: data.session, loading: false, authMode: 'supabase' });
+        return {};
       }
-      if (error.message.includes('Email not confirmed')) {
-        return { error: 'Email is nog niet bevestigd. Check je inbox.' };
-      }
-      return { error: error.message };
+    } catch {
+      // Supabase unavailable — try local fallback
     }
 
-    if (data.session) {
-      const profile = await fetchProfile(data.session.user.id);
-      setState({ user: sessionToUser(data.session, profile), session: data.session, loading: false });
+    // Local fallback: check against managed users
+    const allUsers: User[] = store.get('managedUsers', USERS);
+    const found = allUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+
+    if (found) {
+      store.set('user', found);
+      setState({ user: found, session: null, loading: false, authMode: 'local' });
+      return {};
     }
 
-    return {};
+    setState(prev => ({ ...prev, loading: false }));
+    return { error: 'Ongeldig email of wachtwoord. Probeer het opnieuw.' };
   }, []);
 
   const logout = useCallback(async () => {
-    await supabase.auth.signOut();
-    setState({ user: null, session: null, loading: false });
-  }, []);
+    if (state.authMode === 'supabase') {
+      await supabase.auth.signOut();
+    }
+    store.del('user');
+    setState({ user: null, session: null, loading: false, authMode: state.authMode });
+  }, [state.authMode]);
 
   const resetPassword = useCallback(async (email: string): Promise<{ error?: string }> => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/`,
-    });
-    if (error) return { error: error.message };
-    return {};
-  }, []);
-
-  const updateProfile = useCallback(async (updates: Partial<Pick<User, 'name' | 'role' | 'avatar' | 'deviceId'>>) => {
-    if (!state.user) return;
-
-    // Update profiles table
-    const dbUpdates: Record<string, unknown> = {};
-    if (updates.name !== undefined) dbUpdates.name = updates.name;
-    if (updates.role !== undefined) dbUpdates.role = updates.role;
-    if (updates.avatar !== undefined) dbUpdates.avatar = updates.avatar;
-    if (updates.deviceId !== undefined) dbUpdates.device_id = updates.deviceId;
-
-    const { error } = await supabase
-      .from('profiles')
-      .update(dbUpdates)
-      .eq('id', state.user.id);
-
-    if (error) {
-      console.warn('[Auth] Profile update failed:', error.message);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/`,
+      });
+      if (error) return { error: error.message };
+      return {};
+    } catch {
+      return { error: 'Wachtwoord-reset is niet beschikbaar. Neem contact op met de beheerder.' };
     }
-
-    // Also update local state immediately
-    setState(prev => ({
-      ...prev,
-      user: prev.user ? { ...prev.user, ...updates } : null,
-    }));
-  }, [state.user]);
+  }, []);
 
   return {
     user: state.user,
     session: state.session,
     loading: state.loading,
+    authMode: state.authMode,
     login,
     logout,
     resetPassword,
-    updateProfile,
   };
 }
