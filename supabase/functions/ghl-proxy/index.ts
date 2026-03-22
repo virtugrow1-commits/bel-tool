@@ -8,6 +8,18 @@ const corsHeaders = {
 const GHL_BASE = 'https://services.leadconnectorhq.com';
 const GHL_VERSION = '2021-07-28';
 
+function hasValidContactId(value: unknown): value is string {
+  return typeof value === 'string' && value.trim().length > 0 && value.trim() !== ':id' && !value.trim().startsWith(':');
+}
+
+function requireContactId(params: Record<string, unknown>) {
+  if (!hasValidContactId(params.contactId)) {
+    throw new Error('Invalid contactId: placeholder route parameter received');
+  }
+
+  return params.contactId.trim();
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -53,7 +65,8 @@ serve(async (req) => {
 
       // ─── GET SINGLE CONTACT ───
       case 'getContact': {
-        const res = await fetch(`${GHL_BASE}/contacts/${params.contactId}`, { headers: ghlHeaders });
+        const contactId = requireContactId(params);
+        const res = await fetch(`${GHL_BASE}/contacts/${contactId}`, { headers: ghlHeaders });
         if (!res.ok) throw new Error(`GHL contact error [${res.status}]: ${await res.text()}`);
         result = await res.json();
         break;
@@ -61,7 +74,8 @@ serve(async (req) => {
 
       // ─── UPDATE CONTACT ───
       case 'updateContact': {
-        const { contactId, ...updateData } = params;
+        const contactId = requireContactId(params);
+        const { contactId: _ignoredContactId, ...updateData } = params;
         const res = await fetch(`${GHL_BASE}/contacts/${contactId}`, {
           method: 'PUT', headers: ghlHeaders,
           body: JSON.stringify(updateData),
@@ -73,7 +87,8 @@ serve(async (req) => {
 
       // ─── ADD TAG ───
       case 'addTag': {
-        const res = await fetch(`${GHL_BASE}/contacts/${params.contactId}/tags`, {
+        const contactId = requireContactId(params);
+        const res = await fetch(`${GHL_BASE}/contacts/${contactId}/tags`, {
           method: 'POST', headers: ghlHeaders,
           body: JSON.stringify({ tags: params.tags }),
         });
@@ -84,7 +99,8 @@ serve(async (req) => {
 
       // ─── CREATE NOTE ───
       case 'createNote': {
-        const res = await fetch(`${GHL_BASE}/contacts/${params.contactId}/notes`, {
+        const contactId = requireContactId(params);
+        const res = await fetch(`${GHL_BASE}/contacts/${contactId}/notes`, {
           method: 'POST', headers: ghlHeaders,
           body: JSON.stringify({ body: params.body, userId: params.userId }),
         });
@@ -95,7 +111,8 @@ serve(async (req) => {
 
       // ─── CREATE TASK ───
       case 'createTask': {
-        const res = await fetch(`${GHL_BASE}/contacts/${params.contactId}/tasks`, {
+        const contactId = requireContactId(params);
+        const res = await fetch(`${GHL_BASE}/contacts/${contactId}/tasks`, {
           method: 'POST', headers: ghlHeaders,
           body: JSON.stringify({
             title: params.title,
@@ -218,7 +235,8 @@ serve(async (req) => {
 
       // ─── SAVE CUSTOM FIELDS (Survey answers) ───
       case 'saveCustomFields': {
-        const res = await fetch(`${GHL_BASE}/contacts/${params.contactId}`, {
+        const contactId = requireContactId(params);
+        const res = await fetch(`${GHL_BASE}/contacts/${contactId}`, {
           method: 'PUT', headers: ghlHeaders,
           body: JSON.stringify({ customFields: params.customFields }),
         });
@@ -229,9 +247,10 @@ serve(async (req) => {
 
       // ─── TRIGGER OUTBOUND CALL via workflow tag ───
       case 'triggerCall': {
+        const contactId = requireContactId(params);
         // Add a tag that triggers an outbound call workflow in GHL
         const callTag = `beltool-call-now`;
-        const tagRes = await fetch(`${GHL_BASE}/contacts/${params.contactId}/tags`, {
+        const tagRes = await fetch(`${GHL_BASE}/contacts/${contactId}/tags`, {
           method: 'POST', headers: ghlHeaders,
           body: JSON.stringify({ tags: [callTag] }),
         });
@@ -242,7 +261,8 @@ serve(async (req) => {
 
       // ─── REMOVE TAG (cleanup after call trigger) ───
       case 'removeTag': {
-        const res = await fetch(`${GHL_BASE}/contacts/${params.contactId}/tags`, {
+        const contactId = requireContactId(params);
+        const res = await fetch(`${GHL_BASE}/contacts/${contactId}/tags`, {
           method: 'DELETE', headers: ghlHeaders,
           body: JSON.stringify({ tags: params.tags }),
         });
