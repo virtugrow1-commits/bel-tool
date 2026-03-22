@@ -206,7 +206,7 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
             className="w-full flex items-center justify-between px-3 py-2 rounded-lg border border-border bg-card text-[12px] font-semibold transition-colors hover:border-primary/40"
           >
             <span className="flex items-center gap-1.5">
-              <span className="text-[13px]">{FILTER_TABS.find(f => f.key === stageFilter)?.icon}</span>
+              <span className="text-[13px]">{(() => { const ico = FILTER_TABS.find(f => f.key === stageFilter)?.icon; return ico === 'snowflake' ? <Snowflake size={14} className="text-blue-400" /> : ico; })()}</span>
               <span className="text-foreground">{FILTER_TABS.find(f => f.key === stageFilter)?.label}</span>
               <span className="text-[10px] text-muted-foreground">({displayCounts[stageFilter] ?? 0})</span>
             </span>
