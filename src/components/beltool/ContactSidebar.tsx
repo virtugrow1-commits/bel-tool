@@ -92,7 +92,7 @@ interface ContactSidebarProps {
   onToggleSound?: () => void;
 }
 
-export function ContactSidebar({ companies, activeCompId, activeContactId, expandedComp, setExpandedComp, search, onSearchChange, onSelectContact, phase, onBusy, scores, convRate, user, onLogout, onShowAgenda, onShowCallbackQueue, onShowLeaderboard, onShowSettings, dueCallbackCount, appointmentCount, hasMoreLeads, loadingMore, onLoadMore, stageFilter, onStageFilterChange, onSelectFromLog, onInsertNote, cliqError, onRetryCliq, theme, onThemeChange, onShowRapportage, onShowSurveyResults, callbacks, soundEnabled, onToggleSound }: ContactSidebarProps) {
+export function ContactSidebar({ companies, activeCompId, activeContactId, expandedComp, setExpandedComp, search, onSearchChange, onSelectContact, phase, onBusy, scores, convRate, user, onLogout, onShowAgenda, onShowCallbackQueue, onShowLeaderboard, onShowSettings, dueCallbackCount, appointmentCount, stageCounts: propStageCounts, loadingMore, stageFilter, onStageFilterChange, onSelectFromLog, onInsertNote, cliqError, onRetryCliq, theme, onThemeChange, onShowRapportage, onShowSurveyResults, callbacks, soundEnabled, onToggleSound }: ContactSidebarProps) {
   const { t } = useBelTool();
   const [filterOpen, setFilterOpen] = useState(false);
   const filterRef = useRef<HTMLDivElement>(null);
