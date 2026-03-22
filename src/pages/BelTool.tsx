@@ -358,7 +358,9 @@ export default function BelTool() {
               dueCallbackCount={dueCallbacks.length}
               appointmentCount={settings.appts.length}
               stageCounts={stageCounts}
+              hasMoreLeads={hasMoreLeads}
               loadingMore={cliqLoading}
+              onLoadMore={loadMoreLeads}
               stageFilter={stageFilter}
               onStageFilterChange={setStageFilter}
               onSelectFromLog={(entry) => {
