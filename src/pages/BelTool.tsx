@@ -57,6 +57,7 @@ export default function BelTool() {
 
   const callFlow = useCallFlow({
     updateCompStage,
+    updateContact,
     addScore,
     pipelineInfo: leads.pipelineInfo,
     stageMap: leads.stageMap,
@@ -437,6 +438,8 @@ export default function BelTool() {
                     onUpdateContact={(uc) => updateContact(activeCompId!, uc)}
                     onUpdateCompany={updateCompany}
                     onClose={() => setShowDetail(false)}
+                    liveNotes={notes}
+                    onNotesChange={setNotes}
                   />
                 )}
               </div>

@@ -8,10 +8,15 @@ interface ContactDetailPanelProps {
   onUpdateContact: (c: CompanyContact) => void;
   onUpdateCompany: (c: Company) => void;
   onClose: () => void;
+  liveNotes?: string;
+  onNotesChange?: (v: string) => void;
 }
 
-export function ContactDetailPanel({ contact, company, onUpdateContact, onUpdateCompany, onClose }: ContactDetailPanelProps) {
-  const [editContact, setEditContact] = useState<CompanyContact>({ ...contact });
+export function ContactDetailPanel({ contact, company, onUpdateContact, onUpdateCompany, onClose, liveNotes, onNotesChange }: ContactDetailPanelProps) {
+  const [editContact, setEditContact] = useState<CompanyContact>({
+    ...contact,
+    notes: liveNotes !== undefined ? liveNotes : contact.notes || '',
+  });
   const [editCompany, setEditCompany] = useState<Company>({ ...company });
   const [tab, setTab] = useState<'contact' | 'company'>('contact');
 
@@ -63,7 +68,11 @@ export function ContactDetailPanel({ contact, company, onUpdateContact, onUpdate
               <label className="text-[10px] text-muted-foreground uppercase font-semibold">Notities</label>
               <textarea
                 value={editContact.notes || ''}
-                onChange={e => setEditContact(p => ({ ...p, notes: e.target.value }))}
+                onChange={e => {
+                  const v = e.target.value;
+                  setEditContact(p => ({ ...p, notes: v }));
+                  onNotesChange?.(v);
+                }}
                 rows={3}
                 className={cn(inputCls, 'resize-none')}
               />

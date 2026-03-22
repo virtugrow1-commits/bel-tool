@@ -15,12 +15,13 @@ const STAGE_TO_CLIQ: Record<string, string> = {
 
 interface UseCallFlowOptions {
   updateCompStage: (compId: string, stage: Company['stage']) => void;
+  updateContact: (compId: string, contact: CompanyContact) => void;
   addScore: (type: string) => void;
   pipelineInfo: { pipelineId: string; stageId: string } | null;
   stageMap: Record<string, string>;
 }
 
-export function useCallFlow({ updateCompStage, addScore, pipelineInfo, stageMap }: UseCallFlowOptions) {
+export function useCallFlow({ updateCompStage, updateContact, addScore, pipelineInfo, stageMap }: UseCallFlowOptions) {
   const [activeCompId, setActiveCompId] = useState<string | null>(null);
   const [activeContactId, setActiveContactId] = useState<string | null>(null);
   const [expandedComp, setExpandedComp] = useState<string | null>(null);
@@ -48,7 +49,7 @@ export function useCallFlow({ updateCompStage, addScore, pipelineInfo, stageMap 
     setPhase('intro');
     setCallState('idle');
     setAnswers({ hours: '', tasks: [], tasksOther: '', growth: '', ai: '' });
-    setNotes('');
+    setNotes(contact.notes || '');
     setBookDate('');
     setBookTime('');
     setBookAdvisor('');
@@ -99,6 +100,11 @@ export function useCallFlow({ updateCompStage, addScore, pipelineInfo, stageMap 
     if (activeCompId) {
       updateCompStage(activeCompId, stage);
 
+      // Persist notes on the contact object so they survive between sessions
+      if (activeContact && currentNotes.trim()) {
+        updateContact(activeCompId, { ...activeContact, notes: currentNotes });
+      }
+
       // Move opportunity in CLIQ pipeline
       if (pipelineInfo && STAGE_TO_CLIQ[stage]) {
         const targetStageId = stageMap[STAGE_TO_CLIQ[stage]];
@@ -122,7 +128,7 @@ export function useCallFlow({ updateCompStage, addScore, pipelineInfo, stageMap 
     }
 
     resetCallState();
-  }, [activeCompId, activeContactId, pipelineInfo, stageMap, updateCompStage, resetCallState]);
+  }, [activeCompId, activeContactId, pipelineInfo, stageMap, updateCompStage, updateContact, resetCallState]);
 
   const nextContact = useCallback(() => {
     resetCallState();
