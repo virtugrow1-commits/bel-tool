@@ -13,7 +13,7 @@ export function useTeamProfiles() {
   const fetchProfiles = useCallback(async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('profiles')
         .select('*')
         .order('name');

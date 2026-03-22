@@ -25,7 +25,7 @@ function sessionToUser(session: Session, profile?: Record<string, unknown> | nul
 
 async function fetchProfile(userId: string): Promise<Record<string, unknown> | null> {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('profiles')
       .select('*')
       .eq('id', userId)
