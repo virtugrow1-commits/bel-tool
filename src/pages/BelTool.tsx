@@ -56,7 +56,7 @@ export default function BelTool() {
   const { advisors } = useAdvisors();
 
   const leads = useLeads(user);
-  const { companies, cliqLoading, cliqError, stageCounts, stageFilter, setStageFilter, search, setSearch, reloadLeads, updateCompStage, updateContact, updateCompany } = leads;
+  const { companies, cliqLoading, cliqError, stageCounts, hasMoreLeads, stageFilter, setStageFilter, search, setSearch, reloadLeads, loadMoreLeads, updateCompStage, updateContact, updateCompany } = leads;
 
   const callFlow = useCallFlow({
     updateCompStage,
