@@ -205,7 +205,7 @@ export function ContactSidebar({ companies, activeCompId, activeContactId, expan
             <span className="flex items-center gap-1.5">
               <span className="text-[13px]">{FILTER_TABS.find(f => f.key === stageFilter)?.icon}</span>
               <span className="text-foreground">{FILTER_TABS.find(f => f.key === stageFilter)?.label}</span>
-              <span className="text-[10px] text-muted-foreground">({stageCounts[stageFilter]})</span>
+              <span className="text-[10px] text-muted-foreground">({displayCounts[stageFilter] ?? 0})</span>
             </span>
             <span className={cn('text-muted-foreground text-[9px] transition-transform', filterOpen && 'rotate-180')}>▼</span>
           </button>
