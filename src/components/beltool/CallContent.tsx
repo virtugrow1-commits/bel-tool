@@ -333,7 +333,7 @@ export function CallContent({
       <div className="flex-1 overflow-y-auto p-6 animate-fade-in bg-background" key={phase}>
         {phase === 'intro' && (
           <StepLayout step={1} total={6} icon={surveyConfig.intro.icon} title={surveyConfig.intro.title}
-            script={renderScript(surveyConfig.intro.script, activeContact, answers)} tip={surveyConfig.intro.tip}>
+            script={renderScript(surveyConfig.intro.script, activeContact, answers, user?.name)} tip={surveyConfig.intro.tip}>
             <div className="flex flex-wrap gap-1.5 mt-3.5">
               <ActionBtn onClick={() => { setPhase('q1'); updateStage(activeCompId, 'enqueteGestart'); }}>{t.agree}</ActionBtn>
               <ActionBtn variant="warning" onClick={() => { onNotesChange(notes ? notes + '\n📨 Enquête digitaal verstuurd' : '📨 Enquête digitaal verstuurd'); onEndCall('sent', 'enqueteVerstuurd'); addScore('verstuurd'); showToast(t.surveyDigitalSent, 'info'); }}>{t.noTime}</ActionBtn>
@@ -375,7 +375,7 @@ export function CallContent({
 
         {phase === 'q1' && (
           <StepLayout step={2} total={6} icon={surveyConfig.q1.icon} title={surveyConfig.q1.title}
-            script={renderScript(surveyConfig.q1.script, activeContact, answers)} tip={surveyConfig.q1.tip || undefined}>
+            script={renderScript(surveyConfig.q1.script, activeContact, answers, user?.name)} tip={surveyConfig.q1.tip || undefined}>
             <div className="text-[11px] font-bold text-primary uppercase tracking-wider mb-2">{surveyConfig.q1.fieldLabel}</div>
             <div className="flex flex-wrap gap-1.5 mb-5">
               {((surveyConfig.q1.options || []) as string[]).map(h => (
@@ -394,7 +394,7 @@ export function CallContent({
 
         {phase === 'q2' && (
           <StepLayout step={3} total={6} icon={surveyConfig.q2.icon} title={surveyConfig.q2.title}
-            script={renderScript(surveyConfig.q2.script, activeContact, answers)} tip={surveyConfig.q2.tip || undefined}>
+            script={renderScript(surveyConfig.q2.script, activeContact, answers, user?.name)} tip={surveyConfig.q2.tip || undefined}>
             <div className="text-[11px] font-bold text-primary uppercase tracking-wider mb-2">{surveyConfig.q2.fieldLabel}</div>
             <div className="space-y-1.5 mb-2.5">
               {((surveyConfig.q2.options || []) as string[]).map(tk => {
@@ -426,7 +426,7 @@ export function CallContent({
 
         {phase === 'q3' && (
           <StepLayout step={4} total={6} icon={surveyConfig.q3.icon} title={surveyConfig.q3.title}
-            script={renderScript(surveyConfig.q3.script, activeContact, answers)} tip={surveyConfig.q3.tip || undefined}>
+            script={renderScript(surveyConfig.q3.script, activeContact, answers, user?.name)} tip={surveyConfig.q3.tip || undefined}>
             <div className="text-[11px] font-bold text-primary uppercase tracking-wider mb-2">{surveyConfig.q3.fieldLabel}</div>
             <div className="space-y-2 mb-5">
               {((surveyConfig.q3.options || []) as SelectOption[]).map(o => (
@@ -442,7 +442,7 @@ export function CallContent({
 
         {phase === 'q4' && (
           <StepLayout step={5} total={6} icon={surveyConfig.q4.icon} title={surveyConfig.q4.title}
-            script={renderScript(surveyConfig.q4.script, activeContact, answers)} tip={surveyConfig.q4.tip || undefined}>
+            script={renderScript(surveyConfig.q4.script, activeContact, answers, user?.name)} tip={surveyConfig.q4.tip || undefined}>
             <div className="text-[11px] font-bold text-primary uppercase tracking-wider mb-2">{surveyConfig.q4.fieldLabel}</div>
             <div className="space-y-2 mb-5">
               {((surveyConfig.q4.options || []) as SelectOption[]).map(o => (
@@ -468,7 +468,7 @@ export function CallContent({
           const leadC = ll === 'hot' ? 'hsl(0 84% 60%)' : ll === 'warm' ? 'hsl(38 92% 50%)' : 'hsl(217 91% 60%)';
           return (
             <StepLayout step={6} total={6} icon={surveyConfig.bridge.icon} title={surveyConfig.bridge.title}
-              script={renderScript(surveyConfig.bridge.script, activeContact, answers)} tip={surveyConfig.bridge.tip || undefined}>
+              script={renderScript(surveyConfig.bridge.script, activeContact, answers, user?.name)} tip={surveyConfig.bridge.tip || undefined}>
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg mb-3.5 border" style={{ background: leadC + '10', border: '1px solid ' + leadC + '25' }}>
                 <span className="text-base">{ll === 'hot' ? '🔥' : ll === 'warm' ? '☀️' : '❄️'}</span>
                 <span className="font-bold text-[13px]" style={{ color: leadC }}>{t[ll]} LEAD — {ls}pts</span>

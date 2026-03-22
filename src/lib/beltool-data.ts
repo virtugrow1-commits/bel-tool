@@ -82,7 +82,7 @@ export function defaultSurvey(): SurveyConfig {
     intro: {
       icon: '👋',
       title: 'Introductie',
-      script: '"Goedemiddag {naam}, u spreekt met [jouw naam] van CliqMakers. Ik bel u kort omdat we momenteel een praktijkonderzoek doen naar onnodig tijdverlies en capaciteit binnen het MKB. Mag ik u daar vier hele korte vragen over stellen?"',
+      script: '"Goedemiddag {naam}, u spreekt met {beller} van CliqMakers. Ik bel u kort omdat we momenteel een praktijkonderzoek doen naar onnodig tijdverlies en capaciteit binnen het MKB. Mag ik u daar vier hele korte vragen over stellen?"',
       tip: 'Klinkt de prospect gehaast? Bied direct de digitale enquête aan.',
     },
     q1: {
@@ -140,7 +140,8 @@ export function defaultSurvey(): SurveyConfig {
 export function renderScript(
   template: string,
   contact: { firstName: string } | null,
-  answers: { hours: string; tasks: string[]; tasksOther: string; growth: string; ai: string }
+  answers: { hours: string; tasks: string[]; tasksOther: string; growth: string; ai: string },
+  callerName?: string
 ): string {
   const ts = answers.tasks
     .concat(answers.tasksOther ? [answers.tasksOther] : [])
@@ -149,6 +150,7 @@ export function renderScript(
   const g = answers.growth === 'Klaar voor groei' ? 'wilt opschalen' : 'bent druk met huidig werk';
   return template
     .replace(/\{naam\}/g, contact?.firstName || '[Naam]')
+    .replace(/\{beller\}/g, callerName || '[Beller]')
     .replace(/\{uren\}/g, answers.hours || 'Dat')
     .replace(/\{taken\}/g, ts || 'die taken')
     .replace(/\{groei\}/g, g)
