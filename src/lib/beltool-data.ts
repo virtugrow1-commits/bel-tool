@@ -18,6 +18,7 @@ export interface Advisor {
 /** Fallback users when Supabase profiles table is not yet configured */
 export const USERS: User[] = [
   { id: 'u1', name: 'Willem', email: 'willem@cliqmakers.nl', role: 'admin', avatar: 'WC' },
+  { id: 'u4', name: 'Noelle van Gestel', email: 'noelle@cliqmakers.nl', role: 'caller', avatar: 'NG', deviceId: '203' },
   { id: 'u2', name: 'Sophie', email: 'sophie@cliqmakers.nl', role: 'caller', avatar: 'SV' },
   { id: 'u3', name: 'Mark', email: 'mark@cliqmakers.nl', role: 'manager', avatar: 'MB' },
 ];
