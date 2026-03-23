@@ -109,8 +109,27 @@ export function useAuth() {
       // Supabase unavailable — try local fallback
     }
 
-    // Local fallback: check against managed users
-    const allUsers: User[] = store.get('managedUsers', USERS);
+    // Local fallback: check against managed users + DB profiles
+    let allUsers: User[] = store.get('managedUsers', USERS);
+    
+    // Also try to fetch from profiles table for device_id etc.
+    try {
+      const { data: dbProfiles } = await (supabase as any)
+        .from('profiles')
+        .select('*')
+        .order('name');
+      if (dbProfiles && dbProfiles.length > 0) {
+        allUsers = dbProfiles.map((row: any) => ({
+          id: row.id,
+          name: row.name,
+          email: row.email,
+          role: row.role as User['role'],
+          avatar: row.avatar || row.name?.substring(0, 2).toUpperCase() || 'U',
+          deviceId: row.device_id || '',
+        }));
+      }
+    } catch {}
+
     const found = allUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
 
     if (found) {
