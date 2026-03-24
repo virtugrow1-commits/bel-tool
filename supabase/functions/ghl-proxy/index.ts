@@ -413,6 +413,114 @@ serve(async (req) => {
         break;
       }
 
+      // ─── GET NOTES FOR CONTACT ───
+      case 'getNotes': {
+        const contactId = requireContactId(params);
+        const res = await fetch(`${GHL_BASE}/contacts/${contactId}/notes`, { headers: ghlHeaders });
+        if (!res.ok) throw new Error(`GHL get notes error [${res.status}]: ${await res.text()}`);
+        result = await res.json();
+        break;
+      }
+
+      // ─── GET TASKS FOR CONTACT ───
+      case 'getTasks': {
+        const contactId = requireContactId(params);
+        const res = await fetch(`${GHL_BASE}/contacts/${contactId}/tasks`, { headers: ghlHeaders });
+        if (!res.ok) throw new Error(`GHL get tasks error [${res.status}]: ${await res.text()}`);
+        result = await res.json();
+        break;
+      }
+
+      // ─── COMPLETE TASK ───
+      case 'completeTask': {
+        const contactId = requireContactId(params);
+        const taskId = params.taskId as string;
+        if (!taskId) throw new Error('completeTask requires taskId');
+        const res = await fetch(`${GHL_BASE}/contacts/${contactId}/tasks/${taskId}`, {
+          method: 'PUT', headers: ghlHeaders,
+          body: JSON.stringify({ completed: true }),
+        });
+        if (!res.ok) throw new Error(`GHL complete task error [${res.status}]: ${await res.text()}`);
+        result = await res.json();
+        break;
+      }
+
+      // ─── GET APPOINTMENTS FOR CONTACT ───
+      case 'getAppointments': {
+        const contactId = requireContactId(params);
+        const res = await fetch(
+          `${GHL_BASE}/contacts/${contactId}/appointments`,
+          { headers: ghlHeaders }
+        );
+        if (!res.ok) throw new Error(`GHL get appointments error [${res.status}]: ${await res.text()}`);
+        result = await res.json();
+        break;
+      }
+
+      // ─── UPDATE APPOINTMENT STATUS ───
+      case 'updateAppointment': {
+        const appointmentId = params.appointmentId as string;
+        if (!appointmentId) throw new Error('updateAppointment requires appointmentId');
+        const res = await fetch(`${GHL_BASE}/calendars/events/appointments/${appointmentId}`, {
+          method: 'PUT', headers: ghlHeaders,
+          body: JSON.stringify({
+            ...(params.status ? { appointmentStatus: params.status } : {}),
+            ...(params.notes  ? { notes: params.notes } : {}),
+          }),
+        });
+        if (!res.ok) throw new Error(`GHL update appointment error [${res.status}]: ${await res.text()}`);
+        result = await res.json();
+        break;
+      }
+
+      // ─── STRUCTURED CALL ACTIVITY LOG ───
+      // Creates a rich note in GHL that captures the full call outcome.
+      case 'logCallActivity': {
+        const contactId = requireContactId(params);
+        const durationSec = typeof params.durationSeconds === 'number' ? params.durationSeconds : 0;
+        const durationStr = durationSec > 0
+          ? durationSec >= 60
+            ? `${Math.floor(durationSec / 60)}m ${durationSec % 60}s`
+            : `${durationSec}s`
+          : 'onbekend';
+
+        const resultEmoji: Record<string, string> = {
+          geenGehoor:         '📵',
+          afspraak:           '📅',
+          enqueteTel:         '✅',
+          enqueteVerstuurd:   '📨',
+          nietInteressant:    '🚫',
+          terugbellenGepland: '🔔',
+          anderMoment:        '⏳',
+          gestart:            '📞',
+        };
+
+        const emoji = resultEmoji[params.result as string] || '📞';
+        const lines = [
+          `${emoji} Belresultaat: ${params.resultLabel || params.result}`,
+          `⏱️ Gespreksduur: ${durationStr}`,
+          params.callerName ? `👤 Beller: ${params.callerName}` : '',
+          params.notes      ? `📝 Notities: ${params.notes}` : '',
+          `🕐 ${new Date().toLocaleString('nl-NL')}`,
+        ].filter(Boolean).join('\n');
+
+        const res = await fetch(`${GHL_BASE}/contacts/${contactId}/notes`, {
+          method: 'POST', headers: ghlHeaders,
+          body: JSON.stringify({ body: lines }),
+        });
+        if (!res.ok) throw new Error(`GHL log call activity error [${res.status}]: ${await res.text()}`);
+        result = await res.json();
+        break;
+      }
+
+      // ─── ADD TO DNC LIST (via Supabase — GHL doesn't have native DNC API) ───
+      // This action is handled client-side via Supabase; included here as a no-op
+      // so the proxy doesn't throw on unknown action if called accidentally.
+      case 'addToDNC': {
+        result = { success: true, note: 'DNC updates handled via Supabase' };
+        break;
+      }
+
       default:
         return new Response(JSON.stringify({ error: `Unknown action: ${action}` }), {
           status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },

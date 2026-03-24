@@ -24,13 +24,42 @@ export function useSettings() {
   const [showAgenda, setShowAgenda] = useState(false);
   const [showCallback, setShowCallback] = useState(false);
   const [appts, setAppts] = useState<Appointment[]>(() => store.get('appointments', []));
-  const [webhooks, setWebhooks] = useState<Webhook[]>(() => store.get('webhooks', []));
-  const [apiKey, setApiKey] = useState(() => store.get('apiKey', ''));
-  const [surveyConfig, setSurveyConfig] = useState<SurveyConfig>(() => migrateSurveyConfig(store.get('surveyConfig', defaultSurvey())));
-  const [cliqConfig, setCliqConfig] = useState<CliqConfig>(() => store.get('cliqConfig', {
+  const [webhooks, setWebhooksRaw] = useState<Webhook[]>(() => store.get('webhooks', []));
+  const [apiKey, setApiKeyRaw] = useState(() => store.get('apiKey', ''));
+  const [surveyConfig, setSurveyConfigRaw] = useState<SurveyConfig>(() => migrateSurveyConfig(store.get('surveyConfig', defaultSurvey())));
+  const [cliqConfig, setCliqConfigRaw] = useState<CliqConfig>(() => store.get('cliqConfig', {
     apiKey: '', locationId: '', pipelineId: '', calendarId: '',
     syncContacts: true, syncOpportunities: true, syncAppointments: true, createNotes: true,
   }));
+
+  const setWebhooks = useCallback((v: Webhook[] | ((prev: Webhook[]) => Webhook[])) => {
+    setWebhooksRaw(prev => {
+      const next = typeof v === 'function' ? v(prev) : v;
+      store.set('webhooks', next);
+      return next;
+    });
+  }, []);
+
+  const setApiKey = useCallback((v: string) => {
+    setApiKeyRaw(v);
+    store.set('apiKey', v);
+  }, []);
+
+  const setSurveyConfig = useCallback((v: SurveyConfig | ((prev: SurveyConfig) => SurveyConfig)) => {
+    setSurveyConfigRaw(prev => {
+      const next = typeof v === 'function' ? v(prev) : v;
+      store.set('surveyConfig', next);
+      return next;
+    });
+  }, []);
+
+  const setCliqConfig = useCallback((v: CliqConfig | ((prev: CliqConfig) => CliqConfig)) => {
+    setCliqConfigRaw(prev => {
+      const next = typeof v === 'function' ? v(prev) : v;
+      store.set('cliqConfig', next);
+      return next;
+    });
+  }, []);
 
   const t = i18n[lang as keyof typeof i18n] || i18n.nl;
 

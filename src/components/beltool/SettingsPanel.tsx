@@ -62,7 +62,6 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
     if (!editQ || !draft) return;
     const n = { ...surveyConfig, [editQ]: draft };
     setSurveyConfig(n);
-    store.set('surveyConfig', n);
     setEditQ(null);
     setDraft(null);
   };
@@ -70,15 +69,22 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
   const updateCliqConfig = (partial: Partial<typeof cliqConfig>) => {
     const next = { ...cliqConfig, ...partial };
     setCliqConfig(next);
-    store.set('cliqConfig', next);
   };
 
-  const testConnection = () => {
-    setTestStatus('testing');
-    setTimeout(() => {
-      setTestStatus(cliqConfig.apiKey && cliqConfig.locationId ? 'success' : 'error');
+  const testConnection = async () => {
+    if (!cliqConfig.apiKey || !cliqConfig.locationId) {
+      setTestStatus('error');
       setTimeout(() => setTestStatus(null), 3000);
-    }, 1500);
+      return;
+    }
+    setTestStatus('testing');
+    try {
+      await cliq.getPipelines();
+      setTestStatus('success');
+    } catch {
+      setTestStatus('error');
+    }
+    setTimeout(() => setTestStatus(null), 3000);
   };
 
   const tabs = [
@@ -335,7 +341,7 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
           {['nl', 'en'].map(l => (
             <button
               key={l}
-              onClick={() => { setLang(l); store.set('lang', l); }}
+              onClick={() => { setLang(l); }}
               className={cn(
                 'px-6 py-2.5 rounded-lg border-2 font-semibold text-sm transition-colors',
                 lang === l ? 'border-primary bg-primary/10' : 'border-border'
@@ -374,7 +380,7 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
             );
           })}
           <button
-            onClick={() => { setSurveyConfig(defaultSurvey()); store.set('surveyConfig', defaultSurvey()); }}
+            onClick={() => { setSurveyConfig(defaultSurvey()); }}
             className="mt-3 px-3 py-1.5 rounded-lg bg-destructive text-destructive-foreground text-[11px] font-semibold active:scale-95 transition-transform"
           >
             Reset naar standaard
@@ -463,23 +469,23 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
       {tab === 'api' && (
         <div>
           <div className="text-[11px] text-muted-foreground mb-1">API Key</div>
-          <input value={apiKey} onChange={e => { setApiKey(e.target.value); store.set('apiKey', e.target.value); }} placeholder="cliq-api-key-..." className={cn(inputCls, 'mb-3.5')} />
+          <input value={apiKey} onChange={e => { setApiKey(e.target.value); }} placeholder="cliq-api-key-..." className={cn(inputCls, 'mb-3.5')} />
           <div className="text-[11px] text-muted-foreground mb-1.5">Webhooks</div>
           {webhooks.map((wh, i) => (
             <div key={i} className="flex gap-1.5 mb-1 items-center">
               <input value={wh.url} readOnly className={cn(inputCls, 'flex-1')} />
               <button
-                onClick={() => { const n = [...webhooks]; n[i].active = !n[i].active; setWebhooks(n); store.set('webhooks', n); }}
+                onClick={() => { const n = [...webhooks]; n[i].active = !n[i].active; setWebhooks(n); }}
                 className={cn('px-2.5 py-1.5 rounded-md text-[10px] font-bold border-none', wh.active ? 'bg-green-500/10 text-green-400' : 'bg-destructive/10 text-destructive')}
               >
                 {wh.active ? 'ON' : 'OFF'}
               </button>
-              <button onClick={() => { const n = webhooks.filter((_, j) => j !== i); setWebhooks(n); store.set('webhooks', n); }} className="text-destructive bg-transparent border-none">✕</button>
+              <button onClick={() => { const n = webhooks.filter((_, j) => j !== i); setWebhooks(n); }} className="text-destructive bg-transparent border-none">✕</button>
             </div>
           ))}
           <div className="flex gap-1.5 mt-1.5">
             <input value={newWh} onChange={e => setNewWh(e.target.value)} placeholder="https://..." className={cn(inputCls, 'flex-1')} />
-            <button onClick={() => { if (newWh.trim()) { const n = [...webhooks, { url: newWh.trim(), active: true }]; setWebhooks(n); store.set('webhooks', n); setNewWh(''); } }} className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-[11px] font-semibold">+</button>
+            <button onClick={() => { if (newWh.trim()) { const n = [...webhooks, { url: newWh.trim(), active: true }]; setWebhooks(n); setNewWh(''); } }} className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-[11px] font-semibold">+</button>
           </div>
         </div>
       )}

@@ -9,7 +9,7 @@ import { useFlash } from '@/hooks/useFlash';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useDarkMode } from '@/hooks/useDarkMode';
 import { useMobileSidebar } from '@/hooks/useMobileSidebar';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { store } from '@/lib/beltool-store';
@@ -38,7 +38,7 @@ import { AutoDialCountdown } from '@/components/beltool/AutoDialCountdown';
 import { WhatsAppComposer } from '@/components/beltool/WhatsAppComposer';
 import { useSoundEffects } from '@/hooks/useSoundEffects';
 import { useAdvisors } from '@/hooks/useAdvisors';
-import { recordAttempt, smartSort, getAttemptCount } from '@/lib/smart-queue';
+import { recordAttempt, smartSort, getAttemptCount, loadAttemptCache } from '@/lib/smart-queue';
 
 function normalizeEmail(email?: string) {
   if (typeof email !== 'string') return '';
@@ -61,6 +61,13 @@ export default function BelTool() {
   const { scores, convRate, addScore, allScores, setAllScores, setContactInfo } = scoring;
   const sfx = useSoundEffects();
   const { advisors } = useAdvisors();
+
+  // Load smart-queue attempt cache from Supabase on login
+  useEffect(() => {
+    if (user) {
+      loadAttemptCache().catch(console.warn);
+    }
+  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const leads = useLeads(user);
   const { companies, cliqLoading, cliqError, stageCounts, hasMoreLeads, stageFilter, setStageFilter, search, setSearch, reloadLeads, loadMoreLeads, updateCompStage, updateContact, updateCompany, removeCompany } = leads;
@@ -159,14 +166,18 @@ export default function BelTool() {
     return null;
   }, [companies, callbacks, activeCompId]);
 
-  // Auto-create callbacks for "Enquête Voltooid" leads
+  // Auto-create callbacks for "Enquête Voltooid" leads (only once per contact)
+  const autoCallbackCreatedRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     const enqueteLeads = companies.filter(c => c.stage === 'enqueteTel');
     for (const comp of enqueteLeads) {
       const ct = comp.contacts[0];
       if (!ct) continue;
+      // Skip if already created in this session
+      if (autoCallbackCreatedRef.current.has(ct.id)) continue;
       const alreadyHasCallback = callbacks.some(cb => cb.contactId === ct.id && cb.status === 'scheduled');
       if (!alreadyHasCallback) {
+        autoCallbackCreatedRef.current.add(ct.id);
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
         tomorrow.setHours(9, 0, 0, 0);
@@ -181,7 +192,7 @@ export default function BelTool() {
         }, user?.id);
       }
     }
-  }, [companies]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [companies, callbacks, rawSaveCallback, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Keep scoring ref in sync
   useEffect(() => {
@@ -353,7 +364,14 @@ export default function BelTool() {
                     bookingLink={`${window.location.origin}/afspraak?contactId=${encodeURIComponent(activeContact.id)}`}
                   context={showWhatsApp as 'enquete' | 'geen-gehoor' | 'interesse' | 'afspraak' | 'terugbellen'}
                   onSent={(channel, templateId) => {
-                    flash(`${channel === 'whatsapp' ? 'WhatsApp' : channel === 'sms' ? 'SMS' : 'Email'} verstuurd naar ${activeContact.firstName}!`);
+                    const channelLabel = channel === 'whatsapp' ? 'WhatsApp' : channel === 'sms' ? 'SMS' : 'Email';
+                    flash(`${channelLabel} verstuurd naar ${activeContact.firstName}!`);
+                    // Log the message send in GHL as a note
+                    cliq.createNote(activeContact.id, `📨 ${channelLabel} verstuurd (${templateId}) — ${new Date().toLocaleString('nl-NL')}`).catch(() => {});
+                    // Update stage if context is enquete-related
+                    if (showWhatsApp === 'enquete' && activeCompId) {
+                      updateCompStage(activeCompId, 'enqueteVerstuurd');
+                    }
                   }}
                   onClose={() => setShowWhatsApp(null)}
                 />
@@ -493,9 +511,10 @@ export default function BelTool() {
                     activeContact={activeContact} activeComp={activeComp}
                     phase={phase} callState={callState} setPhase={setPhase}
                     answers={answers} setAnswers={setAnswers} taskString={taskString}
-                    onEndCall={(ph, stage) => endCall(ph, stage, answers, notes, activeContact, activeComp)}
+                    onEndCall={(ph, stage) => endCall(ph, stage, answers, notes, activeContact, activeComp, user?.name)}
                     onNextContact={handleNextContact}
                     showToast={flash} updateStage={updateCompStage} addScore={addScoreWithSfx}
+                    activeCallId={activeCallId}
                     bookDate={bookDate} setBookDate={setBookDate}
                     bookTime={bookTime} setBookTime={setBookTime}
                     bookAdvisor={bookAdvisor} setBookAdvisor={setBookAdvisor}
@@ -516,8 +535,8 @@ export default function BelTool() {
                 {curStep >= 0 && !isMobile && (
                   <AnswersSidebar
                     answers={answers} taskString={taskString} notes={notes} onNotesChange={setNotes}
-                    onSendDigital={() => { setNotes(prev => prev ? prev + '\n📨 Enquête digitaal verstuurd' : '📨 Enquête digitaal verstuurd'); endCall('sent', 'enqueteVerstuurd', answers, notes, activeContact, activeComp); addScoreWithSfx('verstuurd'); flash(t.surveyDigitalSent, 'info'); }}
-                    onNoAnswer={() => { setNotes(prev => prev ? prev + '\n📵 Geen gehoor' : '📵 Geen gehoor'); endCall('noanswer', 'geenGehoor', answers, notes, activeContact, activeComp); addScoreWithSfx('geenGehoor'); flash(t.noAnswerNoted); }}
+                    onSendDigital={() => { setNotes(prev => prev ? prev + '\n📨 Enquête digitaal verstuurd' : '📨 Enquête digitaal verstuurd'); endCall('sent', 'enqueteVerstuurd', answers, notes, activeContact, activeComp, user?.name); addScoreWithSfx('verstuurd'); flash(t.surveyDigitalSent, 'info'); }}
+                    onNoAnswer={() => { setNotes(prev => prev ? prev + '\n📵 Geen gehoor' : '📵 Geen gehoor'); endCall('noanswer', 'geenGehoor', answers, notes, activeContact, activeComp, user?.name); addScoreWithSfx('geenGehoor'); flash(t.noAnswerNoted); }}
                     onGoToAppointment={() => { if (activeCompId) updateCompStage(activeCompId, 'enqueteTel'); addScoreWithSfx('enquete'); setPhase('bridge'); }}
                     onShowCallback={() => settings.setShowCallback(true)}
                   />

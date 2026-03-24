@@ -149,11 +149,56 @@ export const cliq = {
     return callCliq('createNote', { contactId, body: note });
   },
 
+  async logCallActivity(contactId: string, params: {
+    result: string;
+    resultLabel?: string;
+    durationSeconds?: number;
+    callerName?: string;
+    notes?: string;
+  }) {
+    return callCliq('logCallActivity', { contactId, ...params });
+  },
+
+  async getNotes(contactId: string) {
+    return callCliq('getNotes', { contactId });
+  },
+
+  async getTasks(contactId: string) {
+    return callCliq('getTasks', { contactId });
+  },
+
+  async completeTask(contactId: string, taskId: string) {
+    return callCliq('completeTask', { contactId, taskId });
+  },
+
+  async getAppointments(contactId: string) {
+    return callCliq('getAppointments', { contactId });
+  },
+
+  async updateAppointment(appointmentId: string, updates: { status?: string; notes?: string }) {
+    return callCliq('updateAppointment', { appointmentId, ...updates });
+  },
+
+  /**
+   * Sync company info to all contacts in GHL.
+   * Called when a company is renamed or address is updated.
+   */
+  async syncCompanyToContacts(
+    contacts: Array<{ id: string }>,
+    companyName: string,
+  ) {
+    await Promise.allSettled(
+      contacts.map(c =>
+        callCliq('updateContact', {
+          contactId: c.id,
+          companyName,
+        })
+      )
+    );
+  },
+
   async logCall(contactId: string, result: string) {
-    await callCliq('createNote', {
-      contactId,
-      body: `📞 Belresultaat: ${result}\n📅 ${new Date().toLocaleString('nl-NL')}`,
-    });
+    return callCliq('logCallActivity', { contactId, result, resultLabel: result });
   },
 
   async upsertOpportunity(contactId: string, pipelineId: string, stageId: string, name: string, opportunityId?: string) {

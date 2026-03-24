@@ -197,6 +197,7 @@ interface CallContentProps {
   showToast: (msg: string, type?: string) => void;
   updateStage: (compId: string, stage: Company['stage']) => void;
   addScore: (type: string) => void;
+  activeCallId?: string | null;
   bookDate: string;
   setBookDate: (v: string) => void;
   bookTime: string;
@@ -264,6 +265,7 @@ function BigOption({ selected, icon, title, subtitle, onClick }: { selected: boo
 export function CallContent({
   activeContact, activeComp, phase, callState, setPhase, answers, setAnswers, taskString,
   onEndCall, onNextContact, showToast, updateStage, addScore,
+  activeCallId,
   bookDate, setBookDate, bookTime, setBookTime, bookAdvisor, setBookAdvisor,
   scores, onShowCallback, onStartDialing, onHangup, onConfirmConnected, activeCompId, onShowDetail,
   notes, onNotesChange, dailyTargets, onShowWhatsApp, advisors, onAppointmentBooked,
@@ -575,17 +577,21 @@ export function CallContent({
                     : locationType === 'bedrijf' ? `Bedrijfslocatie: ${activeComp.address || 'Adres onbekend'}`
                     : `Op locatie: ${customAddress.trim()}`;
                   const appointmentTitle = activeComp.name ? `Adviesgesprek — ${activeComp.name}` : `Adviesgesprek — ${activeContact.firstName} ${activeContact.lastName}`;
-                  cliq.bookAppointment(activeContact.id, bookDate, bookTime, bookAdvisor, calId, locationStr, appointmentTitle).catch(err => {
-                    console.error('Appointment error:', err);
-                    showToast('Fout bij inplannen: ' + err.message, 'err');
-                  });
-                  cliq.createTask(activeContact.id, `Adviesgesprek ${activeContact.firstName} ${activeContact.lastName}`, {
-                    body: `Afspraak op ${fmtDate(bookDate)} om ${bookTime}\n📍 ${locationStr}`,
-                    dueDate: `${bookDate}T${bookTime}:00`,
-                  }).catch(console.error);
+                  const adv = advisors.find(a => a.id === bookAdvisor);
+
+                  // Fire all GHL sync in parallel, don't block the UI
+                  Promise.all([
+                    cliq.bookAppointment(activeContact.id, bookDate, bookTime, bookAdvisor, calId, locationStr, appointmentTitle)
+                      .catch(err => { console.error('Appointment error:', err); showToast('⚠️ Afspraak kon niet in GHL worden aangemaakt: ' + err.message, 'err'); }),
+                    cliq.createTask(activeContact.id, `Adviesgesprek ${activeContact.firstName} ${activeContact.lastName}`, {
+                      body: `Afspraak op ${fmtDate(bookDate)} om ${bookTime}\n📍 ${locationStr}\n👤 Adviseur: ${adv?.name || bookAdvisor}`,
+                      dueDate: `${bookDate}T${bookTime}:00`,
+                      assignedTo: bookAdvisor,
+                    }).catch(console.error),
+                  ]);
+
                   onEndCall('done', 'afspraak');
                   addScore('afspraak');
-                  const adv = advisors.find(a => a.id === bookAdvisor);
                   if (onAppointmentBooked) {
                     onAppointmentBooked({
                       contactName: `${activeContact.firstName} ${activeContact.lastName}`,
@@ -668,6 +674,7 @@ export function CallContent({
         company={activeComp}
         onHangup={onHangup}
         onConfirmConnected={onConfirmConnected}
+        activeCallId={activeCallId}
       />
     </>
   );

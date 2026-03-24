@@ -62,7 +62,41 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ── DIAL (default) ──
+    // ── STATUS CHECK (for polling) ──
+    if (action === 'status') {
+      const { callId } = body;
+      if (!callId) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'callId is verplicht' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const res = await fetch(`https://api.voipgrid.nl/api/clicktodial/${callId}/`, {
+        method: 'GET',
+        headers: { 'Authorization': authHeader, 'Accept': 'application/json' },
+      });
+
+      if (!res.ok) {
+        return new Response(
+          JSON.stringify({ success: false, status: 'unknown', error: `Status check failed (${res.status})` }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      let voysStatus: Record<string, unknown> = {};
+      try { voysStatus = await res.json(); } catch { /* empty */ }
+
+      // Voys status values: 'connected', 'disconnected', 'failed', 'dialing'
+      const callStatus = voysStatus.callid ? (voysStatus.status || 'ringing') : 'unknown';
+
+      return new Response(
+        JSON.stringify({ success: true, status: callStatus, raw: voysStatus }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+
     const { phone, leadId, leadName, deviceId } = body;
 
     if (!phone) {
