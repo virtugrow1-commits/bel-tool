@@ -29,8 +29,21 @@ export function CallButton({ phoneNumber, leadId, leadName, deviceId, onCallStar
       if (error) throw new Error(error.message || 'Functie aanroep mislukt');
       if (!data?.success) throw new Error(data?.error || 'Onbekende fout');
 
+      const callId = data?.callId || '';
+
+      // Register outgoing call so voys-webhook can track status changes
+      if (callId) {
+        await supabase.from('incoming_calls').insert({
+          caller_number: phoneNumber.replace(/[\s\-\(\)]/g, ''),
+          call_id: callId,
+          status: 'ringing',
+        }).then(({ error: insertErr }) => {
+          if (insertErr) console.warn('Could not register outgoing call:', insertErr);
+        });
+      }
+
       setState('success');
-      onCallStarted?.(data?.callId || '');
+      onCallStarted?.(callId);
       setTimeout(() => setState('idle'), 2500);
     } catch (err: any) {
       setState('error');

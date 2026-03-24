@@ -94,6 +94,11 @@ export function useCallFlow({ updateCompStage, updateContact, addScore, pipeline
     if (contactToClean) {
       cliq.removeTag(contactToClean, ['beltool-call-now']).catch(console.error);
     }
+
+    // Auto-reset to idle after brief display of 'ended'
+    setTimeout(() => {
+      setCallState('idle');
+    }, 1500);
   }, [activeCallId, activeContactId]);
 
   const endCall = useCallback((ph: CallPhase, stage: Company['stage'], currentAnswers: SurveyAnswers, currentNotes: string, activeContact: CompanyContact | null, activeComp: Company | null) => {
