@@ -164,6 +164,10 @@ export function useCallFlow({ updateCompStage, updateContact, addScore, pipeline
       }
       if (['done', 'sent'].includes(ph) && currentAnswers.hours) {
         cliq.saveSurveyAnswers(activeContactId || '', currentAnswers).catch(console.error);
+        // Cache survey answers on contact for persistence
+        if (activeContact) {
+          updateContact(activeCompId, { ...activeContact, surveyAnswers: currentAnswers });
+        }
       }
 
       // Add workflow-trigger tags based on result
