@@ -10,6 +10,7 @@ const ProspectSurvey = lazy(() => import("./pages/ProspectSurvey"));
 const SurveyResults = lazy(() => import("./pages/SurveyResults"));
 const Rapportage = lazy(() => import("./pages/Rapportage"));
 const Afspraak = lazy(() => import("./pages/Afspraak"));
+const GhlIframe = lazy(() => import("./pages/GhlIframe"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 function LoadingFallback() {
