@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { format, addDays, isBefore, startOfDay, parse } from 'date-fns';
@@ -59,7 +60,10 @@ function addMinutesToTime(time: string, minutesToAdd: number) {
 type Step = 'contact' | 'calendar' | 'date' | 'time' | 'confirm' | 'done';
 
 export default function Afspraak() {
-  const [step, setStep] = useState<Step>('contact');
+  const [searchParams] = useSearchParams();
+  const contactIdParam = searchParams.get('contactId');
+  const [ghlContactId, setGhlContactId] = useState<string | null>(contactIdParam);
+  const [step, setStep] = useState<Step>(contactIdParam ? 'date' : 'contact');
   const [contact, setContact] = useState<ContactForm>(EMPTY_CONTACT);
   const [calendars, setCalendars] = useState<GHLCalendar[]>([]);
   const [selectedCalendar, setSelectedCalendar] = useState<string>('');
@@ -67,11 +71,37 @@ export default function Afspraak() {
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [slots, setSlots] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingContact, setLoadingContact] = useState(!!contactIdParam);
   const [error, setError] = useState('');
   const [calendarMonth, setCalendarMonth] = useState(() => {
     const now = new Date();
     return { year: now.getFullYear(), month: now.getMonth() };
   });
+
+  // Fetch contact from GHL if contactId is in URL
+  useEffect(() => {
+    if (!contactIdParam) return;
+    setLoadingContact(true);
+    callGHL('getContact', { contactId: contactIdParam })
+      .then((data) => {
+        const c = data?.contact || data;
+        if (c) {
+          setContact({
+            naam: c.name || c.contactName || [c.firstName, c.lastName].filter(Boolean).join(' ') || '',
+            email: c.email || '',
+            telefoon: c.phone || '',
+            bedrijf: c.companyName || '',
+            opmerking: '',
+          });
+          setGhlContactId(contactIdParam);
+        }
+      })
+      .catch(() => {
+        // If contact fetch fails, show contact form
+        setStep('contact');
+      })
+      .finally(() => setLoadingContact(false));
+  }, [contactIdParam]);
 
   // Fetch calendars on mount
   useEffect(() => {
@@ -134,16 +164,19 @@ export default function Afspraak() {
     setLoading(true);
     setError('');
     try {
-      // Create or find contact in GHL
-      const contactResult = await callGHL('createContact', {
-        name: contact.naam,
-        email: contact.email,
-        phone: contact.telefoon,
-        companyName: contact.bedrijf,
-        tags: ['website-afspraak'],
-        source: 'Website Afspraak',
-      });
-      const contactId = contactResult?.contact?.id || contactResult?.id;
+      // Use existing GHL contact or create new one
+      let contactId = ghlContactId;
+      if (!contactId) {
+        const contactResult = await callGHL('createContact', {
+          name: contact.naam,
+          email: contact.email,
+          phone: contact.telefoon,
+          companyName: contact.bedrijf,
+          tags: ['website-afspraak'],
+          source: 'Website Afspraak',
+        });
+        contactId = contactResult?.contact?.id || contactResult?.id;
+      }
       if (!contactId) throw new Error('Kon contact niet aanmaken');
 
       // Book appointment
@@ -192,14 +225,17 @@ export default function Afspraak() {
         </div>
 
         {/* Progress */}
-        {step !== 'done' && (
+        {step !== 'done' && !loadingContact && (
           <div className="flex gap-1 mb-6">
-            {(['contact', 'calendar', 'date', 'time', 'confirm'] as Step[]).map((s, i) => (
+            {(ghlContactId
+              ? (['date', 'time', 'confirm'] as Step[])
+              : (['contact', 'calendar', 'date', 'time', 'confirm'] as Step[])
+            ).map((s, i, arr) => (
               <div
                 key={s}
                 className={cn(
                   'h-1 flex-1 rounded-full transition-colors',
-                  i <= ['contact', 'calendar', 'date', 'time', 'confirm'].indexOf(step)
+                  i <= arr.indexOf(step)
                     ? 'bg-primary'
                     : 'bg-border'
                 )}
@@ -215,8 +251,16 @@ export default function Afspraak() {
         )}
 
         <div className="bg-card rounded-xl shadow-sm border border-border p-6">
+          {/* Loading contact from GHL */}
+          {loadingContact && (
+            <div className="flex flex-col items-center justify-center py-12 gap-3">
+              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              <span className="text-sm text-muted-foreground">Gegevens ophalen...</span>
+            </div>
+          )}
+
           {/* Step: Contact info */}
-          {step === 'contact' && (
+          {!loadingContact && step === 'contact' && (
             <div className="space-y-4">
               <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
                 <User className="w-5 h-5 text-primary" />
@@ -372,9 +416,11 @@ export default function Afspraak() {
                 })}
               </div>
 
-              <button onClick={() => setStep(calendars.length <= 1 ? 'contact' : 'calendar')} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1">
-                <ArrowLeft className="w-3 h-3" /> Terug
-              </button>
+              {!ghlContactId && (
+                <button onClick={() => setStep(calendars.length <= 1 ? 'contact' : 'calendar')} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1">
+                  <ArrowLeft className="w-3 h-3" /> Terug
+                </button>
+              )}
             </div>
           )}
 
