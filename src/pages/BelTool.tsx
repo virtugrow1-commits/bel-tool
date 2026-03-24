@@ -56,7 +56,7 @@ export default function BelTool() {
   const { advisors } = useAdvisors();
 
   const leads = useLeads(user);
-  const { companies, cliqLoading, cliqError, stageCounts, hasMoreLeads, stageFilter, setStageFilter, search, setSearch, reloadLeads, loadMoreLeads, updateCompStage, updateContact, updateCompany } = leads;
+  const { companies, cliqLoading, cliqError, stageCounts, hasMoreLeads, stageFilter, setStageFilter, search, setSearch, reloadLeads, loadMoreLeads, updateCompStage, updateContact, updateCompany, removeCompany } = leads;
 
   const callFlow = useCallFlow({
     updateCompStage,
@@ -263,11 +263,7 @@ export default function BelTool() {
             onDismiss={dismissPopup}
             onCall={(id) => { handleCompleteCallback(id); clearPopup(); }}
           />
-          <IncomingCallPopup
-            call={incomingCall}
-            onAnswer={handleAnswerIncoming}
-            onDismiss={dismissCall}
-          />
+          {/* Incoming calls go to GHL — no popup in this tool */}
           <ShortcutsHelp open={showShortcuts} onClose={() => setShowShortcuts(false)} />
 
           <SettingsPanel
@@ -476,6 +472,11 @@ export default function BelTool() {
                     onUpdateContact={(uc) => updateContact(activeCompId!, uc)}
                     onUpdateCompany={updateCompany}
                     onClose={() => setShowDetail(false)}
+                    onDeleteContact={() => {
+                      removeCompany(activeCompId!);
+                      callFlow.resetCallState();
+                      flash('Contact verwijderd uit lijst', 'info');
+                    }}
                   />
                 )}
               </div>

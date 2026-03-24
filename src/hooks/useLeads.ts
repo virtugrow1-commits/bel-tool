@@ -312,6 +312,10 @@ export function useLeads(user: User | null) {
     setCompanies(cs => cs.map(c => c.id === updatedComp.id ? { ...c, ...updatedComp } : c));
   }, []);
 
+  const removeCompany = useCallback((compId: string) => {
+    setCompanies(cs => cs.filter(c => c.id !== compId));
+  }, []);
+
   return {
     companies,
     cliqLoading,
@@ -329,5 +333,6 @@ export function useLeads(user: User | null) {
     updateCompStage,
     updateContact,
     updateCompany,
+    removeCompany,
   };
 }

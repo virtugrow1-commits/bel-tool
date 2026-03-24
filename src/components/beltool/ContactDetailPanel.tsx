@@ -8,12 +8,14 @@ interface ContactDetailPanelProps {
   onUpdateContact: (c: CompanyContact) => void;
   onUpdateCompany: (c: Company) => void;
   onClose: () => void;
+  onDeleteContact?: () => void;
 }
 
-export function ContactDetailPanel({ contact, company, onUpdateContact, onUpdateCompany, onClose }: ContactDetailPanelProps) {
+export function ContactDetailPanel({ contact, company, onUpdateContact, onUpdateCompany, onClose, onDeleteContact }: ContactDetailPanelProps) {
   const [editContact, setEditContact] = useState<CompanyContact>({ ...contact });
   const [editCompany, setEditCompany] = useState<Company>({ ...company });
   const [tab, setTab] = useState<'contact' | 'company'>('contact');
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const save = () => {
     onUpdateContact(editContact);
@@ -88,10 +90,26 @@ export function ContactDetailPanel({ contact, company, onUpdateContact, onUpdate
         )}
       </div>
 
-      <div className="p-4 border-t border-border">
+      <div className="p-4 border-t border-border space-y-2">
         <button onClick={save} className="w-full py-2.5 rounded-lg bg-primary text-white text-sm font-semibold active:scale-[0.97] transition-transform shadow-sm">
           Opslaan
         </button>
+        {onDeleteContact && (
+          confirmDelete ? (
+            <div className="flex gap-2">
+              <button onClick={() => { onDeleteContact(); onClose(); }} className="flex-1 py-2 rounded-lg bg-destructive text-white text-xs font-semibold active:scale-[0.97] transition-transform">
+                Ja, verwijderen
+              </button>
+              <button onClick={() => setConfirmDelete(false)} className="flex-1 py-2 rounded-lg bg-muted text-muted-foreground text-xs font-semibold border border-border active:scale-[0.97] transition-transform">
+                Annuleren
+              </button>
+            </div>
+          ) : (
+            <button onClick={() => setConfirmDelete(true)} className="w-full py-2 rounded-lg bg-destructive/10 text-destructive text-xs font-semibold border border-destructive/20 hover:bg-destructive/20 active:scale-[0.97] transition-all">
+              🗑️ Contact verwijderen uit lijst
+            </button>
+          )
+        )}
       </div>
     </div>
   );
