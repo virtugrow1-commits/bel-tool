@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 const ProspectSurvey = lazy(() => import("./pages/ProspectSurvey"));
 const SurveyResults = lazy(() => import("./pages/SurveyResults"));
 const Rapportage = lazy(() => import("./pages/Rapportage"));
+const Afspraak = lazy(() => import("./pages/Afspraak"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 function LoadingFallback() {
