@@ -297,7 +297,17 @@ export function useLeads(user: User | null) {
   }, [pipelineInfo, pageCursor, hasMoreLeads, cliqLoading, loadOpportunities, resolveStageId, stageFilter]);
 
   const updateCompStage = useCallback((compId: string, stage: Company['stage']) => {
-    setCompanies(p => p.map(c => c.id === compId ? { ...c, stage } : c));
+    setCompanies(prev => prev.map(company => {
+      if (company.id === compId) {
+        return { ...company, stage };
+      }
+
+      if (stage === 'bellen' && company.stage === 'bellen') {
+        return { ...company, stage: 'nieuw' };
+      }
+
+      return company;
+    }));
   }, []);
 
   const updateContact = useCallback((compId: string, updatedContact: CompanyContact) => {
