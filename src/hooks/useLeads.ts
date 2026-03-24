@@ -283,12 +283,24 @@ export function useLeads(user: User | null) {
     const stId = resolveStageId(stageFilter, stageMapRef.current);
     const defaultStage: CompanyStage = stageFilter === 'all' ? 'nieuw' : stageFilter;
 
-    loadOpportunities(pipelineInfo.pipelineId, stId, undefined, undefined, defaultStage)
-      .catch((err: any) => {
+    (async () => {
+      try {
+        await loadOpportunities(pipelineInfo.pipelineId, stId, undefined, undefined, defaultStage);
+        const bgCompanies = await loadBackgroundStages(pipelineInfo.pipelineId, stageMapRef.current, stId);
+        if (bgCompanies.length > 0) {
+          setCompanies(prev => {
+            const existingIds = new Set(prev.map(c => c.id));
+            const newOnes = bgCompanies.filter(c => !existingIds.has(c.id));
+            return newOnes.length > 0 ? [...prev, ...newOnes] : prev;
+          });
+        }
+      } catch (err: any) {
         console.warn('CLIQ stage load failed:', err.message);
         setCliqError(err.message);
-      })
-      .finally(() => setCliqLoading(false));
+      } finally {
+        setCliqLoading(false);
+      }
+    })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stageFilter]);
 
