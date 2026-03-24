@@ -472,6 +472,11 @@ export default function BelTool() {
                     onUpdateContact={(uc) => updateContact(activeCompId!, uc)}
                     onUpdateCompany={updateCompany}
                     onClose={() => setShowDetail(false)}
+                    onDeleteContact={() => {
+                      removeCompany(activeCompId!);
+                      callFlow.resetCallState();
+                      flash('Contact verwijderd uit lijst', 'info');
+                    }}
                   />
                 )}
               </div>
