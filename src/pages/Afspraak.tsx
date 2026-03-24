@@ -416,7 +416,11 @@ export default function Afspraak() {
                 })}
               </div>
 
-              <button onClick={() => setStep(calendars.length <= 1 ? 'contact' : 'calendar')} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1">
+              {!ghlContactId && (
+                <button onClick={() => setStep(calendars.length <= 1 ? 'contact' : 'calendar')} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1">
+                  <ArrowLeft className="w-3 h-3" /> Terug
+                </button>
+              )}
                 <ArrowLeft className="w-3 h-3" /> Terug
               </button>
             </div>
