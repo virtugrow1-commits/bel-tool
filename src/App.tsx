@@ -39,6 +39,7 @@ const App = () => (
             <Route path="/resultaten" element={<SurveyResults />} />
             <Route path="/rapportage" element={<Rapportage />} />
             <Route path="/afspraak" element={<Afspraak />} />
+            <Route path="/ghl-iframe" element={<GhlIframe />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
