@@ -1,6 +1,14 @@
 import { supabase } from '@/integrations/supabase/client';
 import { withRetry, isRetryableError } from '@/lib/retry';
 
+function normalizeEmail(email?: string) {
+  if (typeof email !== 'string') return undefined;
+  const trimmed = email.trim();
+  if (!trimmed) return undefined;
+  const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed);
+  return isValid ? trimmed : undefined;
+}
+
 function getAmsterdamOffset(date: string) {
   const parts = new Intl.DateTimeFormat('en-US', {
     timeZone: 'Europe/Amsterdam',
@@ -75,11 +83,12 @@ export const cliq = {
     linkedin?: string;
   }) {
     const fullName = data.name || [data.firstName, data.lastName].filter(Boolean).join(' ').trim();
+    const normalizedEmail = normalizeEmail(data.email);
 
     return callCliq('updateContact', {
       contactId,
       ...(fullName ? { name: fullName } : {}),
-      ...(typeof data.email === 'string' ? { email: data.email } : {}),
+      ...(normalizedEmail ? { email: normalizedEmail } : {}),
       ...(typeof data.phone === 'string' ? { phone: data.phone } : {}),
       ...(typeof data.companyName === 'string' ? { companyName: data.companyName } : {}),
       ...(typeof data.linkedin === 'string' ? { website: data.linkedin } : {}),

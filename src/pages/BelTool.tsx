@@ -40,6 +40,13 @@ import { useSoundEffects } from '@/hooks/useSoundEffects';
 import { useAdvisors } from '@/hooks/useAdvisors';
 import { recordAttempt, smartSort, getAttemptCount } from '@/lib/smart-queue';
 
+function normalizeEmail(email?: string) {
+  if (typeof email !== 'string') return '';
+  const trimmed = email.trim();
+  if (!trimmed) return '';
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed) ? trimmed : '';
+}
+
 export default function BelTool() {
   // --- Core hooks ---
   const { user, login, logout, resetPassword, loading: authLoading } = useAuth();
@@ -85,10 +92,13 @@ export default function BelTool() {
 
   const syncContactToCliq = useCallback(async (contact: import('@/types/beltool').CompanyContact, companyName?: string) => {
     if (!contact.id?.trim()) return;
+
+    const normalizedEmail = normalizeEmail(contact.email);
+
     await cliq.updateContact(contact.id, {
       firstName: contact.firstName,
       lastName: contact.lastName,
-      email: contact.email,
+      email: normalizedEmail,
       phone: contact.phone,
       companyName,
       linkedin: contact.linkedin,
@@ -99,7 +109,9 @@ export default function BelTool() {
     if (!activeCompId || !activeComp) return;
     updateContact(activeCompId, updatedContact);
     await syncContactToCliq(updatedContact, activeComp.name);
-    flash('Contact opgeslagen en gesynchroniseerd', 'info');
+    const hasEmailValue = !!updatedContact.email?.trim();
+    const hasValidEmail = !!normalizeEmail(updatedContact.email);
+    flash(hasEmailValue && !hasValidEmail ? 'Contact opgeslagen — ongeldig e-mailadres niet naar GHL gestuurd' : 'Contact opgeslagen en gesynchroniseerd', hasEmailValue && !hasValidEmail ? 'warn' : 'info');
   }, [activeComp, activeCompId, updateContact, syncContactToCliq, flash]);
 
   const handleUpdateCompany = useCallback(async (updatedCompany: import('@/types/beltool').Company) => {
