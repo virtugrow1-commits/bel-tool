@@ -64,19 +64,25 @@ export function useIncomingCalls({ user, companies, activeCallId, setCallState, 
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'incoming_calls' }, (payload: any) => {
         const row = payload.new;
+        const callId = row.call_id;
 
-        if (row.status === 'answered' && activeCallId && row.call_id === activeCallId) {
+        // Match on activeCallId for outgoing calls
+        if (row.status === 'answered' && callId && callId === activeCallId) {
           setCallState('active');
           flash('📞 Gesprek opgenomen', 'info');
         }
-        if (row.status === 'ended' && activeCallId && row.call_id === activeCallId) {
-          setCallState('ended');
-          flash('📞 Gesprek beëindigd door klant');
-          setTimeout(() => setCallState('idle'), 2000);
-        }
-        if (row.status === 'ended' && incomingCall && row.id === incomingCall.id) {
-          setIncomingCall(null);
-          flash('📞 Inkomend gesprek beëindigd');
+        if (row.status === 'ended') {
+          // Outgoing call ended (by client or otherwise)
+          if (callId && callId === activeCallId) {
+            setCallState('ended');
+            flash('📞 Gesprek beëindigd');
+            setTimeout(() => setCallState('idle'), 2000);
+          }
+          // Incoming call ended
+          if (incomingCall && row.id === incomingCall.id) {
+            setIncomingCall(null);
+            flash('📞 Inkomend gesprek beëindigd');
+          }
         }
       })
       .subscribe();
