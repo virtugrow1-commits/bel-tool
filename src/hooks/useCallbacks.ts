@@ -65,7 +65,7 @@ export function useCallbacks() {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) return;
 
-        const { data, error } = await supabase
+        const { data, error } = await (supabase as any)
           .from('callbacks')
           .select('*')
           .in('status', ['scheduled', 'done'])
