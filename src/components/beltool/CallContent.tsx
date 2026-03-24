@@ -390,8 +390,14 @@ export function CallContent({
           <StepLayout step={1} total={6} icon={surveyConfig.intro.icon} title={surveyConfig.intro.title}
             script={renderScript(surveyConfig.intro.script, activeContact, answers, user?.name)} tip={surveyConfig.intro.tip}>
             <div className="flex flex-wrap gap-1.5 mt-3.5">
-              <ActionBtn onClick={() => { setPhase('q1'); updateStage(activeCompId, 'enqueteGestart'); }}>{t.agree}</ActionBtn>
-              <ActionBtn variant="warning" onClick={() => { onNotesChange(notes ? notes + '\n📨 Enquête digitaal verstuurd' : '📨 Enquête digitaal verstuurd'); onEndCall('sent', 'enqueteVerstuurd'); addScore('verstuurd'); showToast(t.surveyDigitalSent, 'info'); }}>{t.noTime}</ActionBtn>
+              <ActionBtn onClick={() => {
+                if (!activeContact.email) { showToast('⚠️ Geen e-mailadres bekend — vul eerst het e-mailadres in via contactgegevens', 'err'); return; }
+                setPhase('q1'); updateStage(activeCompId, 'enqueteGestart');
+              }}>{t.agree}</ActionBtn>
+              <ActionBtn variant="warning" onClick={() => {
+                if (!activeContact.email) { showToast('⚠️ Geen e-mailadres bekend — kan enquête niet digitaal versturen', 'err'); return; }
+                onNotesChange(notes ? notes + '\n📨 Enquête digitaal verstuurd' : '📨 Enquête digitaal verstuurd'); onEndCall('sent', 'enqueteVerstuurd'); addScore('verstuurd'); showToast(t.surveyDigitalSent, 'info');
+              }}>{t.noTime}</ActionBtn>
               <ActionBtn variant="warning" onClick={onShowCallback}>{t.callback}</ActionBtn>
               <ActionBtn variant="muted" onClick={() => { setShowVoicemail(true); }}>{t.noAnswerAction}</ActionBtn>
               <ActionBtn variant="danger" onClick={() => { onNotesChange(notes ? notes + '\n🚫 Niet geïnteresseerd' : '🚫 Niet geïnteresseerd'); onEndCall('lost', 'nietInteressant'); addScore('afgevallen'); }}>{t.notInterested}</ActionBtn>
@@ -577,7 +583,10 @@ export function CallContent({
 
               <div className="flex flex-wrap gap-1.5">
                 <ActionBtn variant="ghost" onClick={() => setPhase('q4')}>{t.back}</ActionBtn>
-                <ActionBtn variant="warning" onClick={() => { onNotesChange(notes ? notes + '\n📨 Booking link digitaal verstuurd' : '📨 Booking link digitaal verstuurd'); onEndCall('sent', 'enqueteVerstuurd'); addScore('verstuurd'); showToast(t.bookingSent, 'info'); }}>{t.sendBookingDigital}</ActionBtn>
+                <ActionBtn variant="warning" onClick={() => {
+                  if (!activeContact.email) { showToast('⚠️ Geen e-mailadres bekend — kan booking link niet digitaal versturen', 'err'); return; }
+                  onNotesChange(notes ? notes + '\n📨 Booking link digitaal verstuurd' : '📨 Booking link digitaal verstuurd'); onEndCall('sent', 'enqueteVerstuurd'); addScore('verstuurd'); showToast(t.bookingSent, 'info');
+                }}>{t.sendBookingDigital}</ActionBtn>
                 <ActionBtn variant="muted" onClick={() => { onNotesChange(notes ? notes + '\n⏳ Niet op dit moment' : '⏳ Niet op dit moment'); onEndCall('noanswer', 'anderMoment' as any); showToast('Ander moment genoteerd'); }}>⏳ Niet op dit moment</ActionBtn>
                 <ActionBtn variant="danger" onClick={() => { onNotesChange(notes ? notes + '\n🚫 Niet geïnteresseerd' : '🚫 Niet geïnteresseerd'); onEndCall('lost', 'nietInteressant'); addScore('afgevallen'); }}>{t.notInterested}</ActionBtn>
               </div>
