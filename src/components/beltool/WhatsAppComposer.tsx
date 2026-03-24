@@ -69,6 +69,12 @@ export function WhatsAppComposer({ contact, company, callerName, answers, bookin
 
   const handleSend = async () => {
     if (!contact.id || !renderedMessage.trim()) return;
+    if (effectiveChannel === 'email' && !contact.email?.trim()) {
+      setStatus('error');
+      setErrorMsg('Geen e-mailadres bekend — vul eerst het e-mailadres in bij contactgegevens.');
+      setTimeout(() => setStatus('idle'), 4000);
+      return;
+    }
     setStatus('sending');
     setErrorMsg('');
 

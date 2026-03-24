@@ -215,6 +215,15 @@ interface CallContentProps {
   dailyTargets: DailyTargets;
   onShowWhatsApp?: (context: string) => void;
   advisors: Advisor[];
+  onAppointmentBooked?: (appointment: {
+    contactName: string;
+    companyName: string;
+    date: string;
+    time: string;
+    advisorId: string;
+    advisorName: string;
+    status: 'planned';
+  }) => void;
 }
 
 function ActionBtn({ children, variant = 'primary', wide, onClick }: { children: React.ReactNode; variant?: 'primary' | 'ghost' | 'warning' | 'danger' | 'muted'; wide?: boolean; onClick: () => void }) {
@@ -257,7 +266,7 @@ export function CallContent({
   onEndCall, onNextContact, showToast, updateStage, addScore,
   bookDate, setBookDate, bookTime, setBookTime, bookAdvisor, setBookAdvisor,
   scores, onShowCallback, onStartDialing, onHangup, onConfirmConnected, activeCompId, onShowDetail,
-  notes, onNotesChange, dailyTargets, onShowWhatsApp, advisors,
+  notes, onNotesChange, dailyTargets, onShowWhatsApp, advisors, onAppointmentBooked,
 }: CallContentProps) {
   const { t, surveyConfig, user } = useBelTool();
   const [locationType, setLocationType] = useState<LocationType>('');

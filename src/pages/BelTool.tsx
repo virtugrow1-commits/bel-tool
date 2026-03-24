@@ -83,6 +83,49 @@ export default function BelTool() {
   const activeContact = activeComp?.contacts.find(c => c.id === activeContactId) || null;
   const contactName = activeContact ? `${activeContact.firstName} ${activeContact.lastName}` : '';
 
+  const syncContactToCliq = useCallback(async (contact: import('@/types/beltool').CompanyContact, companyName?: string) => {
+    if (!contact.id?.trim()) return;
+    await cliq.updateContact(contact.id, {
+      firstName: contact.firstName,
+      lastName: contact.lastName,
+      email: contact.email,
+      phone: contact.phone,
+      companyName,
+      linkedin: contact.linkedin,
+    });
+  }, []);
+
+  const handleUpdateContact = useCallback(async (updatedContact: import('@/types/beltool').CompanyContact) => {
+    if (!activeCompId || !activeComp) return;
+    updateContact(activeCompId, updatedContact);
+    await syncContactToCliq(updatedContact, activeComp.name);
+    flash('Contact opgeslagen en gesynchroniseerd', 'info');
+  }, [activeComp, activeCompId, updateContact, syncContactToCliq, flash]);
+
+  const handleUpdateCompany = useCallback(async (updatedCompany: import('@/types/beltool').Company) => {
+    updateCompany(updatedCompany);
+    await Promise.all(updatedCompany.contacts.map((contact) => syncContactToCliq(contact, updatedCompany.name).catch(() => {})));
+    flash('Bedrijf opgeslagen en gesynchroniseerd', 'info');
+  }, [updateCompany, syncContactToCliq, flash]);
+
+  const handleAppointmentBooked = useCallback((appointment: {
+    contactName: string;
+    companyName: string;
+    date: string;
+    time: string;
+    advisorId: string;
+    advisorName: string;
+    status: 'planned';
+  }) => {
+    settings.setAppts(prev => [
+      ...prev,
+      {
+        id: Date.now(),
+        ...appointment,
+      },
+    ]);
+  }, [settings]);
+
   // Auto-dial state
   const [autoDialPending, setAutoDialPending] = useState(false);
   const autoDialEnabled = store.get('autoDialEnabled', true);
@@ -290,11 +333,12 @@ export default function BelTool() {
           {showWhatsApp && activeContact && activeComp && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
               <div className="w-full max-w-lg">
-                <WhatsAppComposer
+                  <WhatsAppComposer
                   contact={activeContact}
                   company={activeComp}
                   callerName={user?.name || 'Beller'}
                   answers={answers}
+                    bookingLink={`${window.location.origin}/afspraak?contactId=${encodeURIComponent(activeContact.id)}`}
                   context={showWhatsApp as 'enquete' | 'geen-gehoor' | 'interesse' | 'afspraak' | 'terugbellen'}
                   onSent={(channel, templateId) => {
                     flash(`${channel === 'whatsapp' ? 'WhatsApp' : channel === 'sms' ? 'SMS' : 'Email'} verstuurd naar ${activeContact.firstName}!`);
@@ -454,6 +498,7 @@ export default function BelTool() {
                     dailyTargets={store.get('dailyTargets', { calls: 50, appointments: 5, surveys: 10 })}
                     onShowWhatsApp={(ctx) => setShowWhatsApp(ctx)}
                     advisors={advisors}
+                    onAppointmentBooked={handleAppointmentBooked}
                   />
                 </div>
                 {curStep >= 0 && !isMobile && (
@@ -469,8 +514,8 @@ export default function BelTool() {
                   <ContactDetailPanel
                     contact={activeContact}
                     company={activeComp}
-                    onUpdateContact={(uc) => updateContact(activeCompId!, uc)}
-                    onUpdateCompany={updateCompany}
+                    onUpdateContact={handleUpdateContact}
+                    onUpdateCompany={handleUpdateCompany}
                     onClose={() => setShowDetail(false)}
                     onDeleteContact={() => {
                       removeCompany(activeCompId!);

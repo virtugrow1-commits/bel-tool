@@ -65,6 +65,27 @@ export const cliq = {
     await callCliq('addTag', { contactId, tags: [stage] });
   },
 
+  async updateContact(contactId: string, data: {
+    name?: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    phone?: string;
+    companyName?: string;
+    linkedin?: string;
+  }) {
+    const fullName = data.name || [data.firstName, data.lastName].filter(Boolean).join(' ').trim();
+
+    return callCliq('updateContact', {
+      contactId,
+      ...(fullName ? { name: fullName } : {}),
+      ...(typeof data.email === 'string' ? { email: data.email } : {}),
+      ...(typeof data.phone === 'string' ? { phone: data.phone } : {}),
+      ...(typeof data.companyName === 'string' ? { companyName: data.companyName } : {}),
+      ...(typeof data.linkedin === 'string' ? { website: data.linkedin } : {}),
+    });
+  },
+
   async saveSurveyAnswers(contactId: string, answers: unknown) {
     const fields = answers as Record<string, string>;
 
