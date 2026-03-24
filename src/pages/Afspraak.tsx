@@ -225,14 +225,17 @@ export default function Afspraak() {
         </div>
 
         {/* Progress */}
-        {step !== 'done' && (
+        {step !== 'done' && !loadingContact && (
           <div className="flex gap-1 mb-6">
-            {(['contact', 'calendar', 'date', 'time', 'confirm'] as Step[]).map((s, i) => (
+            {(ghlContactId
+              ? (['date', 'time', 'confirm'] as Step[])
+              : (['contact', 'calendar', 'date', 'time', 'confirm'] as Step[])
+            ).map((s, i, arr) => (
               <div
                 key={s}
                 className={cn(
                   'h-1 flex-1 rounded-full transition-colors',
-                  i <= ['contact', 'calendar', 'date', 'time', 'confirm'].indexOf(step)
+                  i <= arr.indexOf(step)
                     ? 'bg-primary'
                     : 'bg-border'
                 )}
