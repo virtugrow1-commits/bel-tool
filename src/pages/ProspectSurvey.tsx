@@ -35,7 +35,7 @@ const AI_OPTIES = [
 { value: 'Al mee bezig', label: 'Ja, we oriënteren of zijn actief bezig', icon: '⚡' },
 { value: 'Komt niet aan toe', label: 'Nee, door de waan van de dag', icon: '😅' }];
 
-const BOOKING_URL = 'https://cliqmakers.nl/afspraak';
+const BOOKING_URL = 'https://link.cliqcrm.nl/widget/bookings/sales-afspraken';
 
 const isValidContactId = (value?: string) => {
   if (!value) return false;
