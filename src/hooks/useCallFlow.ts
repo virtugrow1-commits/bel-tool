@@ -149,8 +149,10 @@ export function useCallFlow({ updateCompStage, updateContact, addScore, pipeline
       }
     }
 
+    // Hang up any active call before resetting
+    hangup();
     resetCallState();
-  }, [activeCompId, activeContactId, pipelineInfo, stageMap, updateCompStage, updateContact, resetCallState]);
+  }, [activeCompId, activeContactId, pipelineInfo, stageMap, updateCompStage, updateContact, resetCallState, hangup]);
 
   const nextContact = useCallback(() => {
     resetCallState();
