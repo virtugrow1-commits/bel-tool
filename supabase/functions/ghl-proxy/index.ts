@@ -101,8 +101,28 @@ serve(async (req) => {
           method: 'PUT', headers: ghlHeaders,
           body: JSON.stringify(updateData),
         });
-        if (!res.ok) throw new Error(`GHL update contact error [${res.status}]: ${await res.text()}`);
-        result = await res.json();
+        if (!res.ok) {
+          const errorText = await res.text();
+          // Handle duplicate contact error: retry without email
+          if (res.status === 400 && errorText.includes('duplicated contacts') && 'email' in updateData) {
+            console.warn('GHL duplicate contact on email, retrying without email field');
+            const { email: _removed, ...withoutEmail } = updateData;
+            if (Object.keys(withoutEmail).length > 0) {
+              const res2 = await fetch(`${GHL_BASE}/contacts/${contactId}`, {
+                method: 'PUT', headers: ghlHeaders,
+                body: JSON.stringify(withoutEmail),
+              });
+              if (!res2.ok) throw new Error(`GHL update contact error [${res2.status}]: ${await res2.text()}`);
+              result = await res2.json();
+            } else {
+              result = { success: true, note: 'Email skipped due to duplicate constraint' };
+            }
+          } else {
+            throw new Error(`GHL update contact error [${res.status}]: ${errorText}`);
+          }
+        } else {
+          result = await res.json();
+        }
         break;
       }
 
