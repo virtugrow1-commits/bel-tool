@@ -173,37 +173,50 @@ export function useLeads(user: User | null) {
   }, []);
 
   // Fetch counts for all stages in parallel
-  const loadStageCounts = useCallback(async (pipelineId: string, stages: Record<string, string>) => {
-    const stageKeys = Object.keys(STAGE_TO_CLIQ_NAME).filter(k => k !== 'bellen' && k !== 'terugbellen');
-    const uniqueCliqNames = [...new Set(stageKeys.map(k => STAGE_TO_CLIQ_NAME[k]))];
+  // Map a GHL stage name (lowercased) to our internal stage using fuzzy matching
+  const matchStageToInternal = useCallback((ghlStageName: string): CompanyStage | null => {
+    // First try exact match via CLIQ_NAME_TO_STAGE
+    if (CLIQ_NAME_TO_STAGE[ghlStageName]) return CLIQ_NAME_TO_STAGE[ghlStageName];
 
+    // Fuzzy: check if GHL name contains or is contained by our known names
+    for (const [cliqName, internal] of Object.entries(CLIQ_NAME_TO_STAGE)) {
+      if (ghlStageName.includes(cliqName) || cliqName.includes(ghlStageName)) return internal;
+    }
+    return null;
+  }, []);
+
+  const loadStageCounts = useCallback(async (pipelineId: string, stages: Record<string, string>) => {
     const counts: Record<string, number> = {};
 
+    // Use ALL stages from the pipeline (stages map = ghlName → stageId)
+    const stageEntries = Object.entries(stages);
+
     const results = await Promise.allSettled(
-      uniqueCliqNames.map(async (cliqName) => {
-        const stageId = stages[cliqName];
-        if (!stageId) return { cliqName, total: 0 };
+      stageEntries.map(async ([ghlName, stageId]) => {
         const data = await cliq.searchOpportunities(pipelineId, stageId, 1);
-        return { cliqName, total: data?.meta?.total || 0 };
+        return { ghlName, total: data?.meta?.total || 0 };
       })
     );
 
     for (const r of results) {
       if (r.status === 'fulfilled') {
-        const internalStage = CLIQ_NAME_TO_STAGE[r.value.cliqName];
+        const { ghlName, total } = r.value;
+        const internalStage = matchStageToInternal(ghlName);
         if (internalStage) {
-          counts[internalStage] = r.value.total;
+          counts[internalStage] = (counts[internalStage] || 0) + total;
         }
       }
     }
 
-    if (counts['terugbellen'] !== undefined) {
+    // terugbellen and terugbellenGepland share the same GHL stage
+    if (counts['terugbellen'] !== undefined && counts['terugbellenGepland'] === undefined) {
       counts['terugbellenGepland'] = counts['terugbellen'];
     }
 
     counts['all'] = Object.values(counts).reduce((sum, n) => sum + n, 0);
+    console.log('[Leads] Stage counts from GHL:', counts);
     setStageCounts(counts);
-  }, []);
+  }, [matchStageToInternal]);
 
   // Load leads from background stages (enqueteTel, terugbellen) that should always
   // be visible for callbacks, regardless of the active filter.
