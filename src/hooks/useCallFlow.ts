@@ -48,7 +48,11 @@ export function useCallFlow({ updateCompStage, updateContact, addScore, pipeline
     setActiveContactId(contact.id);
     setPhase('intro');
     setCallState('idle');
-    setAnswers({ hours: '', tasks: [], tasksOther: '', growth: '', ai: '' });
+    // Pre-populate from locally cached survey answers
+    const saved = contact.surveyAnswers;
+    setAnswers(saved && (saved.hours || saved.tasks.length > 0 || saved.growth || saved.ai)
+      ? { ...saved }
+      : { hours: '', tasks: [], tasksOther: '', growth: '', ai: '' });
     setNotes(contact.notes || '');
     setBookDate('');
     setBookTime('');
@@ -58,7 +62,34 @@ export function useCallFlow({ updateCompStage, updateContact, addScore, pipeline
     if (freshStages.includes(comp.stage)) {
       updateCompStage(comp.id, 'bellen');
     }
-  }, [updateCompStage]);
+
+    // Fetch custom fields from GHL in background to sync survey answers
+    if (contact.id && !contact.id.startsWith('local-')) {
+      cliq.getContact(contact.id).then((data) => {
+        const cf = data?.contact?.customFields || data?.customFields || [];
+        const fieldMap: Record<string, string> = {};
+        for (const f of cf) {
+          const key = (f.id || f.fieldKey || '').toLowerCase();
+          fieldMap[key] = f.value || f.fieldValue || '';
+        }
+        const hours = fieldMap['beltool_uren_per_week'] || '';
+        const tasksRaw = fieldMap['beltool_taken'] || '';
+        const growth = fieldMap['beltool_groeifase'] || '';
+        const ai = fieldMap['beltool_ai_status'] || '';
+        if (hours || tasksRaw || growth || ai) {
+          const tasks = tasksRaw ? tasksRaw.split(',').map(t => t.trim()).filter(Boolean) : [];
+          const ghlAnswers: SurveyAnswers = { hours, tasks, tasksOther: '', growth, ai };
+          setAnswers(ghlAnswers);
+          // Cache on the contact for future use
+          if (updateContact) {
+            updateContact(comp.id, { ...contact, surveyAnswers: ghlAnswers });
+          }
+        }
+      }).catch((err) => {
+        console.warn('[CallFlow] Failed to fetch GHL custom fields:', err);
+      });
+    }
+  }, [updateCompStage, updateContact]);
 
   const startDialing = useCallback(async (callId?: string) => {
     setCallState('dialing');
