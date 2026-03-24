@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import type { Company, CompanyContact, CompanyStage } from '@/types/beltool';
 import { COMPANIES_INIT } from '@/lib/beltool-data';
 import { cliq } from '@/lib/beltool-ghl';
+import { store } from '@/lib/beltool-store';
 import type { User } from '@/lib/beltool-data';
 
 interface PipelineInfo {
@@ -91,7 +92,7 @@ function mapOpportunitiesToCompanies(opportunities: Array<{
 }
 
 export function useLeads(user: User | null) {
-  const [companies, setCompanies] = useState<Company[]>(COMPANIES_INIT);
+  const [companies, setCompanies] = useState<Company[]>(() => store.get('leadCompanies', COMPANIES_INIT));
   const [cliqLoading, setCliqLoading] = useState(false);
   const [cliqError, setCliqError] = useState<string | null>(null);
   const [pipelineInfo, setPipelineInfo] = useState<PipelineInfo | null>(null);
@@ -104,6 +105,7 @@ export function useLeads(user: User | null) {
   const stageMapRef = useRef<Record<string, string>>({});
 
   useEffect(() => { stageMapRef.current = stageMap; }, [stageMap]);
+  useEffect(() => { store.set('leadCompanies', companies); }, [companies]);
 
   const loadPipeline = useCallback(async () => {
     const pipelineData = await cliq.getPipelines();
