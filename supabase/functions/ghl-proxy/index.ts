@@ -20,6 +20,27 @@ function requireContactId(params: Record<string, unknown>) {
   return params.contactId.trim();
 }
 
+function isValidEmail(value: unknown): value is string {
+  return typeof value === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+}
+
+function sanitizeContactUpdate(params: Record<string, unknown>) {
+  const { contactId: _ignoredContactId, ...updateData } = params;
+  const sanitized = Object.fromEntries(
+    Object.entries(updateData).filter(([, value]) => value !== undefined)
+  );
+
+  if ('email' in sanitized) {
+    if (isValidEmail(sanitized.email)) {
+      sanitized.email = sanitized.email.trim();
+    } else {
+      delete sanitized.email;
+    }
+  }
+
+  return sanitized;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -75,7 +96,7 @@ serve(async (req) => {
       // ─── UPDATE CONTACT ───
       case 'updateContact': {
         const contactId = requireContactId(params);
-        const { contactId: _ignoredContactId, ...updateData } = params;
+        const updateData = sanitizeContactUpdate(params);
         const res = await fetch(`${GHL_BASE}/contacts/${contactId}`, {
           method: 'PUT', headers: ghlHeaders,
           body: JSON.stringify(updateData),

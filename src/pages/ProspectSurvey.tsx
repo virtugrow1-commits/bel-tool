@@ -272,11 +272,14 @@ export default function ProspectSurvey() {
         }
 
         // 3d: Update contact info (non-blocking, skip phone to avoid GHL duplicate error)
+        const trimmedEmail = answers.email?.trim();
+        const hasValidEmail = !!trimmedEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail);
         supabase.functions.invoke('ghl-proxy', {
           body: {
             action: 'updateContact', contactId: ghlContactId,
-            email: answers.email,
-            name: answers.naam, companyName: answers.bedrijf
+            ...(hasValidEmail ? { email: trimmedEmail } : {}),
+            name: answers.naam,
+            companyName: answers.bedrijf,
           }
         }).catch((err) => console.warn('[Enquête] updateContact failed:', err));
 
