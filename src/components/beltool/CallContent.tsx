@@ -583,7 +583,10 @@ export function CallContent({
 
               <div className="flex flex-wrap gap-1.5">
                 <ActionBtn variant="ghost" onClick={() => setPhase('q4')}>{t.back}</ActionBtn>
-                <ActionBtn variant="warning" onClick={() => { onNotesChange(notes ? notes + '\n📨 Booking link digitaal verstuurd' : '📨 Booking link digitaal verstuurd'); onEndCall('sent', 'enqueteVerstuurd'); addScore('verstuurd'); showToast(t.bookingSent, 'info'); }}>{t.sendBookingDigital}</ActionBtn>
+                <ActionBtn variant="warning" onClick={() => {
+                  if (!activeContact.email) { showToast('⚠️ Geen e-mailadres bekend — kan booking link niet digitaal versturen', 'err'); return; }
+                  onNotesChange(notes ? notes + '\n📨 Booking link digitaal verstuurd' : '📨 Booking link digitaal verstuurd'); onEndCall('sent', 'enqueteVerstuurd'); addScore('verstuurd'); showToast(t.bookingSent, 'info');
+                }}>{t.sendBookingDigital}</ActionBtn>
                 <ActionBtn variant="muted" onClick={() => { onNotesChange(notes ? notes + '\n⏳ Niet op dit moment' : '⏳ Niet op dit moment'); onEndCall('noanswer', 'anderMoment' as any); showToast('Ander moment genoteerd'); }}>⏳ Niet op dit moment</ActionBtn>
                 <ActionBtn variant="danger" onClick={() => { onNotesChange(notes ? notes + '\n🚫 Niet geïnteresseerd' : '🚫 Niet geïnteresseerd'); onEndCall('lost', 'nietInteressant'); addScore('afgevallen'); }}>{t.notInterested}</ActionBtn>
               </div>
