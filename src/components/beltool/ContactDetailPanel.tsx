@@ -5,8 +5,8 @@ import type { CompanyContact, Company } from '@/types/beltool';
 interface ContactDetailPanelProps {
   contact: CompanyContact;
   company: Company;
-  onUpdateContact: (c: CompanyContact) => void;
-  onUpdateCompany: (c: Company) => void;
+  onUpdateContact: (c: CompanyContact) => Promise<void> | void;
+  onUpdateCompany: (c: Company) => Promise<void> | void;
   onClose: () => void;
   onDeleteContact?: () => void;
 }
@@ -16,11 +16,19 @@ export function ContactDetailPanel({ contact, company, onUpdateContact, onUpdate
   const [editCompany, setEditCompany] = useState<Company>({ ...company });
   const [tab, setTab] = useState<'contact' | 'company'>('contact');
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  const save = () => {
-    onUpdateContact(editContact);
-    onUpdateCompany(editCompany);
-    onClose();
+  const save = async () => {
+    setSaving(true);
+    try {
+      await Promise.all([
+        onUpdateContact(editContact),
+        onUpdateCompany(editCompany),
+      ]);
+      onClose();
+    } finally {
+      setSaving(false);
+    }
   };
 
   const inputCls = 'w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20';
@@ -91,8 +99,8 @@ export function ContactDetailPanel({ contact, company, onUpdateContact, onUpdate
       </div>
 
       <div className="p-4 border-t border-border space-y-2">
-        <button onClick={save} className="w-full py-2.5 rounded-lg bg-primary text-white text-sm font-semibold active:scale-[0.97] transition-transform shadow-sm">
-          Opslaan
+        <button onClick={save} disabled={saving} className="w-full py-2.5 rounded-lg bg-primary text-white text-sm font-semibold active:scale-[0.97] transition-transform shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
+          {saving ? 'Opslaan...' : 'Opslaan'}
         </button>
         {onDeleteContact && (
           confirmDelete ? (

@@ -44,6 +44,14 @@ export function useSettings() {
     store.set('lang', l);
   }, []);
 
+  const updateAppointments = useCallback((appointments: Appointment[] | ((prev: Appointment[]) => Appointment[])) => {
+    setAppts(prev => {
+      const next = typeof appointments === 'function' ? appointments(prev) : appointments;
+      store.set('appointments', next);
+      return next;
+    });
+  }, []);
+
   return {
     lang,
     setLang: updateLang,
@@ -59,7 +67,7 @@ export function useSettings() {
     showCallback,
     setShowCallback,
     appts,
-    setAppts,
+    setAppts: updateAppointments,
     webhooks,
     setWebhooks,
     apiKey,
