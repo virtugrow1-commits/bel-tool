@@ -586,6 +586,17 @@ export function CallContent({
                   onEndCall('done', 'afspraak');
                   addScore('afspraak');
                   const adv = advisors.find(a => a.id === bookAdvisor);
+                  if (onAppointmentBooked) {
+                    onAppointmentBooked({
+                      contactName: `${activeContact.firstName} ${activeContact.lastName}`,
+                      companyName: activeComp.name,
+                      date: bookDate,
+                      time: bookTime,
+                      advisorId: bookAdvisor,
+                      advisorName: adv?.name || '',
+                      status: 'planned',
+                    });
+                  }
                   showToast(`${t.appointmentPlanned} — ${fmtDate(bookDate)} ${bookTime}${adv ? ` (${adv.name})` : ''}`);
                 }}>{t.bookConfirm}</ActionBtn>
               </div>
