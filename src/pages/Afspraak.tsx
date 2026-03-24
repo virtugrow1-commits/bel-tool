@@ -251,8 +251,16 @@ export default function Afspraak() {
         )}
 
         <div className="bg-card rounded-xl shadow-sm border border-border p-6">
+          {/* Loading contact from GHL */}
+          {loadingContact && (
+            <div className="flex flex-col items-center justify-center py-12 gap-3">
+              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              <span className="text-sm text-muted-foreground">Gegevens ophalen...</span>
+            </div>
+          )}
+
           {/* Step: Contact info */}
-          {step === 'contact' && (
+          {!loadingContact && step === 'contact' && (
             <div className="space-y-4">
               <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
                 <User className="w-5 h-5 text-primary" />
