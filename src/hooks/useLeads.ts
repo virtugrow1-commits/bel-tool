@@ -299,17 +299,25 @@ export function useLeads(user: User | null) {
       const { info, stages } = await loadPipeline();
       const stId = resolveStageId(stageFilter, stages);
       const defaultStage: CompanyStage = stageFilter === 'all' ? 'nieuw' : stageFilter;
-      await Promise.all([
+      const [, , bgCompanies] = await Promise.all([
         loadOpportunities(info.pipelineId, stId, undefined, undefined, defaultStage, stages),
         loadStageCounts(info.pipelineId, stages),
+        loadBackgroundStages(info.pipelineId, stages, stId),
       ]);
+      if (bgCompanies.length > 0) {
+        setCompanies(prev => {
+          const existingIds = new Set(prev.map(c => c.id));
+          const newOnes = bgCompanies.filter(c => !existingIds.has(c.id));
+          return newOnes.length > 0 ? [...prev, ...newOnes] : prev;
+        });
+      }
     } catch (err: any) {
       setCliqError(err.message);
       throw err;
     } finally {
       setCliqLoading(false);
     }
-  }, [loadPipeline, loadOpportunities, loadStageCounts, resolveStageId, stageFilter]);
+  }, [loadPipeline, loadOpportunities, loadStageCounts, loadBackgroundStages, resolveStageId, stageFilter]);
 
   const loadMoreLeads = useCallback(async () => {
     if (!pipelineInfo || !pageCursor || !hasMoreLeads || cliqLoading) return;
