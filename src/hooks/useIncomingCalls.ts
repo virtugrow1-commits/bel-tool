@@ -47,42 +47,20 @@ export function useIncomingCalls({ user, companies, activeCallId, setCallState, 
 
     const channel = supabase
       .channel('incoming-calls')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'incoming_calls' }, (payload: any) => {
-        const row = payload.new;
-        if (row.status !== 'ringing') return;
-
-        const { contact, company } = findContactByPhone(companies, row.caller_number || '');
-
-        setIncomingCall({
-          id: row.id,
-          callerNumber: row.caller_number,
-          contactName: contact ? `${contact.firstName} ${contact.lastName}` : undefined,
-          companyName: company?.name,
-          contactId: contact?.id,
-          companyId: company?.id,
-        });
-      })
+      // Only listen for UPDATE events — incoming calls go to GHL, not this tool
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'incoming_calls' }, (payload: any) => {
         const row = payload.new;
         const callId = row.call_id;
 
-        // Match on activeCallId for outgoing calls
+        // Match on activeCallId for outgoing calls only
         if (row.status === 'answered' && callId && callId === activeCallId) {
           setCallState('active');
           flash('📞 Gesprek opgenomen', 'info');
         }
-        if (row.status === 'ended') {
-          // Outgoing call ended (by client or otherwise)
-          if (callId && callId === activeCallId) {
-            setCallState('ended');
-            flash('📞 Gesprek beëindigd');
-            setTimeout(() => setCallState('idle'), 2000);
-          }
-          // Incoming call ended
-          if (incomingCall && row.id === incomingCall.id) {
-            setIncomingCall(null);
-            flash('📞 Inkomend gesprek beëindigd');
-          }
+        if (row.status === 'ended' && callId && callId === activeCallId) {
+          setCallState('ended');
+          flash('📞 Gesprek beëindigd');
+          setTimeout(() => setCallState('idle'), 2000);
         }
       })
       .subscribe();

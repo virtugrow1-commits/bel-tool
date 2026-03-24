@@ -177,9 +177,14 @@ export function CallDisplay({ callState, contact, company, onHangup, onConfirmCo
                 </button>
               </div>
 
-              <div className="rounded-xl border border-border bg-muted/40 px-3 py-2 text-center text-[11px] font-medium text-muted-foreground">
-                Actief gesprek beëindigen doe je via Vialer.
-              </div>
+              {/* Always show hangup button */}
+              <button
+                onClick={onHangup}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-full bg-destructive text-white text-sm font-semibold hover:bg-destructive/90 transition-all duration-150 active:scale-95 shadow-lg"
+              >
+                <PhoneOff size={15} />
+                Ophangen
+              </button>
             </div>
           ) : (
             <div className="flex items-center justify-center gap-2">
