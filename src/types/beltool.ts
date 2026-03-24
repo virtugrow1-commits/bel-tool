@@ -8,6 +8,7 @@ export interface CompanyContact {
   linkedin?: string;
   notes?: string;
   opportunityId?: string;
+  surveyAnswers?: SurveyAnswers;
 }
 
 export interface Company {
