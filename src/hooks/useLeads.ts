@@ -205,6 +205,31 @@ export function useLeads(user: User | null) {
     setStageCounts(counts);
   }, []);
 
+  // Load leads from background stages (enqueteTel, terugbellen) that should always
+  // be visible for callbacks, regardless of the active filter.
+  const loadBackgroundStages = useCallback(async (
+    pipelineId: string,
+    currentStageMap: Record<string, string>,
+    activeStageId?: string,
+  ) => {
+    const bgStageNames = ['enquête voltooid', 'terugbellen gepland'];
+    const bgLoads = bgStageNames
+      .map(name => ({ name, id: currentStageMap[name] }))
+      .filter(s => s.id && s.id !== activeStageId); // skip if already loaded as main filter
+
+    if (bgLoads.length === 0) return [];
+
+    const results = await Promise.allSettled(
+      bgLoads.map(async ({ id }) => {
+        const data = await cliq.searchOpportunities(pipelineId, id, 50);
+        return data?.opportunities || [];
+      })
+    );
+
+    const allOpps = results.flatMap(r => r.status === 'fulfilled' ? r.value : []);
+    return mapOpportunitiesToCompanies(allOpps, currentStageMap);
+  }, []);
+
   // Initial load
   useEffect(() => {
     if (!user) return;
@@ -217,10 +242,20 @@ export function useLeads(user: User | null) {
         const stId = resolveStageId(stageFilter, stages);
         const defaultStage: CompanyStage = stageFilter === 'all' ? 'nieuw' : stageFilter;
 
-        await Promise.all([
+        const [, , bgCompanies] = await Promise.all([
           loadOpportunities(info.pipelineId, stId, undefined, undefined, defaultStage, stages),
           loadStageCounts(info.pipelineId, stages),
+          loadBackgroundStages(info.pipelineId, stages, stId),
         ]);
+
+        // Merge background-stage leads into companies (avoid duplicates)
+        if (bgCompanies.length > 0) {
+          setCompanies(prev => {
+            const existingIds = new Set(prev.map(c => c.id));
+            const newOnes = bgCompanies.filter(c => !existingIds.has(c.id));
+            return newOnes.length > 0 ? [...prev, ...newOnes] : prev;
+          });
+        }
       } catch (err: any) {
         console.warn('CLIQ pipeline load failed:', err.message);
         setCliqError(err.message);
@@ -248,12 +283,24 @@ export function useLeads(user: User | null) {
     const stId = resolveStageId(stageFilter, stageMapRef.current);
     const defaultStage: CompanyStage = stageFilter === 'all' ? 'nieuw' : stageFilter;
 
-    loadOpportunities(pipelineInfo.pipelineId, stId, undefined, undefined, defaultStage)
-      .catch((err: any) => {
+    (async () => {
+      try {
+        await loadOpportunities(pipelineInfo.pipelineId, stId, undefined, undefined, defaultStage);
+        const bgCompanies = await loadBackgroundStages(pipelineInfo.pipelineId, stageMapRef.current, stId);
+        if (bgCompanies.length > 0) {
+          setCompanies(prev => {
+            const existingIds = new Set(prev.map(c => c.id));
+            const newOnes = bgCompanies.filter(c => !existingIds.has(c.id));
+            return newOnes.length > 0 ? [...prev, ...newOnes] : prev;
+          });
+        }
+      } catch (err: any) {
         console.warn('CLIQ stage load failed:', err.message);
         setCliqError(err.message);
-      })
-      .finally(() => setCliqLoading(false));
+      } finally {
+        setCliqLoading(false);
+      }
+    })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stageFilter]);
 
@@ -264,17 +311,25 @@ export function useLeads(user: User | null) {
       const { info, stages } = await loadPipeline();
       const stId = resolveStageId(stageFilter, stages);
       const defaultStage: CompanyStage = stageFilter === 'all' ? 'nieuw' : stageFilter;
-      await Promise.all([
+      const [, , bgCompanies] = await Promise.all([
         loadOpportunities(info.pipelineId, stId, undefined, undefined, defaultStage, stages),
         loadStageCounts(info.pipelineId, stages),
+        loadBackgroundStages(info.pipelineId, stages, stId),
       ]);
+      if (bgCompanies.length > 0) {
+        setCompanies(prev => {
+          const existingIds = new Set(prev.map(c => c.id));
+          const newOnes = bgCompanies.filter(c => !existingIds.has(c.id));
+          return newOnes.length > 0 ? [...prev, ...newOnes] : prev;
+        });
+      }
     } catch (err: any) {
       setCliqError(err.message);
       throw err;
     } finally {
       setCliqLoading(false);
     }
-  }, [loadPipeline, loadOpportunities, loadStageCounts, resolveStageId, stageFilter]);
+  }, [loadPipeline, loadOpportunities, loadStageCounts, loadBackgroundStages, resolveStageId, stageFilter]);
 
   const loadMoreLeads = useCallback(async () => {
     if (!pipelineInfo || !pageCursor || !hasMoreLeads || cliqLoading) return;
