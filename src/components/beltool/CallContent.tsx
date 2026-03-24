@@ -397,15 +397,13 @@ export function CallContent({
           {onShowDetail && (
             <button onClick={onShowDetail} className="w-8 h-8 rounded-lg bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors text-[13px] border border-border">ℹ️</button>
           )}
-          {callState === 'idle' && (
-            <CallButton
-              phoneNumber={activeContact.phone}
-              leadId={activeContact.id}
-              leadName={`${activeContact.firstName} ${activeContact.lastName}`}
-              deviceId={user?.deviceId}
-              onCallStarted={(callId) => { onStartDialing(callId); }}
-            />
-          )}
+          <CallButton
+            phoneNumber={activeContact.phone}
+            leadId={activeContact.id}
+            leadName={`${activeContact.firstName} ${activeContact.lastName}`}
+            deviceId={user?.deviceId}
+            onCallStarted={(callId) => { onStartDialing(callId); }}
+          />
           {callState !== 'idle' && callState !== 'ended' && (
             <div className={cn(
               'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold border',
