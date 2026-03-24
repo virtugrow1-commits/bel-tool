@@ -127,61 +127,59 @@ export function CallDisplay({ callState, contact, company, onHangup, onConfirmCo
         {/* Action buttons */}
         <div className="px-4 pb-4 pt-1">
           {isActive ? (
-            <div className="flex items-center justify-center gap-2">
-              <button
-                onClick={() => setMuted(!muted)}
-                title={muted ? 'Unmute' : 'Mute'}
-                className={cn(
-                  'w-11 h-11 rounded-full flex items-center justify-center transition-all duration-150 active:scale-95 border',
-                  muted
-                    ? 'bg-destructive/10 text-destructive border-destructive/20'
-                    : 'bg-muted text-muted-foreground hover:bg-muted/80 border-border'
-                )}
-              >
-                {muted ? <MicOff size={17} /> : <Mic size={17} />}
-              </button>
+            <div className="space-y-3">
+              <div className="flex items-center justify-center gap-2">
+                <button
+                  onClick={() => setMuted(!muted)}
+                  title={muted ? 'Unmute' : 'Mute'}
+                  className={cn(
+                    'w-11 h-11 rounded-full flex items-center justify-center transition-all duration-150 active:scale-95 border',
+                    muted
+                      ? 'bg-destructive/10 text-destructive border-destructive/20'
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80 border-border'
+                  )}
+                >
+                  {muted ? <MicOff size={17} /> : <Mic size={17} />}
+                </button>
 
-              <button
-                onClick={() => setHeld(!held)}
-                title={held ? 'Hervatten' : 'Pauze'}
-                className={cn(
-                  'w-11 h-11 rounded-full flex items-center justify-center transition-all duration-150 active:scale-95 border',
-                  held
-                    ? 'bg-warning/10 text-warning border-warning/20'
-                    : 'bg-muted text-muted-foreground hover:bg-muted/80 border-border'
-                )}
-              >
-                {held ? <Play size={17} /> : <Pause size={17} />}
-              </button>
+                <button
+                  onClick={() => setHeld(!held)}
+                  title={held ? 'Hervatten' : 'Pauze'}
+                  className={cn(
+                    'w-11 h-11 rounded-full flex items-center justify-center transition-all duration-150 active:scale-95 border',
+                    held
+                      ? 'bg-warning/10 text-warning border-warning/20'
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80 border-border'
+                  )}
+                >
+                  {held ? <Play size={17} /> : <Pause size={17} />}
+                </button>
 
-              <button
-                onClick={() => setShowKeypad(!showKeypad)}
-                title="Toetsen"
-                className={cn(
-                  'w-11 h-11 rounded-full flex items-center justify-center transition-all duration-150 active:scale-95 border',
-                  showKeypad
-                    ? 'bg-primary/10 text-primary border-primary/20'
-                    : 'bg-muted text-muted-foreground hover:bg-muted/80 border-border'
-                )}
-              >
-                <Hash size={17} />
-              </button>
+                <button
+                  onClick={() => setShowKeypad(!showKeypad)}
+                  title="Toetsen"
+                  className={cn(
+                    'w-11 h-11 rounded-full flex items-center justify-center transition-all duration-150 active:scale-95 border',
+                    showKeypad
+                      ? 'bg-primary/10 text-primary border-primary/20'
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80 border-border'
+                  )}
+                >
+                  <Hash size={17} />
+                </button>
 
-              <button
-                onClick={() => {}}
-                title="Doorschakelen"
-                className="w-11 h-11 rounded-full flex items-center justify-center bg-muted text-muted-foreground hover:bg-muted/80 transition-all duration-150 active:scale-95 border border-border"
-              >
-                <PhoneForwarded size={17} />
-              </button>
+                <button
+                  onClick={() => {}}
+                  title="Doorschakelen"
+                  className="w-11 h-11 rounded-full flex items-center justify-center bg-muted text-muted-foreground hover:bg-muted/80 transition-all duration-150 active:scale-95 border border-border"
+                >
+                  <PhoneForwarded size={17} />
+                </button>
+              </div>
 
-              <button
-                onClick={onHangup}
-                title="Ophangen"
-                className="w-12 h-12 rounded-full flex items-center justify-center bg-destructive text-white hover:bg-destructive/90 transition-all duration-150 active:scale-95 shadow-lg"
-              >
-                <PhoneOff size={19} />
-              </button>
+              <div className="rounded-xl border border-border bg-muted/40 px-3 py-2 text-center text-[11px] font-medium text-muted-foreground">
+                Actief gesprek beëindigen doe je via Vialer.
+              </div>
             </div>
           ) : (
             <div className="flex items-center justify-center gap-2">
