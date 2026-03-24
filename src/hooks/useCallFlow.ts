@@ -46,14 +46,19 @@ export function useCallFlow({ updateCompStage, updateContact, addScore, pipeline
   const selectContact = useCallback((comp: Company, contact: CompanyContact) => {
     setActiveCompId(comp.id);
     setActiveContactId(contact.id);
-    setPhase('intro');
+    // Show precall view so caller sees last status; don't jump straight into 'intro'
+    setPhase('precall');
     setCallState('idle');
     setAnswers({ hours: '', tasks: [], tasksOther: '', growth: '', ai: '' });
     setNotes(contact.notes || '');
     setBookDate('');
     setBookTime('');
     setBookAdvisor('');
-    updateCompStage(comp.id, 'bellen');
+    // Only move to 'bellen' if the lead is still fresh (nieuw); preserve existing result stages
+    const freshStages: Company['stage'][] = ['nieuw', 'bellen'];
+    if (freshStages.includes(comp.stage)) {
+      updateCompStage(comp.id, 'bellen');
+    }
   }, [updateCompStage]);
 
   const startDialing = useCallback(async (callId?: string) => {
