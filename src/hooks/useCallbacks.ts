@@ -148,7 +148,7 @@ export function useCallbacks() {
   ): Promise<CallbackEntry[]> => {
     if (useSupabase) {
       try {
-        const { data, error } = await supabase
+        const { data, error } = await (supabase as any)
           .from('callbacks')
           .insert(entryToRow(cb, userId))
           .select()
