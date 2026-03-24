@@ -120,9 +120,10 @@ export default function Afspraak() {
     setSelectedTime('');
     callGHL('getFreeSlots', { calendarId: selectedCalendar, startDate: selectedDate, endDate: selectedDate })
       .then((data) => {
-        const dayKey = Object.keys(data || {})?.[0];
-        const daySlots: TimeSlot[] = dayKey ? data[dayKey] : [];
-        const allSlots = daySlots.flatMap((s: TimeSlot) => s.slots || []);
+        // Response format: { "2026-03-25": { "slots": [...] }, "traceId": "..." }
+        const filtered = Object.entries(data || {}).filter(([k]) => k !== 'traceId');
+        const dayData = filtered[0]?.[1] as { slots?: string[] } | undefined;
+        const allSlots: string[] = dayData?.slots || [];
         // Convert to HH:mm and filter past times
         const now = new Date();
         const isToday = selectedDate === format(now, 'yyyy-MM-dd');
