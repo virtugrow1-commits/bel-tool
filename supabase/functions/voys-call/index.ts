@@ -3,6 +3,26 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
+// Retry wrapper for Voys API — connection resets occasionally happen
+async function fetchVoys(url: string, options: RequestInit, maxRetries = 2): Promise<Response> {
+  let lastErr: unknown;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const res = await fetch(url, { ...options, signal: AbortSignal.timeout(12_000) });
+      if ([502, 503, 504].includes(res.status) && attempt < maxRetries) {
+        await new Promise(r => setTimeout(r, 600 * Math.pow(2, attempt)));
+        continue;
+      }
+      return res;
+    } catch (err) {
+      lastErr = err;
+      if (attempt >= maxRetries) throw err;
+      await new Promise(r => setTimeout(r, 600 * Math.pow(2, attempt)));
+    }
+  }
+  throw lastErr;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -30,7 +50,7 @@ Deno.serve(async (req) => {
 
       console.log('Voys hangup:', callId);
 
-      const res = await fetch(`https://api.voipgrid.nl/api/clicktodial/${callId}/`, {
+      const res = await fetchVoys(`https://api.voipgrid.nl/api/clicktodial/${callId}/`, {
         method: 'DELETE',
         headers: {
           'Authorization': authHeader,
@@ -72,7 +92,7 @@ Deno.serve(async (req) => {
         );
       }
 
-      const res = await fetch(`https://api.voipgrid.nl/api/clicktodial/${callId}/`, {
+      const res = await fetchVoys(`https://api.voipgrid.nl/api/clicktodial/${callId}/`, {
         method: 'GET',
         headers: { 'Authorization': authHeader, 'Accept': 'application/json' },
       });
@@ -133,7 +153,7 @@ Deno.serve(async (req) => {
 
     console.log('Voys request:', JSON.stringify({ ...voysBody, auth_type: 'Token', email: voysEmail }));
 
-    const voysResponse = await fetch('https://api.voipgrid.nl/api/clicktodial/', {
+    const voysResponse = await fetchVoys('https://api.voipgrid.nl/api/clicktodial/', {
       method: 'POST',
       headers: {
         'Authorization': authHeader,

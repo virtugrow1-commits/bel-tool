@@ -42,13 +42,25 @@ export async function withRetry<T>(
 }
 
 /**
- * Default retry predicate: retry on network errors and 5xx server errors.
+ * Default retry predicate: retry on network errors, 5xx server errors, and connection resets.
  */
 export function isRetryableError(error: unknown): boolean {
-  if (error instanceof TypeError && error.message.includes('fetch')) return true;
+  if (error instanceof TypeError && error.message.toLowerCase().includes('fetch')) return true;
   if (error instanceof Error) {
     const msg = error.message.toLowerCase();
-    if (msg.includes('network') || msg.includes('timeout') || msg.includes('500') || msg.includes('502') || msg.includes('503')) {
+    if (
+      msg.includes('network') ||
+      msg.includes('timeout') ||
+      msg.includes('connection') ||
+      msg.includes('reset') ||
+      msg.includes('econnreset') ||
+      msg.includes('500') ||
+      msg.includes('502') ||
+      msg.includes('503') ||
+      msg.includes('504') ||
+      msg.includes('sendrequest') ||
+      msg.includes('client error')
+    ) {
       return true;
     }
   }

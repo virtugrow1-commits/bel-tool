@@ -41,15 +41,38 @@ async function callCliq(action: string, params: Record<string, unknown> = {}) {
       const { data, error } = await supabase.functions.invoke('ghl-proxy', {
         body: { action, ...params },
       });
-      if (error) throw new Error(`CLIQ ${action} failed: ${error.message}`);
+      if (error) {
+        const msg = error.message || '';
+        throw new Error(`CLIQ ${action} failed: ${msg}`);
+      }
+      if (data?.error) {
+        const msg = String(data.error);
+        // Connection reset / network errors from the edge function are retryable
+        if (
+          msg.includes('connection') ||
+          msg.includes('reset') ||
+          msg.includes('SendRequest') ||
+          msg.includes('client error') ||
+          msg.includes('502') ||
+          msg.includes('503') ||
+          msg.includes('504')
+        ) {
+          throw new Error(`CLIQ ${action} network error: ${msg}`);
+        }
+        // Non-retryable GHL errors (e.g. 404, 400 validation)
+        throw Object.assign(new Error(`CLIQ ${action} error: ${msg}`), { noRetry: true });
+      }
       return data;
     },
     {
-      maxRetries: 2,
-      baseDelay: 800,
-      shouldRetry: (err) => isRetryableError(err),
+      maxRetries: 3,
+      baseDelay: 1200,
+      shouldRetry: (err, attempt) => {
+        if ((err as any)?.noRetry) return false;
+        return isRetryableError(err) && attempt < 3;
+      },
       onRetry: (err, attempt) => {
-        console.warn(`[CLIQ] Retrying ${action} (attempt ${attempt + 1}):`, err);
+        console.warn(`[CLIQ] Retrying ${action} (attempt ${attempt + 1}/3):`, (err as Error)?.message);
       },
     }
   );

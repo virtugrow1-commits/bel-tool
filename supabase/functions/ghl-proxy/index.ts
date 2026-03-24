@@ -8,6 +8,48 @@ const corsHeaders = {
 const GHL_BASE = 'https://services.leadconnectorhq.com';
 const GHL_VERSION = '2021-07-28';
 
+// ─── Retry helper for GHL API calls ──────────────────────────────────────────
+// GHL occasionally resets connections (especially from IPv6 Supabase edge IPs).
+// We retry up to 3 times with exponential backoff before giving up.
+function isRetryable(err: unknown): boolean {
+  const msg = String(err instanceof Error ? err.message : err).toLowerCase();
+  return (
+    msg.includes('connection') ||
+    msg.includes('reset') ||
+    msg.includes('sendrequest') ||
+    msg.includes('client error') ||
+    msg.includes('network') ||
+    msg.includes('timeout') ||
+    msg.includes('eof')
+  );
+}
+
+async function fetchGHL(
+  url: string,
+  options: RequestInit,
+  maxRetries = 3,
+): Promise<Response> {
+  let lastErr: unknown;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const res = await fetch(url, { ...options, signal: AbortSignal.timeout(15_000) });
+      // 502/503/504 are retryable
+      if ([502, 503, 504].includes(res.status) && attempt < maxRetries) {
+        await new Promise(r => setTimeout(r, 800 * Math.pow(2, attempt)));
+        continue;
+      }
+      return res;
+    } catch (err) {
+      lastErr = err;
+      if (!isRetryable(err) || attempt >= maxRetries) throw err;
+      const delay = 800 * Math.pow(2, attempt) + Math.random() * 400;
+      console.warn(`[GHL Proxy] Retry ${attempt + 1}/${maxRetries} for ${url} after: ${err}`);
+      await new Promise(r => setTimeout(r, delay));
+    }
+  }
+  throw lastErr;
+}
+
 function hasValidContactId(value: unknown): value is string {
   return typeof value === 'string' && value.trim().length > 0 && value.trim() !== ':id' && !value.trim().startsWith(':');
 }
@@ -78,7 +120,7 @@ serve(async (req) => {
         const limit = params.limit || 100;
         const query = params.query || '';
         const url = `${GHL_BASE}/contacts/?locationId=${GHL_LOCATION_ID}&limit=${limit}${query ? `&query=${encodeURIComponent(query)}` : ''}`;
-        const res = await fetch(url, { headers: ghlHeaders });
+        const res = await fetchGHL(url, { headers: ghlHeaders });
         if (!res.ok) throw new Error(`GHL contacts error [${res.status}]: ${await res.text()}`);
         result = await res.json();
         break;
@@ -87,7 +129,7 @@ serve(async (req) => {
       // ─── GET SINGLE CONTACT ───
       case 'getContact': {
         const contactId = requireContactId(params);
-        const res = await fetch(`${GHL_BASE}/contacts/${contactId}`, { headers: ghlHeaders });
+        const res = await fetchGHL(`${GHL_BASE}/contacts/${contactId}`, { headers: ghlHeaders });
         if (!res.ok) throw new Error(`GHL contact error [${res.status}]: ${await res.text()}`);
         result = await res.json();
         break;
@@ -97,7 +139,7 @@ serve(async (req) => {
       case 'updateContact': {
         const contactId = requireContactId(params);
         const updateData = sanitizeContactUpdate(params);
-        const res = await fetch(`${GHL_BASE}/contacts/${contactId}`, {
+        const res = await fetchGHL(`${GHL_BASE}/contacts/${contactId}`, {
           method: 'PUT', headers: ghlHeaders,
           body: JSON.stringify(updateData),
         });
@@ -108,7 +150,7 @@ serve(async (req) => {
             console.warn('GHL duplicate contact on email, retrying without email field');
             const { email: _removed, ...withoutEmail } = updateData;
             if (Object.keys(withoutEmail).length > 0) {
-              const res2 = await fetch(`${GHL_BASE}/contacts/${contactId}`, {
+              const res2 = await fetchGHL(`${GHL_BASE}/contacts/${contactId}`, {
                 method: 'PUT', headers: ghlHeaders,
                 body: JSON.stringify(withoutEmail),
               });
@@ -128,7 +170,7 @@ serve(async (req) => {
 
       // ─── CREATE CONTACT ───
       case 'createContact': {
-        const res = await fetch(`${GHL_BASE}/contacts/`, {
+        const res = await fetchGHL(`${GHL_BASE}/contacts/`, {
           method: 'POST', headers: ghlHeaders,
           body: JSON.stringify({
             locationId: GHL_LOCATION_ID,
@@ -160,7 +202,7 @@ serve(async (req) => {
       // ─── ADD TAG ───
       case 'addTag': {
         const contactId = requireContactId(params);
-        const res = await fetch(`${GHL_BASE}/contacts/${contactId}/tags`, {
+        const res = await fetchGHL(`${GHL_BASE}/contacts/${contactId}/tags`, {
           method: 'POST', headers: ghlHeaders,
           body: JSON.stringify({ tags: params.tags }),
         });
@@ -172,7 +214,7 @@ serve(async (req) => {
       // ─── CREATE NOTE ───
       case 'createNote': {
         const contactId = requireContactId(params);
-        const res = await fetch(`${GHL_BASE}/contacts/${contactId}/notes`, {
+        const res = await fetchGHL(`${GHL_BASE}/contacts/${contactId}/notes`, {
           method: 'POST', headers: ghlHeaders,
           body: JSON.stringify({ body: params.body, userId: params.userId }),
         });
@@ -184,7 +226,7 @@ serve(async (req) => {
       // ─── CREATE TASK ───
       case 'createTask': {
         const contactId = requireContactId(params);
-        const res = await fetch(`${GHL_BASE}/contacts/${contactId}/tasks`, {
+        const res = await fetchGHL(`${GHL_BASE}/contacts/${contactId}/tasks`, {
           method: 'POST', headers: ghlHeaders,
           body: JSON.stringify({
             title: params.title,
@@ -208,7 +250,7 @@ serve(async (req) => {
         const startMs = new Date(`${startDate}T00:00:00+02:00`).getTime();
         const endMs = new Date(`${endDate}T23:59:59+02:00`).getTime();
         const url = `${GHL_BASE}/calendars/${calendarId}/free-slots?startDate=${startMs}&endDate=${endMs}&timezone=Europe/Amsterdam`;
-        const res = await fetch(url, { headers: ghlHeaders });
+        const res = await fetchGHL(url, { headers: ghlHeaders });
         if (!res.ok) throw new Error(`GHL free-slots error [${res.status}]: ${await res.text()}`);
         result = await res.json();
         break;
@@ -216,7 +258,7 @@ serve(async (req) => {
 
       // ─── CREATE APPOINTMENT ───
       case 'createAppointment': {
-        const res = await fetch(`${GHL_BASE}/calendars/events/appointments`, {
+        const res = await fetchGHL(`${GHL_BASE}/calendars/events/appointments`, {
           method: 'POST', headers: ghlHeaders,
           body: JSON.stringify({
             calendarId: params.calendarId,
@@ -237,7 +279,7 @@ serve(async (req) => {
 
       // ─── GET CALENDARS ───
       case 'getCalendars': {
-        const res = await fetch(`${GHL_BASE}/calendars/?locationId=${GHL_LOCATION_ID}`, { headers: ghlHeaders });
+        const res = await fetchGHL(`${GHL_BASE}/calendars/?locationId=${GHL_LOCATION_ID}`, { headers: ghlHeaders });
         if (!res.ok) throw new Error(`GHL calendars error [${res.status}]: ${await res.text()}`);
         result = await res.json();
         break;
@@ -245,7 +287,7 @@ serve(async (req) => {
 
       // ─── GET PIPELINES ───
       case 'getPipelines': {
-        const res = await fetch(`${GHL_BASE}/opportunities/pipelines?locationId=${GHL_LOCATION_ID}`, { headers: ghlHeaders });
+        const res = await fetchGHL(`${GHL_BASE}/opportunities/pipelines?locationId=${GHL_LOCATION_ID}`, { headers: ghlHeaders });
         if (!res.ok) throw new Error(`GHL pipelines error [${res.status}]: ${await res.text()}`);
         result = await res.json();
         break;
@@ -261,7 +303,7 @@ serve(async (req) => {
         if (stageId) url += `&pipeline_stage_id=${stageId}`;
         if (params.startAfter) url += `&startAfter=${params.startAfter}`;
         if (params.startAfterId) url += `&startAfterId=${params.startAfterId}`;
-        const res = await fetch(url, { headers: ghlHeaders });
+        const res = await fetchGHL(url, { headers: ghlHeaders });
         if (!res.ok) throw new Error(`GHL search opportunities error [${res.status}]: ${await res.text()}`);
         result = await res.json();
         break;
@@ -271,7 +313,7 @@ serve(async (req) => {
       case 'upsertOpportunity': {
         // If we have the opportunity ID, update directly (no search needed)
         if (params.opportunityId) {
-          const res = await fetch(`${GHL_BASE}/opportunities/${params.opportunityId}`, {
+          const res = await fetchGHL(`${GHL_BASE}/opportunities/${params.opportunityId}`, {
             method: 'PUT', headers: ghlHeaders,
             body: JSON.stringify({
               pipelineStageId: params.stageId,
@@ -283,7 +325,7 @@ serve(async (req) => {
           result = await res.json();
         } else {
           // Fallback: search by contact_id
-          const searchRes = await fetch(
+          const searchRes = await fetchGHL(
             `${GHL_BASE}/opportunities/search?location_id=${GHL_LOCATION_ID}&contact_id=${params.contactId}`,
             { headers: ghlHeaders }
           );
@@ -291,7 +333,7 @@ serve(async (req) => {
           const existing = searchData?.opportunities?.[0];
 
           if (existing) {
-            const res = await fetch(`${GHL_BASE}/opportunities/${existing.id}`, {
+            const res = await fetchGHL(`${GHL_BASE}/opportunities/${existing.id}`, {
               method: 'PUT', headers: ghlHeaders,
               body: JSON.stringify({
                 pipelineStageId: params.stageId,
@@ -302,7 +344,7 @@ serve(async (req) => {
             if (!res.ok) throw new Error(`GHL update opportunity error [${res.status}]: ${await res.text()}`);
             result = await res.json();
           } else {
-            const res = await fetch(`${GHL_BASE}/opportunities/`, {
+            const res = await fetchGHL(`${GHL_BASE}/opportunities/`, {
               method: 'POST', headers: ghlHeaders,
               body: JSON.stringify({
                 pipelineId: params.pipelineId,
@@ -323,7 +365,7 @@ serve(async (req) => {
       // ─── SAVE CUSTOM FIELDS (Survey answers) ───
       case 'saveCustomFields': {
         const contactId = requireContactId(params);
-        const res = await fetch(`${GHL_BASE}/contacts/${contactId}`, {
+        const res = await fetchGHL(`${GHL_BASE}/contacts/${contactId}`, {
           method: 'PUT', headers: ghlHeaders,
           body: JSON.stringify({ customFields: params.customFields }),
         });
@@ -337,7 +379,7 @@ serve(async (req) => {
         const contactId = requireContactId(params);
         // Add a tag that triggers an outbound call workflow in GHL
         const callTag = `beltool-call-now`;
-        const tagRes = await fetch(`${GHL_BASE}/contacts/${contactId}/tags`, {
+        const tagRes = await fetchGHL(`${GHL_BASE}/contacts/${contactId}/tags`, {
           method: 'POST', headers: ghlHeaders,
           body: JSON.stringify({ tags: [callTag] }),
         });
@@ -349,7 +391,7 @@ serve(async (req) => {
       // ─── REMOVE TAG (cleanup after call trigger) ───
       case 'removeTag': {
         const contactId = requireContactId(params);
-        const res = await fetch(`${GHL_BASE}/contacts/${contactId}/tags`, {
+        const res = await fetchGHL(`${GHL_BASE}/contacts/${contactId}/tags`, {
           method: 'DELETE', headers: ghlHeaders,
           body: JSON.stringify({ tags: params.tags }),
         });
@@ -360,10 +402,10 @@ serve(async (req) => {
 
       // ─── GET USERS (for assignedTo) ───
       case 'getUsers': {
-        const res = await fetch(`${GHL_BASE}/users/search?companyId=${GHL_LOCATION_ID}`, { headers: ghlHeaders });
+        const res = await fetchGHL(`${GHL_BASE}/users/search?companyId=${GHL_LOCATION_ID}`, { headers: ghlHeaders });
         if (!res.ok) {
           // Try location-based endpoint
-          const res2 = await fetch(`${GHL_BASE}/users/?locationId=${GHL_LOCATION_ID}`, { headers: ghlHeaders });
+          const res2 = await fetchGHL(`${GHL_BASE}/users/?locationId=${GHL_LOCATION_ID}`, { headers: ghlHeaders });
           if (!res2.ok) throw new Error(`GHL users error [${res2.status}]: ${await res2.text()}`);
           result = await res2.json();
         } else {
@@ -374,7 +416,7 @@ serve(async (req) => {
 
       // ─── SEND MESSAGE (WhatsApp / SMS / Email via Conversations) ───
       case 'sendMessage': {
-        const res = await fetch(`${GHL_BASE}/conversations/messages`, {
+        const res = await fetchGHL(`${GHL_BASE}/conversations/messages`, {
           method: 'POST', headers: ghlHeaders,
           body: JSON.stringify({
             type: params.type || 'WhatsApp',
@@ -392,7 +434,7 @@ serve(async (req) => {
 
       // ─── GET CONVERSATION BY CONTACT ───
       case 'getConversation': {
-        const res = await fetch(
+        const res = await fetchGHL(
           `${GHL_BASE}/conversations/search?locationId=${GHL_LOCATION_ID}&contactId=${params.contactId}`,
           { headers: ghlHeaders }
         );
@@ -404,7 +446,7 @@ serve(async (req) => {
       // ─── GET MESSAGES IN CONVERSATION ───
       case 'getMessages': {
         const limit = params.limit || 20;
-        const res = await fetch(
+        const res = await fetchGHL(
           `${GHL_BASE}/conversations/${params.conversationId}/messages?limit=${limit}`,
           { headers: ghlHeaders }
         );
@@ -416,7 +458,7 @@ serve(async (req) => {
       // ─── GET NOTES FOR CONTACT ───
       case 'getNotes': {
         const contactId = requireContactId(params);
-        const res = await fetch(`${GHL_BASE}/contacts/${contactId}/notes`, { headers: ghlHeaders });
+        const res = await fetchGHL(`${GHL_BASE}/contacts/${contactId}/notes`, { headers: ghlHeaders });
         if (!res.ok) throw new Error(`GHL get notes error [${res.status}]: ${await res.text()}`);
         result = await res.json();
         break;
@@ -425,7 +467,7 @@ serve(async (req) => {
       // ─── GET TASKS FOR CONTACT ───
       case 'getTasks': {
         const contactId = requireContactId(params);
-        const res = await fetch(`${GHL_BASE}/contacts/${contactId}/tasks`, { headers: ghlHeaders });
+        const res = await fetchGHL(`${GHL_BASE}/contacts/${contactId}/tasks`, { headers: ghlHeaders });
         if (!res.ok) throw new Error(`GHL get tasks error [${res.status}]: ${await res.text()}`);
         result = await res.json();
         break;
@@ -436,7 +478,7 @@ serve(async (req) => {
         const contactId = requireContactId(params);
         const taskId = params.taskId as string;
         if (!taskId) throw new Error('completeTask requires taskId');
-        const res = await fetch(`${GHL_BASE}/contacts/${contactId}/tasks/${taskId}`, {
+        const res = await fetchGHL(`${GHL_BASE}/contacts/${contactId}/tasks/${taskId}`, {
           method: 'PUT', headers: ghlHeaders,
           body: JSON.stringify({ completed: true }),
         });
@@ -448,7 +490,7 @@ serve(async (req) => {
       // ─── GET APPOINTMENTS FOR CONTACT ───
       case 'getAppointments': {
         const contactId = requireContactId(params);
-        const res = await fetch(
+        const res = await fetchGHL(
           `${GHL_BASE}/contacts/${contactId}/appointments`,
           { headers: ghlHeaders }
         );
@@ -461,7 +503,7 @@ serve(async (req) => {
       case 'updateAppointment': {
         const appointmentId = params.appointmentId as string;
         if (!appointmentId) throw new Error('updateAppointment requires appointmentId');
-        const res = await fetch(`${GHL_BASE}/calendars/events/appointments/${appointmentId}`, {
+        const res = await fetchGHL(`${GHL_BASE}/calendars/events/appointments/${appointmentId}`, {
           method: 'PUT', headers: ghlHeaders,
           body: JSON.stringify({
             ...(params.status ? { appointmentStatus: params.status } : {}),
@@ -504,7 +546,7 @@ serve(async (req) => {
           `🕐 ${new Date().toLocaleString('nl-NL')}`,
         ].filter(Boolean).join('\n');
 
-        const res = await fetch(`${GHL_BASE}/contacts/${contactId}/notes`, {
+        const res = await fetchGHL(`${GHL_BASE}/contacts/${contactId}/notes`, {
           method: 'POST', headers: ghlHeaders,
           body: JSON.stringify({ body: lines }),
         });

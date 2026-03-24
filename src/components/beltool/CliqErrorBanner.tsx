@@ -4,6 +4,26 @@ interface CliqErrorBannerProps {
   onRetry: () => void;
 }
 
+function friendlyError(msg: string): string {
+  const lower = msg.toLowerCase();
+  if (lower.includes('connection') || lower.includes('reset') || lower.includes('sendrequest') || lower.includes('client error')) {
+    return 'Verbinding met GoHighLevel verbroken. Dit is een tijdelijk netwerk­probleem — klik op opnieuw proberen.';
+  }
+  if (lower.includes('pipeline') || lower.includes('geen')) {
+    return 'Geen "Bellen" pipeline gevonden in GHL. Controleer of de pipeline bestaat en de API-sleutel klopt.';
+  }
+  if (lower.includes('api_key') || lower.includes('api key') || lower.includes('unauthorized') || lower.includes('401')) {
+    return 'Ongeldige GHL API-sleutel. Controleer de instellingen (⚙️ → CLIQ Integratie).';
+  }
+  if (lower.includes('location') || lower.includes('403')) {
+    return 'Geen toegang tot deze GHL locatie. Controleer de Location ID in de instellingen.';
+  }
+  if (lower.includes('502') || lower.includes('503') || lower.includes('504')) {
+    return 'GoHighLevel is tijdelijk niet bereikbaar. Probeer het over een minuut opnieuw.';
+  }
+  return msg;
+}
+
 export function CliqErrorBanner({ error, loading, onRetry }: CliqErrorBannerProps) {
   if (!error) return null;
 
@@ -12,8 +32,10 @@ export function CliqErrorBanner({ error, loading, onRetry }: CliqErrorBannerProp
       <div className="flex items-start gap-2">
         <span className="text-base shrink-0 mt-0.5">⚠️</span>
         <div className="flex-1 min-w-0">
-          <div className="text-[12px] font-semibold text-destructive">Verbinding mislukt</div>
-          <div className="text-[11px] text-destructive/70 mt-0.5 break-words">{error}</div>
+          <div className="text-[12px] font-semibold text-destructive">GHL verbinding mislukt</div>
+          <div className="text-[11px] text-destructive/70 mt-0.5 break-words leading-relaxed">
+            {friendlyError(error)}
+          </div>
         </div>
       </div>
       <button
