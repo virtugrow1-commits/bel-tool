@@ -421,8 +421,6 @@ export default function Afspraak() {
                   <ArrowLeft className="w-3 h-3" /> Terug
                 </button>
               )}
-                <ArrowLeft className="w-3 h-3" /> Terug
-              </button>
             </div>
           )}
 
