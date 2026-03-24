@@ -65,7 +65,7 @@ export function useCallbacks() {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) return;
 
-        const { data, error } = await supabase
+        const { data, error } = await (supabase as any)
           .from('callbacks')
           .select('*')
           .in('status', ['scheduled', 'done'])
@@ -148,7 +148,7 @@ export function useCallbacks() {
   ): Promise<CallbackEntry[]> => {
     if (useSupabase) {
       try {
-        const { data, error } = await supabase
+        const { data, error } = await (supabase as any)
           .from('callbacks')
           .insert(entryToRow(cb, userId))
           .select()
@@ -179,7 +179,7 @@ export function useCallbacks() {
 
     if (useSupabase && found) {
       try {
-        await supabase.from('callbacks').update({ status: 'done' }).eq('id', String(cbId));
+        await (supabase as any).from('callbacks').update({ status: 'done' }).eq('id', String(cbId));
       } catch (err) {
         console.warn('[Callbacks] Supabase update failed:', err);
       }
