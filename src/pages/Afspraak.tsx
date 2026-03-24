@@ -164,16 +164,19 @@ export default function Afspraak() {
     setLoading(true);
     setError('');
     try {
-      // Create or find contact in GHL
-      const contactResult = await callGHL('createContact', {
-        name: contact.naam,
-        email: contact.email,
-        phone: contact.telefoon,
-        companyName: contact.bedrijf,
-        tags: ['website-afspraak'],
-        source: 'Website Afspraak',
-      });
-      const contactId = contactResult?.contact?.id || contactResult?.id;
+      // Use existing GHL contact or create new one
+      let contactId = ghlContactId;
+      if (!contactId) {
+        const contactResult = await callGHL('createContact', {
+          name: contact.naam,
+          email: contact.email,
+          phone: contact.telefoon,
+          companyName: contact.bedrijf,
+          tags: ['website-afspraak'],
+          source: 'Website Afspraak',
+        });
+        contactId = contactResult?.contact?.id || contactResult?.id;
+      }
       if (!contactId) throw new Error('Kon contact niet aanmaken');
 
       // Book appointment
