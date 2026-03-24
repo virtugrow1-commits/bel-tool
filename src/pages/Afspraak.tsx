@@ -60,7 +60,10 @@ function addMinutesToTime(time: string, minutesToAdd: number) {
 type Step = 'contact' | 'calendar' | 'date' | 'time' | 'confirm' | 'done';
 
 export default function Afspraak() {
-  const [step, setStep] = useState<Step>('contact');
+  const [searchParams] = useSearchParams();
+  const contactIdParam = searchParams.get('contactId');
+  const [ghlContactId, setGhlContactId] = useState<string | null>(contactIdParam);
+  const [step, setStep] = useState<Step>(contactIdParam ? 'date' : 'contact');
   const [contact, setContact] = useState<ContactForm>(EMPTY_CONTACT);
   const [calendars, setCalendars] = useState<GHLCalendar[]>([]);
   const [selectedCalendar, setSelectedCalendar] = useState<string>('');
@@ -68,11 +71,37 @@ export default function Afspraak() {
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [slots, setSlots] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingContact, setLoadingContact] = useState(!!contactIdParam);
   const [error, setError] = useState('');
   const [calendarMonth, setCalendarMonth] = useState(() => {
     const now = new Date();
     return { year: now.getFullYear(), month: now.getMonth() };
   });
+
+  // Fetch contact from GHL if contactId is in URL
+  useEffect(() => {
+    if (!contactIdParam) return;
+    setLoadingContact(true);
+    callGHL('getContact', { contactId: contactIdParam })
+      .then((data) => {
+        const c = data?.contact || data;
+        if (c) {
+          setContact({
+            naam: c.name || c.contactName || [c.firstName, c.lastName].filter(Boolean).join(' ') || '',
+            email: c.email || '',
+            telefoon: c.phone || '',
+            bedrijf: c.companyName || '',
+            opmerking: '',
+          });
+          setGhlContactId(contactIdParam);
+        }
+      })
+      .catch(() => {
+        // If contact fetch fails, show contact form
+        setStep('contact');
+      })
+      .finally(() => setLoadingContact(false));
+  }, [contactIdParam]);
 
   // Fetch calendars on mount
   useEffect(() => {
