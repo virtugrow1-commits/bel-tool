@@ -179,7 +179,7 @@ export function useCallbacks() {
 
     if (useSupabase && found) {
       try {
-        await supabase.from('callbacks').update({ status: 'done' }).eq('id', String(cbId));
+        await (supabase as any).from('callbacks').update({ status: 'done' }).eq('id', String(cbId));
       } catch (err) {
         console.warn('[Callbacks] Supabase update failed:', err);
       }

@@ -249,8 +249,8 @@ export default function BelTool() {
     }
   };
 
-  const handleCompleteCallback = (cbId: number) => {
-    const cb = rawCompleteCallback(cbId);
+  const handleCompleteCallback = async (cbId: number) => {
+    const cb = await rawCompleteCallback(cbId);
     flash('Callback voltooid!');
     if (cb) {
       const comp = companies.find(c => c.contacts.some(ct => ct.id === cb.contactId));
