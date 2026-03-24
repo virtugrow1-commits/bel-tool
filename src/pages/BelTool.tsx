@@ -108,6 +108,24 @@ export default function BelTool() {
     flash('Bedrijf opgeslagen en gesynchroniseerd', 'info');
   }, [updateCompany, syncContactToCliq, flash]);
 
+  const handleAppointmentBooked = useCallback((appointment: {
+    contactName: string;
+    companyName: string;
+    date: string;
+    time: string;
+    advisorId: string;
+    advisorName: string;
+    status: 'planned';
+  }) => {
+    settings.setAppts(prev => [
+      ...prev,
+      {
+        id: Date.now(),
+        ...appointment,
+      },
+    ]);
+  }, [settings]);
+
   // Auto-dial state
   const [autoDialPending, setAutoDialPending] = useState(false);
   const autoDialEnabled = store.get('autoDialEnabled', true);
@@ -480,6 +498,7 @@ export default function BelTool() {
                     dailyTargets={store.get('dailyTargets', { calls: 50, appointments: 5, surveys: 10 })}
                     onShowWhatsApp={(ctx) => setShowWhatsApp(ctx)}
                     advisors={advisors}
+                    onAppointmentBooked={handleAppointmentBooked}
                   />
                 </div>
                 {curStep >= 0 && !isMobile && (
