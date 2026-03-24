@@ -263,11 +263,7 @@ export default function BelTool() {
             onDismiss={dismissPopup}
             onCall={(id) => { handleCompleteCallback(id); clearPopup(); }}
           />
-          <IncomingCallPopup
-            call={incomingCall}
-            onAnswer={handleAnswerIncoming}
-            onDismiss={dismissCall}
-          />
+          {/* Incoming calls go to GHL — no popup in this tool */}
           <ShortcutsHelp open={showShortcuts} onClose={() => setShowShortcuts(false)} />
 
           <SettingsPanel
