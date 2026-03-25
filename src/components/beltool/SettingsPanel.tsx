@@ -800,6 +800,87 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
           </div>
         </div>
       )}
+
+      {/* ORGANIZATIONS TAB */}
+      {tab === 'orgs' && user?.role === 'admin' && (
+        <div className="space-y-5">
+          <div className="bg-primary/[0.06] border border-primary/15 rounded-xl p-4">
+            <h3 className="text-sm font-bold text-primary mb-2">🏢 Organisatiebeheer</h3>
+            <p className="text-muted-foreground text-sm">Beheer de bedrijven die meedoen aan de competitie. Elk bedrijf heeft een eigen GHL sub-account.</p>
+          </div>
+
+          {/* Existing orgs */}
+          <div className="space-y-2">
+            {organizations.map(org => (
+              <div key={org.id} className="p-4 rounded-xl bg-foreground/[0.02] border border-border/40">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="font-semibold text-sm">{org.name}</div>
+                  <span className="text-[10px] font-mono text-muted-foreground/40">{org.slug}</span>
+                </div>
+                <div className="text-[11px] text-muted-foreground/50">
+                  {org.ghl_api_key ? '🔗 GHL gekoppeld' : '⚠️ Geen GHL API key'}
+                  {org.ghl_location_id ? ` · Location: ${org.ghl_location_id.slice(0, 8)}...` : ''}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Add new org */}
+          <div className="border-t border-border/40 pt-4">
+            <div className="text-xs font-bold text-muted-foreground/50 mb-3">ORGANISATIE TOEVOEGEN</div>
+            <div className="grid gap-3">
+              <input
+                value={newOrgName}
+                onChange={e => { setNewOrgName(e.target.value); setNewOrgSlug(e.target.value.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-')); }}
+                placeholder="Bedrijfsnaam (bijv. Future Media)"
+                className={inputCls}
+              />
+              <input
+                value={newOrgSlug}
+                onChange={e => setNewOrgSlug(e.target.value)}
+                placeholder="Slug (bijv. future-media)"
+                className={cn(inputCls, 'font-mono')}
+              />
+              <input
+                type="password"
+                value={newOrgApiKey}
+                onChange={e => setNewOrgApiKey(e.target.value)}
+                placeholder="GHL API Key (optioneel, later in te stellen)"
+                className={cn(inputCls, 'font-mono')}
+              />
+              <input
+                value={newOrgLocationId}
+                onChange={e => setNewOrgLocationId(e.target.value)}
+                placeholder="GHL Location ID (optioneel)"
+                className={cn(inputCls, 'font-mono')}
+              />
+              <button
+                onClick={async () => {
+                  if (!newOrgName.trim() || !newOrgSlug.trim()) return;
+                  try {
+                    await createOrg({
+                      name: newOrgName.trim(),
+                      slug: newOrgSlug.trim(),
+                      ghl_api_key: newOrgApiKey || undefined,
+                      ghl_location_id: newOrgLocationId || undefined,
+                    });
+                    setNewOrgName('');
+                    setNewOrgSlug('');
+                    setNewOrgApiKey('');
+                    setNewOrgLocationId('');
+                  } catch (err) {
+                    console.error('Error creating org:', err);
+                  }
+                }}
+                disabled={!newOrgName.trim() || !newOrgSlug.trim()}
+                className="px-4 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold active:scale-[0.97] transition-transform disabled:opacity-40"
+              >
+                🏢 Organisatie toevoegen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </Modal>
   );
 }
