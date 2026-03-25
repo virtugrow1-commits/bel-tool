@@ -58,7 +58,7 @@ Met vriendelijke groet,
     description: 'Stuur de 4-vragen enquête via link',
     channels: ['whatsapp', 'sms', 'email'],
     ghlTemplateName: 'enquete_digitaal_sturen',
-    subject: 'Praktijkonderzoek — CliqMakers',
+    ghlPlaceholderKeys: ['voornaam', 'beller'],
     body: `Hallo {voornaam},
 
 Zoals zojuist besproken stuur ik u hierbij de link naar ons praktijkonderzoek:
