@@ -41,6 +41,7 @@ Met vriendelijke groet,
     icon: '⏰',
     description: 'Prospect had interesse maar geen tijd voor enquête',
     channels: ['whatsapp', 'sms'],
+    ghlTemplateName: 'had_interesse_geen_tijd',
     body: `Hallo {voornaam}, u sprak met {beller} van CliqMakers. Fijn dat u geïnteresseerd bent! Hier is de link om direct een gratis adviesgesprek in te plannen op een moment dat u uitkomt: {bookingLink}`,
   },
   {
