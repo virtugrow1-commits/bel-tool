@@ -87,6 +87,7 @@ Groet,
     icon: '🎉',
     description: 'Bevestiging dat de afspraak is ingepland',
     channels: ['whatsapp', 'email'],
+    ghlTemplateName: 'bevestiging_na_afspraak',
     subject: 'Uw adviesgesprek is bevestigd, {voornaam}',
     body: `Hallo {voornaam},
 
