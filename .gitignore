@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+beltool-backend/node_modules
+beltool-backend/dist
+backend/node_modules
+backend/dist
+backend/.env
