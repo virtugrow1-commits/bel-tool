@@ -147,6 +147,7 @@ export default function ProspectSurvey() {
             bedrijf: c.companyName || ''
           }));
           setContactLoaded(true);
+          setStep(1); // Skip contact info step — data already loaded from GHL
         }
       } catch {
 
