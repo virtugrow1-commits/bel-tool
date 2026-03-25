@@ -104,6 +104,7 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
     { id: 'api', label: t.apiKeys },
     { id: 'reset', label: t.resetStats },
     ...(user?.role === 'admin' ? [{ id: 'users', label: t.userManagement }] : []),
+    ...(user?.role === 'admin' ? [{ id: 'orgs', label: '🏢 Organisaties' }] : []),
   ];
 
   const inputCls = 'w-full px-3 py-2 rounded-lg border border-border bg-foreground/[0.04] text-foreground text-[13px] outline-none focus:ring-1 focus:ring-primary';
