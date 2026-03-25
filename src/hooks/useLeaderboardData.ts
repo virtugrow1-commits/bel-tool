@@ -60,8 +60,8 @@ export function useLeaderboardData() {
 
       // Build individual rows
       const indivRows: LeaderboardRow[] = (scores || []).map((s: any) => {
-        const profile = profileMap.get(s.user_id);
-        const org = profile ? orgMap.get(profile.organization_id) : null;
+        const profile = profileMap.get(s.user_id) as any;
+        const org = profile ? orgMap.get(profile.organization_id) as any : null;
         return {
           userId: s.user_id,
           userName: profile?.name || s.user_id,
