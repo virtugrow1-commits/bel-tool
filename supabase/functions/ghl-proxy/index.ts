@@ -437,34 +437,32 @@ serve(async (req) => {
         const messageBody: Record<string, unknown> = {
           type: params.type || 'WhatsApp',
           contactId: params.contactId,
+          locationId: GHL_LOCATION_ID,
           ...(params.subject ? { subject: params.subject } : {}),
           ...(params.html ? { html: params.html } : {}),
         };
 
         if (hasTemplate) {
-          // For WhatsApp templates: do NOT include 'message' field.
-          // GHL sends the template content itself; adding 'message' causes
-          // a free-form send attempt that fails outside the 24h window.
-          messageBody.contentType = 'template';
-          messageBody.templateName = params.templateName;
-
           const bodyParams: string[] = params.placeholders?.body || [];
-          if (bodyParams.length > 0) {
-            messageBody.components = [
-              {
-                type: 'body',
-                parameters: bodyParams.map((text: string) => ({
-                  type: 'text',
-                  text,
-                })),
-              },
-            ];
-          }
-        } else {
-          // Non-template messages: include the message field
-          if (params.message) {
-            messageBody.message = params.message;
-          }
+          const headerParams: string[] = params.placeholders?.header || [];
+          const buttonParams: string[] = params.placeholders?.buttons || [];
+
+          // GHL WhatsApp templates use a nested whatsapp payload.
+          messageBody.message = params.message || 'Template message';
+          messageBody.whatsapp = {
+            type: 'template',
+            template: {
+              name: params.templateName,
+              lang: params.templateLang || 'nl',
+            },
+            placeholders: {
+              header: headerParams,
+              body: bodyParams,
+              buttons: buttonParams,
+            },
+          };
+        } else if (params.message) {
+          messageBody.message = params.message;
         }
 
         console.log('[GHL Proxy] sendMessage payload:', JSON.stringify(messageBody));

@@ -267,13 +267,13 @@ export const cliq = {
 
   /**
    * Send a WhatsApp message via GHL Conversations API.
-   * Falls back to tag-based workflow trigger if Conversations API is not available.
+   * Do not silently fall back to a workflow tag: failed sends must surface as errors.
    */
   async sendWhatsAppMessage(
     contactId: string,
     message: string,
     templateName?: string,
-    placeholders?: { body: string[] },
+    placeholders?: { body: string[]; header?: string[]; buttons?: string[] },
   ): Promise<{ success: boolean; messageId?: string }> {
     try {
       const result = await callCliq('sendMessage', {
@@ -288,10 +288,8 @@ export const cliq = {
       });
       return { success: true, messageId: result?.messageId || result?.id };
     } catch (err) {
-      // Fallback: trigger via workflow tag
-      console.warn('[CLIQ] WhatsApp Conversations API failed, falling back to tag:', err);
-      await callCliq('addTag', { contactId, tags: ['beltool-send-whatsapp'] });
-      return { success: true };
+      console.error('[CLIQ] WhatsApp template send failed:', err);
+      return { success: false };
     }
   },
 
