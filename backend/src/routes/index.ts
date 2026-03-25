@@ -81,7 +81,7 @@ const bookAppointmentSchema = z.object({
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function getSurveyUrl(contactId: string): string {
-  const base = process.env.SURVEY_BASE_URL || 'https://cliqmakers.nl/enquete';
+  const base = process.env.SURVEY_BASE_URL || 'https://enquete.cliqmakers.nl/enquete';
   return `${base}/${contactId}`;
 }
 
