@@ -47,7 +47,7 @@ export function WhatsAppComposer({ contact, company, callerName, answers, bookin
     ? answers.tasks.concat(answers.tasksOther ? [answers.tasksOther] : []).filter(Boolean).join(', ')
     : '';
 
-  const enqueteLink = `${window.location.origin}/enquete/${contact.id}`;
+  const enqueteLink = `https://enquete.cliqmakers.nl/enquete/${contact.id}`;
 
   const vars = {
     voornaam: contact.firstName,
@@ -55,8 +55,9 @@ export function WhatsAppComposer({ contact, company, callerName, answers, bookin
     beller: callerName,
     uren: answers?.hours || '',
     taken: taskString,
-    bookingLink: bookingLink || 'https://cliqmakers.nl/afspraak',
+    bookingLink: bookingLink || 'https://adviesgesprekken.cliqmakers.nl/',
     enqueteLink,
+    contactId: contact.id,
   };
 
   const renderedMessage = editing ? editedMessage : renderTemplate(template, vars);
