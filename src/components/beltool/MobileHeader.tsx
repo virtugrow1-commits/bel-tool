@@ -29,7 +29,7 @@ export function MobileHeader({ user, scores, onToggleSidebar, dueCallbackCount }
       </button>
 
       <div className="flex-1 min-w-0">
-        <div className="text-[13px] font-bold tracking-tight text-foreground">Bel-Tool</div>
+        <div className="text-[13px] font-bold tracking-tight text-foreground">Praktijkonderzoek</div>
       </div>
 
       {/* Inline mini stats */}
