@@ -10,7 +10,6 @@ const ProspectSurvey = lazy(() => import("./pages/ProspectSurvey"));
 const SurveyResults = lazy(() => import("./pages/SurveyResults"));
 const Rapportage = lazy(() => import("./pages/Rapportage"));
 const Afspraak = lazy(() => import("./pages/Afspraak"));
-const GhlIframe = lazy(() => import("./pages/GhlIframe"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 function LoadingFallback() {
@@ -39,7 +38,6 @@ const App = () => (
             <Route path="/resultaten" element={<SurveyResults />} />
             <Route path="/rapportage" element={<Rapportage />} />
             <Route path="/afspraak" element={<Afspraak />} />
-            <Route path="/ghl-iframe" element={<GhlIframe />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
