@@ -269,13 +269,22 @@ export const cliq = {
    * Send a WhatsApp message via GHL Conversations API.
    * Falls back to tag-based workflow trigger if Conversations API is not available.
    */
-  async sendWhatsAppMessage(contactId: string, message: string, templateName?: string): Promise<{ success: boolean; messageId?: string }> {
+  async sendWhatsAppMessage(
+    contactId: string,
+    message: string,
+    templateName?: string,
+    placeholders?: { body: string[] },
+  ): Promise<{ success: boolean; messageId?: string }> {
     try {
       const result = await callCliq('sendMessage', {
         type: 'WhatsApp',
         contactId,
         message,
-        ...(templateName ? { templateName } : {}),
+        ...(templateName ? {
+          templateName,
+          templateLang: 'nl',
+          placeholders: placeholders || { body: [] },
+        } : {}),
       });
       return { success: true, messageId: result?.messageId || result?.id };
     } catch (err) {
