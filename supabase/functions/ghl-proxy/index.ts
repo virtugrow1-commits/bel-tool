@@ -441,6 +441,11 @@ serve(async (req) => {
           ...(params.html ? { html: params.html } : {}),
         };
 
+        // Always include the message field — GHL requires it even for template messages
+        if (params.message) {
+          messageBody.message = params.message;
+        }
+
         if (hasTemplate) {
           // GHL requires contentType + templateName for WhatsApp template messages
           messageBody.contentType = 'template';
@@ -458,8 +463,6 @@ serve(async (req) => {
               },
             ];
           }
-        } else {
-          messageBody.message = params.message;
         }
 
         console.log('[GHL Proxy] sendMessage payload:', JSON.stringify(messageBody));
