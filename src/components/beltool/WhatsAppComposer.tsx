@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { cliq } from '@/lib/beltool-ghl';
-import { MESSAGE_TEMPLATES, renderTemplate, renderSubject, type MessageTemplate } from '@/lib/message-templates';
+import { MESSAGE_TEMPLATES, renderTemplate, renderSubject, buildPlaceholders, type MessageTemplate } from '@/lib/message-templates';
 import type { CompanyContact, Company, SurveyAnswers } from '@/types/beltool';
 
 type Channel = 'whatsapp' | 'sms' | 'email';
