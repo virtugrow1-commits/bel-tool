@@ -10,6 +10,8 @@ export interface MessageTemplate {
   body: string;
   /** Email subject (only for email channel) */
   subject?: string;
+  /** GHL WhatsApp template name (for approved template sending) */
+  ghlTemplateName?: string;
 }
 
 export const MESSAGE_TEMPLATES: MessageTemplate[] = [
