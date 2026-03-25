@@ -89,7 +89,7 @@ export function useLeaderboardData() {
           existing.verstuurd += row.verstuurd;
           existing.memberCount += 1;
         } else {
-          const org = orgMap.get(row.orgId);
+          const org = orgMap.get(row.orgId) as any;
           teamMap.set(row.orgId, {
             orgId: row.orgId,
             orgName: row.orgName,
