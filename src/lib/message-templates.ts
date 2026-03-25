@@ -120,6 +120,7 @@ Tot snel!
     description: 'Vooraankondiging dat je morgen belt',
     channels: ['whatsapp', 'sms'],
     ghlTemplateName: 'herinnering_terugbelafspraak',
+    ghlPlaceholderKeys: ['voornaam', 'beller'],
     body: `Hallo {voornaam}, even een kort berichtje: ik bel u morgen kort terug zoals afgesproken, namens CliqMakers. Tot dan! — {beller}`,
   },
 ];
