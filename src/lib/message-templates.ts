@@ -157,3 +157,16 @@ export function renderSubject(
   return (template.subject || '')
     .replace(/\{voornaam\}/g, vars.voornaam || '[Naam]');
 }
+
+/**
+ * Build the GHL WhatsApp template placeholders from template keys and variable values.
+ * Returns { body: ["value1", "value2", ...] } matching {{1}}, {{2}}, etc.
+ */
+export function buildPlaceholders(
+  template: MessageTemplate,
+  vars: Record<string, string>,
+): { body: string[] } {
+  if (!template.ghlPlaceholderKeys?.length) return { body: [] };
+  const body = template.ghlPlaceholderKeys.map(key => vars[key] || '');
+  return { body };
+}
