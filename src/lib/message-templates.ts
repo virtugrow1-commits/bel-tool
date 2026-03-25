@@ -12,6 +12,11 @@ export interface MessageTemplate {
   subject?: string;
   /** GHL WhatsApp template name (for approved template sending) */
   ghlTemplateName?: string;
+  /**
+   * Ordered list of variable keys that map to GHL template placeholders {{1}}, {{2}}, etc.
+   * E.g. ['voornaam', 'beller'] means {{1}} = voornaam, {{2}} = beller
+   */
+  ghlPlaceholderKeys?: string[];
 }
 
 export const MESSAGE_TEMPLATES: MessageTemplate[] = [
