@@ -21,6 +21,7 @@ export const MESSAGE_TEMPLATES: MessageTemplate[] = [
     icon: '📋',
     description: 'Na telefonische enquête — samenvatting + booking-link',
     channels: ['whatsapp', 'email'],
+    ghlTemplateName: 'opvolging_na_enquete',
     subject: 'Bedankt voor uw tijd, {voornaam} — uw gratis adviesgesprek',
     body: `Hallo {voornaam},
 
