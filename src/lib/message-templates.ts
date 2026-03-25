@@ -112,8 +112,8 @@ export function renderTemplate(
     enqueteLink?: string;
   }
 ): string {
-  const bookLink = vars.bookingLink || 'https://cliqmakers.nl/afspraak';
-  const surveyLink = vars.enqueteLink || bookLink;
+  const bookLink = vars.bookingLink || 'https://adviesgesprekken.cliqmakers.nl/';
+  const surveyLink = vars.enqueteLink || `https://enquete.cliqmakers.nl/enquete/${vars.contactId || 'contact.id'}`;
   return template.body
     .replace(/\{voornaam\}/g, vars.voornaam || '[Naam]')
     .replace(/\{bedrijf\}/g, vars.bedrijf || '[Bedrijf]')
