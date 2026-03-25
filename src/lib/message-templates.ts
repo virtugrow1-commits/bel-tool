@@ -102,6 +102,7 @@ Team CliqMakers`,
     description: 'Bevestiging dat de afspraak is ingepland',
     channels: ['whatsapp', 'email'],
     ghlTemplateName: 'bevestiging_na_afspraak',
+    ghlPlaceholderKeys: ['voornaam', 'beller'],
     subject: 'Uw adviesgesprek is bevestigd, {voornaam}',
     body: `Hallo {voornaam},
 
