@@ -22,13 +22,14 @@ export function useTeamProfiles() {
         console.warn('[TeamProfiles] Fetch failed, using fallback:', error.message);
         setProfiles(USERS);
       } else if (data && data.length > 0) {
-        setProfiles(data.map(row => ({
+        setProfiles(data.map((row: any) => ({
           id: row.id,
           name: row.name,
           email: row.email,
           role: row.role as User['role'],
           avatar: row.avatar,
           deviceId: row.device_id || '',
+          organizationId: row.organization_id || undefined,
         })));
       } else {
         // Empty profiles table — use fallback

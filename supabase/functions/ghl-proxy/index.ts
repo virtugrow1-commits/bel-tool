@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -88,23 +89,37 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const GHL_API_KEY = Deno.env.get('GHL_API_KEY');
-  if (!GHL_API_KEY) {
-    return new Response(JSON.stringify({ error: 'GHL_API_KEY not configured' }), {
-      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
-
-  const GHL_LOCATION_ID = Deno.env.get('GHL_LOCATION_ID');
-  if (!GHL_LOCATION_ID) {
-    return new Response(JSON.stringify({ error: 'GHL_LOCATION_ID not configured' }), {
-      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
-
   try {
     const body = await req.json();
-    const { action, ...params } = body;
+    const { action, organizationId, ...params } = body;
+
+    // Try to resolve API key per organization
+    let GHL_API_KEY = Deno.env.get('GHL_API_KEY') || '';
+    let GHL_LOCATION_ID = Deno.env.get('GHL_LOCATION_ID') || '';
+
+    if (organizationId) {
+      try {
+        const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+        const sb = createClient(supabaseUrl, supabaseKey);
+        const { data: org } = await sb.from('organizations').select('ghl_api_key, ghl_location_id').eq('id', organizationId).single();
+        if (org?.ghl_api_key) GHL_API_KEY = org.ghl_api_key;
+        if (org?.ghl_location_id) GHL_LOCATION_ID = org.ghl_location_id;
+      } catch (e) {
+        console.warn('[GHL Proxy] Org lookup failed, using default keys:', e);
+      }
+    }
+
+    if (!GHL_API_KEY) {
+      return new Response(JSON.stringify({ error: 'GHL_API_KEY not configured' }), {
+        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    if (!GHL_LOCATION_ID) {
+      return new Response(JSON.stringify({ error: 'GHL_LOCATION_ID not configured' }), {
+        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     const ghlHeaders = {
       'Authorization': `Bearer ${GHL_API_KEY}`,

@@ -38,7 +38,7 @@ async function upsertDayScore(userId: string, scores: Scores) {
   }
 }
 
-export function useScoring(user: User | null) {
+export function useScoring(user: User | null, organizationId?: string) {
   const [allScores, setAllScores] = useState<Record<string, Scores>>(() => {
     const s = store.get<Record<string, Scores>>('scores', {});
     USERS.forEach(u => { if (!s[u.id]) s[u.id] = initScores(); });
@@ -93,10 +93,20 @@ export function useScoring(user: User | null) {
 
       // Async Supabase sync (fire and forget)
       upsertDayScore(user.id, s);
+      // Also sync organization_id if available
+      if (organizationId) {
+        (supabase as any)
+          .from('user_scores')
+          .update({ organization_id: organizationId })
+          .eq('user_id', user.id)
+          .eq('score_date', TODAY)
+          .then(() => {})
+          .catch(() => {});
+      }
 
       return next;
     });
-  }, [user]);
+  }, [user, organizationId]);
 
   return {
     scores,

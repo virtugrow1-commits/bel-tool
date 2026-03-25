@@ -57,7 +57,7 @@ export default function BelTool() {
   const settings = useSettings();
   const { t, lang, setLang, managedUsers, updateManagedUsers } = settings;
 
-  const scoring = useScoring(user);
+  const scoring = useScoring(user, user?.organizationId);
   const { scores, convRate, addScore, allScores, setAllScores, setContactInfo } = scoring;
   const sfx = useSoundEffects();
   const { advisors } = useAdvisors();
