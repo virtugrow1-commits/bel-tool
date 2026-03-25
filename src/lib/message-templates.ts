@@ -92,6 +92,7 @@ Team CliqMakers`,
     description: 'Alleen de booking-link, kort en krachtig',
     channels: ['whatsapp', 'sms'],
     ghlTemplateName: 'booking_link_sturen',
+    ghlPlaceholderKeys: ['voornaam', 'bookingLink', 'beller'],
     body: `Hallo {voornaam}, hier is de link om uw gratis adviesgesprek in te plannen: {bookingLink} — Groet, {beller} (CliqMakers)`,
   },
   {
