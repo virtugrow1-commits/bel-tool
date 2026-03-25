@@ -26,13 +26,8 @@ export interface Advisor {
   specialty: string;
 }
 
-/** Fallback users when Supabase profiles table is not yet configured */
-export const USERS: User[] = [
-  { id: 'u1', name: 'Willem', email: 'willem@cliqmakers.nl', role: 'admin', avatar: 'WC' },
-  { id: 'u4', name: 'Noelle van Gestel', email: 'noelle@cliqmakers.nl', role: 'caller', avatar: 'NG', deviceId: '203' },
-  { id: 'u2', name: 'Sophie', email: 'sophie@cliqmakers.nl', role: 'caller', avatar: 'SV' },
-  { id: 'u3', name: 'Mark', email: 'mark@cliqmakers.nl', role: 'manager', avatar: 'MB' },
-];
+/** No more hardcoded users — all users come from GHL */
+export const USERS: User[] = [];
 
 export const ADVISORS: Advisor[] = [
   { id: '09a9x0oU0pFO3boHXMtJ', name: 'Willem Claassen', specialty: 'AI & Automatisering' },
