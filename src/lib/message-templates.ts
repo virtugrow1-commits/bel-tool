@@ -110,6 +110,7 @@ export function renderTemplate(
     taken?: string;
     bookingLink?: string;
     enqueteLink?: string;
+    contactId?: string;
   }
 ): string {
   const bookLink = vars.bookingLink || 'https://adviesgesprekken.cliqmakers.nl/';
