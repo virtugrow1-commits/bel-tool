@@ -27,10 +27,10 @@ const CHANNEL_CONFIG: Record<Channel, { icon: string; label: string; color: stri
 
 const CONTEXT_TO_TEMPLATE: Record<string, string> = {
   'enquete': 'stuur-enquete',
-  'geen-gehoor': 'opvolg-geen-gehoor',
+  'geen-gehoor': 'enquete-reminder',
   'interesse': 'opvolg-interesse',
-  'afspraak': 'bedankt-afspraak',
-  'terugbellen': 'terugbellen-herinnering',
+  'afspraak': 'afspraak-bevestiging',
+  'terugbellen': 'enquete-reminder',
 };
 
 export function WhatsAppComposer({ contact, company, callerName, answers, bookingLink, context, onSent, onClose }: WhatsAppComposerProps) {
