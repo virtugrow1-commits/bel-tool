@@ -21,44 +21,32 @@ export interface MessageTemplate {
 
 export const MESSAGE_TEMPLATES: MessageTemplate[] = [
   {
-    id: 'opvolg-enquete',
-    label: 'Opvolging na enquête',
-    icon: '📋',
-    description: 'Na telefonische enquête — samenvatting + booking-link',
-    channels: ['whatsapp', 'email'],
-    ghlTemplateName: 'opvolging_na_enquete',
-    ghlPlaceholderKeys: ['voornaam', 'uren', 'taken', 'bookingLink', 'beller'],
-    subject: 'Bedankt voor uw tijd, {voornaam} — uw gratis adviesgesprek',
-    body: `Hallo {voornaam},
+    id: 'enquete-reminder',
+    label: 'Enquête herinnering',
+    icon: '🔔',
+    description: 'Herinnering voor het invullen van de enquête',
+    channels: ['whatsapp'],
+    ghlTemplateName: 'enquete_reminder_1',
+    ghlPlaceholderKeys: ['voornaam'],
+    body: `Hoi {voornaam} ,
 
-Bedankt voor het prettige gesprek zojuist! Zoals besproken verliest u momenteel {uren} per week aan {taken}.
+U heeft onlangs van ons een korte enquête ontvangen voor ons praktijkonderzoek.
 
-Graag plan ik een gratis adviesgesprek van 15 minuten voor u in, waarin we concreet bekijken hoe u die tijd terugwint.
+Het invullen duurt slechts 2 minuten en helpt ons om zzp'ers en MKB beter te adviseren.
 
-Plan direct in via deze link:
-{bookingLink}
+Alvast bedankt voor uw tijd!
 
-Met vriendelijke groet,
-{beller} — CliqMakers`,
-  },
-  {
-    id: 'opvolg-interesse',
-    label: 'Had interesse, geen tijd',
-    icon: '⏰',
-    description: 'Prospect had interesse maar geen tijd voor enquête',
-    channels: ['whatsapp', 'sms'],
-    ghlTemplateName: 'had_interesse_geen_tijd',
-    ghlPlaceholderKeys: ['voornaam', 'beller', 'bookingLink'],
-    body: `Hallo {voornaam}, u sprak met {beller} van CliqMakers. Fijn dat u geïnteresseerd bent! Hier is de link om direct een gratis adviesgesprek in te plannen op een moment dat u uitkomt: {bookingLink}`,
+Met vriendelijke groet,`,
   },
   {
     id: 'stuur-enquete',
     label: 'Enquête digitaal sturen',
     icon: '📋',
-    description: 'Stuur de 4-vragen enquête via link',
+    description: 'Stuur de enquête-link na telefonisch contact',
     channels: ['whatsapp', 'sms', 'email'],
     ghlTemplateName: 'enquete_digitaal_sturen',
     ghlPlaceholderKeys: ['voornaam', 'beller'],
+    subject: 'Uw praktijkonderzoek van CliqMakers',
     body: `Hallo {voornaam},
 
 Zoals zojuist besproken stuur ik u hierbij de link naar ons praktijkonderzoek:
@@ -76,14 +64,43 @@ Met vriendelijke groet,
 Team CliqMakers`,
   },
   {
-    id: 'opvolg-geen-gehoor',
-    label: 'Geen gehoor — eerste poging',
-    icon: '📵',
-    description: 'Na niet bereikt — kort bericht met enquête-link',
+    id: 'opvolg-enquete',
+    label: 'Opvolging na enquête',
+    icon: '📋',
+    description: 'Na telefonische enquête — samenvatting + booking-link',
+    channels: ['whatsapp', 'email'],
+    ghlTemplateName: 'opvolging_na_enquete',
+    ghlPlaceholderKeys: ['voornaam', 'uren', 'taken', 'beller'],
+    subject: 'Bedankt voor uw tijd, {voornaam} — uw gratis adviesgesprek',
+    body: `Hallo {voornaam},
+
+Bedankt voor het prettige gesprek zojuist! Zoals besproken verliest u momenteel {uren} per week aan {taken}.
+
+Graag plan ik een gratis adviesgesprek van 15 minuten voor u in, waarin we concreet bekijken hoe u die tijd terugwint.
+
+Plan direct in via deze link:
+
+https://adviesgesprekken.cliqmakers.nl/
+
+Met vriendelijke groet,
+
+{beller} — CliqMakers`,
+  },
+  {
+    id: 'opvolg-interesse',
+    label: 'Had interesse, geen tijd',
+    icon: '⏰',
+    description: 'Prospect had interesse maar geen tijd voor enquête',
     channels: ['whatsapp', 'sms'],
-    ghlTemplateName: 'geen_gehoor_eerste_poging',
-    ghlPlaceholderKeys: ['voornaam', 'enqueteLink'],
-    body: `Hallo {voornaam}, ik probeerde u zojuist te bereiken namens CliqMakers. We doen een kort onderzoek naar tijdverlies in het MKB. Wilt u de 4 vragen even digitaal invullen? Kost maar 2 minuten: {enqueteLink}`,
+    ghlTemplateName: 'had_interesse_geen_tijd',
+    ghlPlaceholderKeys: ['voornaam', 'beller'],
+    body: `Hallo {voornaam},
+
+U sprak met {beller} van CliqMakers. Fijn dat u geïnteresseerd bent!
+
+Hier is de link om direct een vrijblijvend adviesgesprek in te plannen op een moment dat u uitkomt: 
+
+https://adviesgesprekken.cliqmakers.nl/`,
   },
   {
     id: 'booking-link',
@@ -92,36 +109,35 @@ Team CliqMakers`,
     description: 'Alleen de booking-link, kort en krachtig',
     channels: ['whatsapp', 'sms'],
     ghlTemplateName: 'booking_link_sturen',
-    ghlPlaceholderKeys: ['voornaam', 'bookingLink', 'beller'],
-    body: `Hallo {voornaam}, hier is de link om uw gratis adviesgesprek in te plannen: {bookingLink} — Groet, {beller} (CliqMakers)`,
+    ghlPlaceholderKeys: ['voornaam', 'beller'],
+    body: `Hallo {voornaam}, 
+
+hier is de link om uw gratis adviesgesprek in te plannen:  
+
+https://adviesgesprekken.cliqmakers.nl/
+
+ Groet, {beller} (CliqMakers)`,
   },
   {
-    id: 'bedankt-afspraak',
-    label: 'Bevestiging na afspraak',
+    id: 'afspraak-bevestiging',
+    label: 'Bevestiging afspraak',
     icon: '🎉',
     description: 'Bevestiging dat de afspraak is ingepland',
-    channels: ['whatsapp', 'email'],
-    ghlTemplateName: 'bevestiging_na_afspraak',
-    ghlPlaceholderKeys: ['voornaam', 'beller'],
-    subject: 'Uw adviesgesprek is bevestigd, {voornaam}',
-    body: `Hallo {voornaam},
+    channels: ['whatsapp'],
+    ghlTemplateName: 'afspraak_bevestiging',
+    ghlPlaceholderKeys: ['voornaam', 'datum', 'tijd', 'locatie'],
+    body: `Hi {voornaam}
+Je afspraak met CliqMakers is ingepland.
 
-Uw gratis adviesgesprek is ingepland! U ontvangt een aparte kalender-uitnodiging met de details.
+📅 Datum: {datum}
 
-Mocht u van tevoren al vragen hebben, antwoord gerust op dit bericht.
+⏰ Tijd: {tijd}
 
-Tot snel!
-{beller} — CliqMakers`,
-  },
-  {
-    id: 'terugbellen-herinnering',
-    label: 'Herinnering terugbelafspraak',
-    icon: '🔔',
-    description: 'Vooraankondiging dat je morgen belt',
-    channels: ['whatsapp', 'sms'],
-    ghlTemplateName: 'herinnering_terugbelafspraak',
-    ghlPlaceholderKeys: ['voornaam', 'beller'],
-    body: `Hallo {voornaam}, even een kort berichtje: ik bel u morgen kort terug zoals afgesproken, namens CliqMakers. Tot dan! — {beller}`,
+📍 Locatie: {locatie}
+
+We kijken ernaar uit om je te spreken!
+
+CliqMakers`,
   },
 ];
 
@@ -136,9 +152,11 @@ export function renderTemplate(
     bookingLink?: string;
     enqueteLink?: string;
     contactId?: string;
+    datum?: string;
+    tijd?: string;
+    locatie?: string;
   }
 ): string {
-  const bookLink = vars.bookingLink || 'https://adviesgesprekken.cliqmakers.nl/';
   const surveyLink = vars.enqueteLink || `https://enquete.cliqmakers.nl/enquete/${vars.contactId || 'contact.id'}`;
   return template.body
     .replace(/\{voornaam\}/g, vars.voornaam || '[Naam]')
@@ -146,8 +164,10 @@ export function renderTemplate(
     .replace(/\{beller\}/g, vars.beller || '[Beller]')
     .replace(/\{uren\}/g, vars.uren || 'aanzienlijke uren')
     .replace(/\{taken\}/g, vars.taken || 'repetitieve taken')
-    .replace(/\{bookingLink\}/g, bookLink)
-    .replace(/\{enqueteLink\}/g, surveyLink);
+    .replace(/\{enqueteLink\}/g, surveyLink)
+    .replace(/\{datum\}/g, vars.datum || '[Datum]')
+    .replace(/\{tijd\}/g, vars.tijd || '[Tijd]')
+    .replace(/\{locatie\}/g, vars.locatie || '[Locatie]');
 }
 
 export function renderSubject(
