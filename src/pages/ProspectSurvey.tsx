@@ -129,7 +129,6 @@ export default function ProspectSurvey() {
   const [step,          setStep]          = useState(0);
   const [status,        setStatus]        = useState<'loading' | 'active' | 'submitting' | 'done' | 'error'>('loading');
   const [contactLoaded, setContactLoaded] = useState(false);
-  const [nameEditable,  setNameEditable]  = useState(true);
 
   // ── Load contact from GHL on mount ─────────────────────────────────────────
   useEffect(() => {
@@ -162,11 +161,7 @@ export default function ProspectSurvey() {
 
           if (fullName) {
             setContactLoaded(true);
-            setNameEditable(false);
-            // Skip contact-info step only when we have name + email
-            if (fullName && c.email) {
-              setStep(1);
-            }
+            // Always stay on step 0 so user can verify prefilled data
           }
         }
       })
@@ -364,8 +359,8 @@ export default function ProspectSurvey() {
   // We tonen TOTAL_STEPS - (contactLoaded ? 1 : 0) in de progressbar
   // zodat de balk klopt.
   const TOTAL_STEPS  = 5;
-  const displayTotal = contactLoaded ? TOTAL_STEPS - 1 : TOTAL_STEPS;
-  const displayStep  = contactLoaded ? Math.max(0, step - 1) : step;
+  const displayTotal = TOTAL_STEPS;
+  const displayStep  = step;
 
   const inputCls = 'w-full px-4 py-3 rounded-xl border border-border bg-card text-foreground text-[15px] outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all placeholder:text-muted-foreground/50';
 
@@ -382,37 +377,24 @@ export default function ProspectSurvey() {
         { key: 'email'    as const, label: 'E-mailadres',        placeholder: 'jan@devries.nl',         type: 'email' },
         { key: 'telefoon' as const, label: 'Telefoonnummer',     placeholder: '06 12345678',            type: 'tel'   },
       ]).map(f => {
-        const isAutofilled = contactLoaded && f.key === 'naam' && !!answers.naam;
-        const isLocked     = isAutofilled && !nameEditable;
+        const isAutofilled = contactLoaded && !!answers[f.key];
         return (
           <div key={f.key}>
             <div className="flex items-center gap-2 mb-1">
               <label className="text-[12px] font-semibold text-foreground/70">{f.label}</label>
               {isAutofilled && (
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                  ✓ automatisch ingevuld
+                  ✓ ingevuld
                 </span>
               )}
             </div>
-            <div className="relative">
-              <input
-                type={f.type}
-                value={answers[f.key]}
-                onChange={e => update(f.key, e.target.value)}
-                placeholder={f.placeholder}
-                readOnly={isLocked}
-                className={cn(inputCls, isLocked && 'bg-muted/50 cursor-default')}
-              />
-              {isLocked && (
-                <button
-                  onClick={() => setNameEditable(true)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-primary underline underline-offset-2"
-                  title="Klik om te wijzigen"
-                >
-                  Wijzigen
-                </button>
-              )}
-            </div>
+            <input
+              type={f.type}
+              value={answers[f.key]}
+              onChange={e => update(f.key, e.target.value)}
+              placeholder={f.placeholder}
+              className={inputCls}
+            />
             {f.key === 'email' && answers.email && !isValidEmail(answers.email) && (
               <p className="text-[11px] text-destructive mt-1">Vul een geldig e-mailadres in</p>
             )}
@@ -588,7 +570,7 @@ export default function ProspectSurvey() {
 
   // ── Survey form ─────────────────────────────────────────────────────────────
   const isLastStep = step === TOTAL_STEPS - 1;
-  const isFirstVisibleStep = contactLoaded ? step <= 1 : step === 0;
+  const isFirstVisibleStep = step === 0;
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'linear-gradient(135deg, #f8fffe 0%, #e8f5f3 100%)' }}>
@@ -627,7 +609,7 @@ export default function ProspectSurvey() {
 
             <div className="flex justify-between items-center">
               <button
-                onClick={() => setStep(s => Math.max(contactLoaded ? 1 : 0, s - 1))}
+                onClick={() => setStep(s => Math.max(0, s - 1))}
                 disabled={isFirstVisibleStep}
                 className={cn(
                   'px-5 py-2.5 rounded-xl text-[14px] font-semibold transition-all',
