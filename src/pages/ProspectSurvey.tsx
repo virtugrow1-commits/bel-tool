@@ -139,14 +139,17 @@ export default function ProspectSurvey() {
         });
         if (!error && data?.contact) {
           const c = data.contact;
+          const fullName = c.name ||
+            [c.firstName, c.lastName].filter(Boolean).join(' ').trim() ||
+            c.contactName || '';
           setAnswers((prev) => ({
             ...prev,
-            naam: c.contactName || c.name || '',
-            email: c.email || '',
+            naam:     fullName,
+            email:    c.email || '',
             telefoon: c.phone || '',
-            bedrijf: c.companyName || ''
+            bedrijf:  c.companyName || c.company || '',
           }));
-          setContactLoaded(true);
+          if (fullName) setContactLoaded(true);
           setStep(1); // Skip contact info step — data already loaded from GHL
         }
       } catch {
@@ -488,14 +491,20 @@ export default function ProspectSurvey() {
     { key: 'telefoon' as const, label: 'Telefoonnummer', placeholder: '06 12345678', type: 'tel' }].
     map((f) =>
     <div key={f.key}>
-          <label className="text-[12px] font-semibold text-foreground/70 mb-1 block">{f.label}</label>
+          <label className="text-[12px] font-semibold text-foreground/70 mb-1 flex items-center gap-2">
+            {f.label}
+            {contactLoaded && f.key === 'naam' && !!answers.naam && (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">✓ automatisch ingevuld</span>
+            )}
+          </label>
           <input
         type={f.type}
         value={answers[f.key]}
         onChange={(e) => update(f.key, e.target.value)}
         placeholder={f.placeholder}
         className="w-full px-4 py-3 rounded-xl border border-border bg-card text-foreground text-[15px] outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
-        readOnly={contactLoaded && (f.key === 'naam' || f.key === 'bedrijf')} />
+        readOnly={contactLoaded && f.key === 'naam' && !!answers.naam}
+        style={contactLoaded && f.key === 'naam' && !!answers.naam ? { background: 'hsl(var(--muted)/0.5)', cursor: 'default' } : {}} />
       
         </div>
     )}
