@@ -7,7 +7,7 @@ import { USERS, type User } from '@/lib/beltool-data';
  * Falls back to hardcoded USERS if the profiles table is empty or unavailable.
  */
 export function useTeamProfiles() {
-  const [profiles, setProfiles] = useState<User[]>(USERS);
+  const [profiles, setProfiles] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchProfiles = useCallback(async () => {
@@ -15,14 +15,14 @@ export function useTeamProfiles() {
     try {
       const { data, error } = await (supabase as any)
         .from('profiles')
-        .select('*')
+        .select('*, organizations(name)')
         .order('name');
 
       if (error) {
-        console.warn('[TeamProfiles] Fetch failed, using fallback:', error.message);
-        setProfiles(USERS);
-      } else if (data && data.length > 0) {
-        setProfiles(data.map((row: any) => ({
+        console.warn('[TeamProfiles] Fetch failed:', error.message);
+        setProfiles([]);
+      } else {
+        setProfiles((data || []).map((row: any) => ({
           id: row.id,
           name: row.name,
           email: row.email,
@@ -30,13 +30,11 @@ export function useTeamProfiles() {
           avatar: row.avatar,
           deviceId: row.device_id || '',
           organizationId: row.organization_id || undefined,
+          organizationName: row.organizations?.name || undefined,
         })));
-      } else {
-        // Empty profiles table — use fallback
-        setProfiles(USERS);
       }
     } catch {
-      setProfiles(USERS);
+      setProfiles([]);
     } finally {
       setLoading(false);
     }
