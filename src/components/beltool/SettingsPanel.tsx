@@ -7,6 +7,7 @@ import { store } from '@/lib/beltool-store';
 import { cliq } from '@/lib/beltool-ghl';
 import { cn } from '@/lib/utils';
 import { useAdvisors } from '@/hooks/useAdvisors';
+import { useOrganizations } from '@/hooks/useOrganizations';
 import type { SelectOption } from '@/types/beltool';
 
 const DEFAULT_CUSTOM_FIELDS = [
