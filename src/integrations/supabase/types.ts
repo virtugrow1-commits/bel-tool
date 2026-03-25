@@ -50,6 +50,36 @@ export type Database = {
         }
         Relationships: []
       }
+      organizations: {
+        Row: {
+          created_at: string
+          ghl_api_key: string | null
+          ghl_location_id: string | null
+          id: string
+          logo_url: string | null
+          name: string
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          ghl_api_key?: string | null
+          ghl_location_id?: string | null
+          id?: string
+          logo_url?: string | null
+          name: string
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          ghl_api_key?: string | null
+          ghl_location_id?: string | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          slug?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar: string | null
@@ -58,6 +88,7 @@ export type Database = {
           email: string
           id: string
           name: string
+          organization_id: string | null
           role: string
         }
         Insert: {
@@ -67,6 +98,7 @@ export type Database = {
           email: string
           id?: string
           name: string
+          organization_id?: string | null
           role?: string
         }
         Update: {
@@ -76,9 +108,74 @@ export type Database = {
           email?: string
           id?: string
           name?: string
+          organization_id?: string | null
           role?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_scores: {
+        Row: {
+          afgevallen: number
+          afspraken: number
+          best_reeks: number
+          callbacks: number
+          enquetes: number
+          gebeld: number
+          geen_gehoor: number
+          id: string
+          organization_id: string | null
+          score_date: string
+          updated_at: string
+          user_id: string
+          verstuurd: number
+        }
+        Insert: {
+          afgevallen?: number
+          afspraken?: number
+          best_reeks?: number
+          callbacks?: number
+          enquetes?: number
+          gebeld?: number
+          geen_gehoor?: number
+          id?: string
+          organization_id?: string | null
+          score_date?: string
+          updated_at?: string
+          user_id: string
+          verstuurd?: number
+        }
+        Update: {
+          afgevallen?: number
+          afspraken?: number
+          best_reeks?: number
+          callbacks?: number
+          enquetes?: number
+          gebeld?: number
+          geen_gehoor?: number
+          id?: string
+          organization_id?: string | null
+          score_date?: string
+          updated_at?: string
+          user_id?: string
+          verstuurd?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_scores_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
