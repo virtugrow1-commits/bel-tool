@@ -40,6 +40,11 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
 }) {
   const { lang, setLang, user, allScores, setAllScores, webhooks, setWebhooks, apiKey, setApiKey, t, surveyConfig, setSurveyConfig, cliqConfig, setCliqConfig } = useBelTool();
   const { advisors, loading: advisorsLoading, refresh: refreshAdvisors } = useAdvisors();
+  const { organizations, createOrg, updateOrg } = useOrganizations();
+  const [newOrgName, setNewOrgName] = useState('');
+  const [newOrgSlug, setNewOrgSlug] = useState('');
+  const [newOrgApiKey, setNewOrgApiKey] = useState('');
+  const [newOrgLocationId, setNewOrgLocationId] = useState('');
   const [tab, setTab] = useState('cliq');
   const [confirmReset, setConfirmReset] = useState<string | null>(null);
   const [newWh, setNewWh] = useState('');
