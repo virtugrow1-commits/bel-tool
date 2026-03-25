@@ -82,6 +82,7 @@ Team CliqMakers`,
     description: 'Na niet bereikt — kort bericht met enquête-link',
     channels: ['whatsapp', 'sms'],
     ghlTemplateName: 'geen_gehoor_eerste_poging',
+    ghlPlaceholderKeys: ['voornaam', 'enqueteLink'],
     body: `Hallo {voornaam}, ik probeerde u zojuist te bereiken namens CliqMakers. We doen een kort onderzoek naar tijdverlies in het MKB. Wilt u de 4 vragen even digitaal invullen? Kost maar 2 minuten: {enqueteLink}`,
   },
   {
