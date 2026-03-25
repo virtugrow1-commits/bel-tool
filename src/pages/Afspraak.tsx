@@ -194,11 +194,69 @@ export default function Afspraak() {
         notes: contact.opmerking || undefined,
       });
 
-      // Add note
-      await callGHL('createNote', {
-        contactId,
-        body: `📅 Afspraak ingepland via website\n🗓️ ${format(parse(selectedDate, 'yyyy-MM-dd', new Date()), 'd MMMM yyyy', { locale: nl })} om ${selectedTime}\n💬 ${contact.opmerking || '-'}`,
-      });
+      const dateFormatted = format(parse(selectedDate, 'yyyy-MM-dd', new Date()), 'd MMMM yyyy', { locale: nl });
+
+      // Parallel GHL sync: note + tag + custom fields + pipeline stage
+      await Promise.allSettled([
+        // Note
+        callGHL('createNote', {
+          contactId,
+          body: `📅 Afspraak ingepland via website\n🗓️ ${dateFormatted} om ${selectedTime}\n📍 Google Meet\n💬 ${contact.opmerking || '-'}`,
+        }),
+        // Tags
+        callGHL('addTag', {
+          contactId,
+          tags: ['beltool-afspraak-gepland', 'appointment-booked'],
+        }),
+        // Custom fields
+        callGHL('saveCustomFields', {
+          contactId,
+          customFields: [
+            { id: 'beltool_appointment_status', field_value: 'booked' },
+            { id: 'beltool_appointment_date',   field_value: selectedDate },
+            { id: 'beltool_lead_status',         field_value: 'appointment_booked' },
+            { id: 'beltool_callback_required',   field_value: 'false' },
+          ],
+        }),
+        // Move opportunity to "Afspraak Gepland" pipeline stage
+        (async () => {
+          try {
+            const pd = await callGHL('getPipelines');
+            const pipeline = (pd?.pipelines || []).find((p: { name: string }) =>
+              p.name.toLowerCase().includes('bellen')
+            );
+            const stage = pipeline?.stages?.find((s: { name: string }) =>
+              s.name.toLowerCase().includes('afspraak') &&
+              (s.name.toLowerCase().includes('gepland') || s.name.toLowerCase().includes('geboekt'))
+            );
+            if (pipeline && stage) {
+              await callGHL('upsertOpportunity', {
+                contactId,
+                pipelineId: pipeline.id,
+                stageId:    stage.id,
+                name:       `${contact.bedrijf || contact.naam} — Afspraak`,
+              });
+            }
+          } catch (e) {
+            console.warn('[Afspraak] Pipeline update mislukt:', e);
+          }
+        })(),
+      ]);
+
+      // Write to call_sessions so bel-tool Realtime notifier fires
+      try {
+        await supabase.from('call_sessions' as any).insert({
+          contact_id:       contactId,
+          company_id:       '',
+          company_name:     contact.bedrijf || '',
+          contact_name:     contact.naam,
+          phone:            contact.telefoon || '',
+          caller_name:      'Zelfgeboekt (website)',
+          result:           'afspraak',
+          notes:            `Afspraak: ${selectedDate} ${selectedTime}`,
+          ghl_synced:       true,
+        });
+      } catch { /* non-critical */ }
 
       setStep('done');
     } catch (err: unknown) {

@@ -4,6 +4,7 @@ import { useCallFlow } from '@/hooks/useCallFlow';
 import { useCallbacks } from '@/hooks/useCallbacks';
 import { useScoring } from '@/hooks/useScoring';
 import { useIncomingCalls } from '@/hooks/useIncomingCalls';
+import { useAppointmentNotifier } from '@/hooks/useAppointmentNotifier';
 import { useSettings } from '@/hooks/useSettings';
 import { useFlash } from '@/hooks/useFlash';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
@@ -206,6 +207,15 @@ export default function BelTool() {
     activeCallId,
     setCallState,
     flash,
+  });
+
+  // Realtime: afspraken geboekt via publieke pagina → update bel-tool live
+  useAppointmentNotifier({
+    user,
+    companies,
+    updateCompStage,
+    flash,
+    reloadLeads,
   });
 
   // Keyboard shortcuts (proper hook, no DOM queries)
