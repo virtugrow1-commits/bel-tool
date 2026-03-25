@@ -39,7 +39,7 @@ const AI_OPTIES = [
   { value: 'Komt niet aan toe', label: 'Nee, door de waan van de dag',           icon: '😅' },
 ];
 
-const BOOKING_URL = 'https://link.cliqcrm.nl/widget/bookings/sales-afspraken';
+const BOOKING_URL = 'https://adviesgesprekken.cliqmakers.nl';
 
 /* ─── Helpers ────────────────────────────────────────────────────────────────── */
 const isValidContactId = (v?: string) =>
@@ -161,7 +161,10 @@ export default function ProspectSurvey() {
 
           if (fullName) {
             setContactLoaded(true);
-            // Always stay on step 0 so user can verify prefilled data
+            // Skip stap 0 automatisch als naam én email al bekend zijn vanuit GHL
+            if (fullName && c.email) {
+              setStep(1);
+            }
           }
         }
       })
@@ -359,8 +362,8 @@ export default function ProspectSurvey() {
   // We tonen TOTAL_STEPS - (contactLoaded ? 1 : 0) in de progressbar
   // zodat de balk klopt.
   const TOTAL_STEPS  = 5;
-  const displayTotal = TOTAL_STEPS;
-  const displayStep  = step;
+  const displayTotal = contactLoaded ? TOTAL_STEPS - 1 : TOTAL_STEPS;
+  const displayStep  = contactLoaded ? Math.max(0, step - 1) : step;
 
   const inputCls = 'w-full px-4 py-3 rounded-xl border border-border bg-card text-foreground text-[15px] outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all placeholder:text-muted-foreground/50';
 
@@ -570,7 +573,7 @@ export default function ProspectSurvey() {
 
   // ── Survey form ─────────────────────────────────────────────────────────────
   const isLastStep = step === TOTAL_STEPS - 1;
-  const isFirstVisibleStep = step === 0;
+  const isFirstVisibleStep = contactLoaded ? step <= 1 : step === 0;
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'linear-gradient(135deg, #f8fffe 0%, #e8f5f3 100%)' }}>
@@ -609,7 +612,7 @@ export default function ProspectSurvey() {
 
             <div className="flex justify-between items-center">
               <button
-                onClick={() => setStep(s => Math.max(0, s - 1))}
+                onClick={() => setStep(s => Math.max(contactLoaded ? 1 : 0, s - 1))}
                 disabled={isFirstVisibleStep}
                 className={cn(
                   'px-5 py-2.5 rounded-xl text-[14px] font-semibold transition-all',
