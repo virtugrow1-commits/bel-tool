@@ -51,17 +51,22 @@ Met vriendelijke groet,
     description: 'Stuur de 4-vragen enquête via link',
     channels: ['whatsapp', 'sms', 'email'],
     ghlTemplateName: 'enquete_digitaal_sturen',
-    subject: 'Kort onderzoek voor {bedrijf} — CliqMakers',
+    subject: 'Praktijkonderzoek — CliqMakers',
     body: `Hallo {voornaam},
 
-Bedankt voor het korte gesprek. Zoals afgesproken stuur ik u de 4 vragen digitaal toe. Het kost maar 2 minuten:
+Zoals zojuist besproken stuur ik u hierbij de link naar ons praktijkonderzoek:
 
 {enqueteLink}
 
-Na het invullen nemen we contact op voor een vrijblijvend adviesgesprek.
+in de behoeften en uitdagingen van ondernemers.
 
-Groet,
-{beller} — CliqMakers`,
+Alvast hartelijk dank voor uw tijd!
+
+Met vriendelijke groet,
+
+{beller}
+
+Team CliqMakers`,
   },
   {
     id: 'opvolg-geen-gehoor',
