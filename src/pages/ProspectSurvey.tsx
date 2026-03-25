@@ -148,6 +148,7 @@ export default function ProspectSurvey() {
           }));
           setContactLoaded(true);
           setStep(1); // Skip contact info step — data already loaded from GHL
+        }
       } catch {
 
 
