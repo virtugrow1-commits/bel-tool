@@ -440,6 +440,7 @@ serve(async (req) => {
             ...(params.subject ? { subject: params.subject } : {}),
             ...(params.html ? { html: params.html } : {}),
             ...(params.templateId ? { templateId: params.templateId } : {}),
+            ...(params.templateName ? { templateName: params.templateName } : {}),
           }),
         });
         if (!res.ok) throw new Error(`GHL send message error [${res.status}]: ${await res.text()}`);

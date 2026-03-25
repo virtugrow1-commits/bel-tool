@@ -10,6 +10,8 @@ export interface MessageTemplate {
   body: string;
   /** Email subject (only for email channel) */
   subject?: string;
+  /** GHL WhatsApp template name (for approved template sending) */
+  ghlTemplateName?: string;
 }
 
 export const MESSAGE_TEMPLATES: MessageTemplate[] = [
@@ -19,6 +21,7 @@ export const MESSAGE_TEMPLATES: MessageTemplate[] = [
     icon: '📋',
     description: 'Na telefonische enquête — samenvatting + booking-link',
     channels: ['whatsapp', 'email'],
+    ghlTemplateName: 'opvolging_na_enquete',
     subject: 'Bedankt voor uw tijd, {voornaam} — uw gratis adviesgesprek',
     body: `Hallo {voornaam},
 
@@ -38,6 +41,7 @@ Met vriendelijke groet,
     icon: '⏰',
     description: 'Prospect had interesse maar geen tijd voor enquête',
     channels: ['whatsapp', 'sms'],
+    ghlTemplateName: 'had_interesse_geen_tijd',
     body: `Hallo {voornaam}, u sprak met {beller} van CliqMakers. Fijn dat u geïnteresseerd bent! Hier is de link om direct een gratis adviesgesprek in te plannen op een moment dat u uitkomt: {bookingLink}`,
   },
   {
@@ -46,6 +50,7 @@ Met vriendelijke groet,
     icon: '📋',
     description: 'Stuur de 4-vragen enquête via link',
     channels: ['whatsapp', 'sms', 'email'],
+    ghlTemplateName: 'enquete_digitaal_sturen',
     subject: 'Kort onderzoek voor {bedrijf} — CliqMakers',
     body: `Hallo {voornaam},
 
@@ -64,6 +69,7 @@ Groet,
     icon: '📵',
     description: 'Na niet bereikt — kort bericht met enquête-link',
     channels: ['whatsapp', 'sms'],
+    ghlTemplateName: 'geen_gehoor_eerste_poging',
     body: `Hallo {voornaam}, ik probeerde u zojuist te bereiken namens CliqMakers. We doen een kort onderzoek naar tijdverlies in het MKB. Wilt u de 4 vragen even digitaal invullen? Kost maar 2 minuten: {enqueteLink}`,
   },
   {
@@ -72,6 +78,7 @@ Groet,
     icon: '📅',
     description: 'Alleen de booking-link, kort en krachtig',
     channels: ['whatsapp', 'sms'],
+    ghlTemplateName: 'booking_link_sturen',
     body: `Hallo {voornaam}, hier is de link om uw gratis adviesgesprek in te plannen: {bookingLink} — Groet, {beller} (CliqMakers)`,
   },
   {
@@ -80,6 +87,7 @@ Groet,
     icon: '🎉',
     description: 'Bevestiging dat de afspraak is ingepland',
     channels: ['whatsapp', 'email'],
+    ghlTemplateName: 'bevestiging_na_afspraak',
     subject: 'Uw adviesgesprek is bevestigd, {voornaam}',
     body: `Hallo {voornaam},
 
@@ -96,6 +104,7 @@ Tot snel!
     icon: '🔔',
     description: 'Vooraankondiging dat je morgen belt',
     channels: ['whatsapp', 'sms'],
+    ghlTemplateName: 'herinnering_terugbelafspraak',
     body: `Hallo {voornaam}, even een kort berichtje: ik bel u morgen kort terug zoals afgesproken, namens CliqMakers. Tot dan! — {beller}`,
   },
 ];
