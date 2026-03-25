@@ -437,23 +437,32 @@ serve(async (req) => {
         const messageBody: Record<string, unknown> = {
           type: params.type || 'WhatsApp',
           contactId: params.contactId,
-          message: params.message,
           ...(params.subject ? { subject: params.subject } : {}),
           ...(params.html ? { html: params.html } : {}),
         };
 
-        // For WhatsApp templates: use the whatsapp object format required by GHL
-        // This is needed to send messages outside the 24-hour window
         if (hasTemplate) {
-          messageBody.whatsapp = {
-            type: 'template',
-            template: {
-              name: params.templateName,
-              lang: params.templateLang || 'nl',
-            },
-            placeholders: params.placeholders || { body: [] },
-          };
+          // GHL requires contentType + templateName for WhatsApp template messages
+          messageBody.contentType = 'template';
+          messageBody.templateName = params.templateName;
+
+          const bodyParams: string[] = params.placeholders?.body || [];
+          if (bodyParams.length > 0) {
+            messageBody.components = [
+              {
+                type: 'body',
+                parameters: bodyParams.map((text: string) => ({
+                  type: 'text',
+                  text,
+                })),
+              },
+            ];
+          }
+        } else {
+          messageBody.message = params.message;
         }
+
+        console.log('[GHL Proxy] sendMessage payload:', JSON.stringify(messageBody));
 
         const res = await fetchGHL(`${GHL_BASE}/conversations/messages`, {
           method: 'POST', headers: ghlHeaders,
