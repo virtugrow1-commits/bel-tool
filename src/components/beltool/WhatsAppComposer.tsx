@@ -81,7 +81,8 @@ export function WhatsAppComposer({ contact, company, callerName, answers, bookin
 
     try {
       if (effectiveChannel === 'whatsapp') {
-        const result = await cliq.sendWhatsAppMessage(contact.id, renderedMessage, template.ghlTemplateName);
+        const placeholders = buildPlaceholders(template, vars);
+        const result = await cliq.sendWhatsAppMessage(contact.id, renderedMessage, template.ghlTemplateName, placeholders);
         if (!result.success) throw new Error('WhatsApp verzending mislukt');
       } else if (effectiveChannel === 'sms') {
         const result = await cliq.sendSMS(contact.id, renderedMessage);
