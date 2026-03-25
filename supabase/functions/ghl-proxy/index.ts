@@ -441,13 +441,10 @@ serve(async (req) => {
           ...(params.html ? { html: params.html } : {}),
         };
 
-        // Always include the message field — GHL requires it even for template messages
-        if (params.message) {
-          messageBody.message = params.message;
-        }
-
         if (hasTemplate) {
-          // GHL requires contentType + templateName for WhatsApp template messages
+          // For WhatsApp templates: do NOT include 'message' field.
+          // GHL sends the template content itself; adding 'message' causes
+          // a free-form send attempt that fails outside the 24h window.
           messageBody.contentType = 'template';
           messageBody.templateName = params.templateName;
 
@@ -462,6 +459,11 @@ serve(async (req) => {
                 })),
               },
             ];
+          }
+        } else {
+          // Non-template messages: include the message field
+          if (params.message) {
+            messageBody.message = params.message;
           }
         }
 
