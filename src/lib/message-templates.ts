@@ -50,6 +50,7 @@ Met vriendelijke groet,
     icon: '📋',
     description: 'Stuur de 4-vragen enquête via link',
     channels: ['whatsapp', 'sms', 'email'],
+    ghlTemplateName: 'enquete_digitaal_sturen',
     subject: 'Kort onderzoek voor {bedrijf} — CliqMakers',
     body: `Hallo {voornaam},
 
