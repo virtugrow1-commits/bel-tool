@@ -43,8 +43,8 @@ export function LoginScreen({ onLogin, onResetPassword, loading }: LoginScreenPr
           </div>
           <div className="text-[13px] text-white/40 mt-1.5">
             {mode === 'reset'
-              ? 'We sturen een reset-link naar je email'
-              : 'Log in om te starten met bellen'}
+              ? 'Neem contact op met de beheerder'
+              : 'Log in met je GHL account email'}
           </div>
         </div>
 
