@@ -38,7 +38,7 @@ async function upsertDayScore(userId: string, scores: Scores) {
   }
 }
 
-export function useScoring(user: User | null) {
+export function useScoring(user: User | null, organizationId?: string) {
   const [allScores, setAllScores] = useState<Record<string, Scores>>(() => {
     const s = store.get<Record<string, Scores>>('scores', {});
     USERS.forEach(u => { if (!s[u.id]) s[u.id] = initScores(); });
