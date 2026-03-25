@@ -106,7 +106,7 @@ export function useScoring(user: User | null, organizationId?: string) {
 
       return next;
     });
-  }, [user]);
+  }, [user, organizationId]);
 
   return {
     scores,

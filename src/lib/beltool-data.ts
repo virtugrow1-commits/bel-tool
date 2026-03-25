@@ -1,5 +1,14 @@
 import type { Company, CompanyContact, SurveyConfig } from '@/types/beltool';
 
+export interface Organization {
+  id: string;
+  name: string;
+  slug: string;
+  ghl_api_key?: string;
+  ghl_location_id?: string;
+  logo_url?: string;
+}
+
 export interface User {
   id: string;
   name: string;
@@ -7,6 +16,8 @@ export interface User {
   role: 'admin' | 'caller' | 'manager';
   avatar: string;
   deviceId?: string;
+  organizationId?: string;
+  organizationName?: string;
 }
 
 export interface Advisor {
