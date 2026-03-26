@@ -129,6 +129,7 @@ export function useCallbacks(currentUserId?: string) {
       const due = callbacks.find(cb =>
         cb.status === 'scheduled' &&
         !dismissedIds.has(cb.id) &&
+        (!cb.userId || !currentUserId || cb.userId === currentUserId) &&
         (cb.date < nowStr || (cb.date === nowStr && cb.time <= nowTime))
       );
 
