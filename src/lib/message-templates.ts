@@ -180,7 +180,8 @@ export function renderSubject(
   vars: { voornaam: string }
 ): string {
   return (template.subject || '')
-    .replace(/\{voornaam\}/g, vars.voornaam || '[Naam]');
+    .replace(/\{voornaam\}/g, vars.voornaam || '[Naam]')
+    .replace(/\{brandName\}/g, vars.brandName || 'CliqMakers');
 }
 
 /**
