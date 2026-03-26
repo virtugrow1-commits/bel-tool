@@ -88,6 +88,7 @@ export default function BelTool() {
     addScore,
     pipelineInfo: leads.pipelineInfo,
     stageMap: leads.stageMap,
+    organizationId: user?.organizationId,
   });
 
   const {

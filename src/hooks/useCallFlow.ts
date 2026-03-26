@@ -192,7 +192,7 @@ export function useCallFlow({
     if (callIdToHangup) {
       try {
         await supabase.functions.invoke('voys-call', {
-          body: { action: 'hangup', callId: callIdToHangup },
+          body: { action: 'hangup', callId: callIdToHangup, ...(organizationId ? { organizationId } : {}) },
         });
       } catch (err) {
         console.error('Voys hangup failed (call may already be ended):', err);
