@@ -41,7 +41,7 @@ function entryToRow(cb: Omit<CallbackEntry, 'id' | 'userId'>, userId?: string) {
 
 let _localSeq = Date.now();
 
-export function useCallbacks() {
+export function useCallbacks(currentUserId?: string) {
   const [callbacks, setCallbacks] = useState<CallbackEntry[]>(() =>
     store.get<CallbackEntry[]>('callbacks', [])
   );
@@ -129,6 +129,7 @@ export function useCallbacks() {
       const due = callbacks.find(cb =>
         cb.status === 'scheduled' &&
         !dismissedIds.has(cb.id) &&
+        (!cb.userId || !currentUserId || cb.userId === currentUserId) &&
         (cb.date < nowStr || (cb.date === nowStr && cb.time <= nowTime))
       );
 
