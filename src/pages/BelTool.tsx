@@ -65,6 +65,7 @@ export default function BelTool() {
   const { scores, convRate, addScore, allScores, setAllScores, setContactInfo } = scoring;
   const sfx = useSoundEffects();
   const { advisors } = useAdvisors();
+  const { organizations } = useOrganizations();
 
   // Set current organization ID for all CLIQ calls
   useEffect(() => {
