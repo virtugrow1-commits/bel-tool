@@ -65,7 +65,7 @@ export function CallButton({ phoneNumber, leadId, leadName, deviceId, organizati
       }
 
       const { data, error } = await supabase.functions.invoke('voys-call', {
-        body: { phone: phoneNumber, leadId, leadName, ...(deviceId ? { deviceId } : {}) },
+        body: { phone: phoneNumber, leadId, leadName, ...(deviceId ? { deviceId } : {}), ...(organizationId ? { organizationId } : {}) },
       });
 
       if (error) throw new Error(error.message || 'Functie aanroep mislukt');

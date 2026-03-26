@@ -343,6 +343,7 @@ export function CallContent({
             leadId={activeContact.id}
             leadName={`${activeContact.firstName} ${activeContact.lastName}`}
             deviceId={user?.deviceId}
+            organizationId={organization?.id}
             onCallStarted={(callId) => { onStartDialing(callId); }}
           />
           {callState !== 'idle' && callState !== 'ended' && (
