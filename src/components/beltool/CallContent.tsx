@@ -676,6 +676,7 @@ export function CallContent({
         onHangup={onHangup}
         onConfirmConnected={onConfirmConnected}
         activeCallId={activeCallId}
+        organizationId={organization?.id}
       />
     </>
   );

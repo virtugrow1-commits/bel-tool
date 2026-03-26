@@ -73,7 +73,8 @@ export function useCallFlow({
   addScore,
   pipelineInfo,
   stageMap,
-}: UseCallFlowOptions) {
+  organizationId,
+}: UseCallFlowOptions & { organizationId?: string }) {
   const [activeCompId,    setActiveCompId]    = useState<string | null>(null);
   const [activeContactId, setActiveContactId] = useState<string | null>(null);
   const [expandedComp,    setExpandedComp]    = useState<string | null>(null);
@@ -191,7 +192,7 @@ export function useCallFlow({
     if (callIdToHangup) {
       try {
         await supabase.functions.invoke('voys-call', {
-          body: { action: 'hangup', callId: callIdToHangup },
+          body: { action: 'hangup', callId: callIdToHangup, ...(organizationId ? { organizationId } : {}) },
         });
       } catch (err) {
         console.error('Voys hangup failed (call may already be ended):', err);
@@ -203,7 +204,7 @@ export function useCallFlow({
     }
 
     setTimeout(() => setCallState('idle'), 1500);
-  }, [activeCallId, activeContactId]);
+  }, [activeCallId, activeContactId, organizationId]);
 
   // ── endCall ────────────────────────────────────────────────────────────────
   const endCall = useCallback((
