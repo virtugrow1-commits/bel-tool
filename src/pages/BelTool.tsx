@@ -39,6 +39,7 @@ import { AutoDialCountdown } from '@/components/beltool/AutoDialCountdown';
 import { WhatsAppComposer } from '@/components/beltool/WhatsAppComposer';
 import { useSoundEffects } from '@/hooks/useSoundEffects';
 import { useAdvisors } from '@/hooks/useAdvisors';
+import { useOrganizations } from '@/hooks/useOrganizations';
 import { recordAttempt, smartSort, getAttemptCount, loadAttemptCache } from '@/lib/smart-queue';
 
 function normalizeEmail(email?: string) {
