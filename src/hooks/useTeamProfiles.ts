@@ -6,17 +6,24 @@ import { USERS, type User } from '@/lib/beltool-data';
  * Fetches team profiles from Supabase.
  * Falls back to hardcoded USERS if the profiles table is empty or unavailable.
  */
-export function useTeamProfiles() {
+export function useTeamProfiles(organizationId?: string) {
   const [profiles, setProfiles] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchProfiles = useCallback(async () => {
     setLoading(true);
     try {
-      const { data, error } = await (supabase as any)
+      let query = (supabase as any)
         .from('profiles')
         .select('*, organizations(name)')
         .order('name');
+
+      // Filter by organization if provided
+      if (organizationId) {
+        query = query.eq('organization_id', organizationId);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         console.warn('[TeamProfiles] Fetch failed:', error.message);
@@ -38,7 +45,7 @@ export function useTeamProfiles() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [organizationId]);
 
   useEffect(() => {
     fetchProfiles();

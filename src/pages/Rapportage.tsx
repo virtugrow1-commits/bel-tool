@@ -334,6 +334,7 @@ export default function Rapportage() {
       .from('user_scores')
       .select('*')
       .order('score_date', { ascending: false });
+    if (orgId) scoreQuery = scoreQuery.eq('organization_id', orgId);
     if (period === 'today') scoreQuery = scoreQuery.eq('score_date', new Date().toISOString().split('T')[0]);
 
     Promise.all([sessionQuery, scoreQuery])
