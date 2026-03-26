@@ -17,6 +17,7 @@ interface CallButtonProps {
   leadId:         string;
   leadName:       string;
   deviceId?:      string;
+  organizationId?: string;
   onCallStarted?: (callId: string) => void;
   className?:     string;
 }
