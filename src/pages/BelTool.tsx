@@ -15,6 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { store } from '@/lib/beltool-store';
 import { cliq } from '@/lib/beltool-ghl';
+import { setCurrentOrganizationId } from '@/lib/beltool-ghl';
 import { fmtDate } from '@/lib/beltool-data';
 import { BelToolContext } from '@/contexts/BelToolContext';
 import { ContactSidebar } from '@/components/beltool/ContactSidebar';
