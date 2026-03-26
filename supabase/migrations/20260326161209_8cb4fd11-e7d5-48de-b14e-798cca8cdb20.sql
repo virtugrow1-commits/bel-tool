@@ -1,0 +1,1 @@
+UPDATE organizations SET voys_email = 'bart@hubomedia.nl' WHERE slug = 'future-media';
