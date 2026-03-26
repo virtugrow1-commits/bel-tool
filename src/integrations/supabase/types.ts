@@ -52,31 +52,43 @@ export type Database = {
       }
       organizations: {
         Row: {
+          booking_link: string | null
+          brand_name: string | null
           created_at: string
+          enquete_link: string | null
           ghl_api_key: string | null
           ghl_location_id: string | null
           id: string
           logo_url: string | null
           name: string
           slug: string
+          whatsapp_templates: Json | null
         }
         Insert: {
+          booking_link?: string | null
+          brand_name?: string | null
           created_at?: string
+          enquete_link?: string | null
           ghl_api_key?: string | null
           ghl_location_id?: string | null
           id?: string
           logo_url?: string | null
           name: string
           slug: string
+          whatsapp_templates?: Json | null
         }
         Update: {
+          booking_link?: string | null
+          brand_name?: string | null
           created_at?: string
+          enquete_link?: string | null
           ghl_api_key?: string | null
           ghl_location_id?: string | null
           id?: string
           logo_url?: string | null
           name?: string
           slug?: string
+          whatsapp_templates?: Json | null
         }
         Relationships: []
       }
