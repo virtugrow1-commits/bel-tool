@@ -2,7 +2,7 @@ import { createContext, useContext } from 'react';
 import type { Translations } from '@/lib/beltool-i18n';
 import type { SurveyConfig, Webhook, CliqConfig } from '@/types/beltool';
 import type { Scores } from '@/lib/beltool-scoring';
-import type { User } from '@/lib/beltool-data';
+import type { User, Organization } from '@/lib/beltool-data';
 
 export interface BelToolContextValue {
   lang: string;
@@ -19,6 +19,7 @@ export interface BelToolContextValue {
   setSurveyConfig: React.Dispatch<React.SetStateAction<SurveyConfig>>;
   cliqConfig: CliqConfig;
   setCliqConfig: React.Dispatch<React.SetStateAction<CliqConfig>>;
+  organization: Organization | null;
 }
 
 export const BelToolContext = createContext<BelToolContextValue | null>(null);

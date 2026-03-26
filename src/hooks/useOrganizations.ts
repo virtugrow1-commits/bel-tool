@@ -24,6 +24,10 @@ export function useOrganizations() {
           ghl_api_key: row.ghl_api_key,
           ghl_location_id: row.ghl_location_id,
           logo_url: row.logo_url,
+          enquete_link: row.enquete_link,
+          booking_link: row.booking_link,
+          brand_name: row.brand_name,
+          whatsapp_templates: row.whatsapp_templates,
         })));
       }
     } catch {

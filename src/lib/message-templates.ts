@@ -128,7 +128,7 @@ hier is de link om uw gratis adviesgesprek in te plannen:
     ghlTemplateName: 'afspraak_bevestiging',
     ghlPlaceholderKeys: ['voornaam', 'datum', 'tijd', 'locatie'],
     body: `Hi {voornaam}
-Je afspraak met CliqMakers is ingepland.
+Je afspraak met {brandName} is ingepland.
 
 📅 Datum: {datum}
 
@@ -138,7 +138,7 @@ Je afspraak met CliqMakers is ingepland.
 
 We kijken ernaar uit om je te spreken!
 
-CliqMakers`,
+{brandName}`,
   },
 ];
 
