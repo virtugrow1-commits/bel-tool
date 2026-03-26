@@ -156,9 +156,11 @@ export function renderTemplate(
     datum?: string;
     tijd?: string;
     locatie?: string;
+    brandName?: string;
   }
 ): string {
   const surveyLink = vars.enqueteLink || `https://enquete.cliqmakers.nl/enquete/${vars.contactId || 'contact.id'}`;
+  const brand = vars.brandName || 'CliqMakers';
   return template.body
     .replace(/\{voornaam\}/g, vars.voornaam || '[Naam]')
     .replace(/\{bedrijf\}/g, vars.bedrijf || '[Bedrijf]')
@@ -166,9 +168,11 @@ export function renderTemplate(
     .replace(/\{uren\}/g, vars.uren || 'aanzienlijke uren')
     .replace(/\{taken\}/g, vars.taken || 'repetitieve taken')
     .replace(/\{enqueteLink\}/g, surveyLink)
+    .replace(/\{bookingLink\}/g, vars.bookingLink || 'https://adviesgesprekken.cliqmakers.nl/')
     .replace(/\{datum\}/g, vars.datum || '[Datum]')
     .replace(/\{tijd\}/g, vars.tijd || '[Tijd]')
-    .replace(/\{locatie\}/g, vars.locatie || '[Locatie]');
+    .replace(/\{locatie\}/g, vars.locatie || '[Locatie]')
+    .replace(/\{brandName\}/g, brand);
 }
 
 export function renderSubject(
