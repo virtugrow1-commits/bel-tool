@@ -65,6 +65,11 @@ export default function BelTool() {
   const sfx = useSoundEffects();
   const { advisors } = useAdvisors();
 
+  // Set current organization ID for all CLIQ calls
+  useEffect(() => {
+    setCurrentOrganizationId(user?.organizationId);
+  }, [user?.organizationId]);
+
   // Load smart-queue attempt cache from Supabase on login
   useEffect(() => {
     if (user) {
