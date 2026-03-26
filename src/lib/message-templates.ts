@@ -115,9 +115,9 @@ Hier is de link om direct een vrijblijvend adviesgesprek in te plannen op een mo
 
 hier is de link om uw gratis adviesgesprek in te plannen:  
 
-https://adviesgesprekken.cliqmakers.nl/
+{bookingLink}
 
- Groet, {beller} (CliqMakers)`,
+ Groet, {beller} ({brandName})`,
   },
   {
     id: 'afspraak-bevestiging',
