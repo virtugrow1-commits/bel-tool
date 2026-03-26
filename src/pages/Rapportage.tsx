@@ -303,6 +303,7 @@ export default function Rapportage() {
   const navigate = useNavigate();
   const currentUser: User | null = store.get('user', null);
   const localScores: Record<string, Scores> = store.get('scores', {});
+  const orgId = currentUser?.organizationId || null;
 
   const [period, setPeriod] = useState<'today' | 'week' | 'month' | 'all'>('today');
   const [sessions, setSessions] = useState<CallSession[]>([]);
