@@ -13,22 +13,23 @@ import type { User } from '@/lib/beltool-data';
 
 const TODAY = new Date().toISOString().split('T')[0];
 
-async function upsertDayScore(userId: string, scores: Scores) {
+async function upsertDayScore(userId: string, scores: Scores, organizationId?: string) {
   try {
     const { error } = await (supabase as any)
       .from('user_scores')
       .upsert({
-        user_id:    userId,
-        score_date: TODAY,
-        gebeld:     scores.gebeld,
-        enquetes:   scores.enquetes,
-        afspraken:  scores.afspraken,
-        verstuurd:  scores.verstuurd,
-        afgevallen: scores.afgevallen,
-        geen_gehoor: scores.geenGehoor,
-        callbacks:  scores.callbacks,
-        best_reeks: scores.bestReeks,
-        updated_at: new Date().toISOString(),
+        user_id:         userId,
+        score_date:      TODAY,
+        gebeld:          scores.gebeld,
+        enquetes:        scores.enquetes,
+        afspraken:       scores.afspraken,
+        verstuurd:       scores.verstuurd,
+        afgevallen:      scores.afgevallen,
+        geen_gehoor:     scores.geenGehoor,
+        callbacks:       scores.callbacks,
+        best_reeks:      scores.bestReeks,
+        updated_at:      new Date().toISOString(),
+        ...(organizationId ? { organization_id: organizationId } : {}),
       }, { onConflict: 'user_id,score_date' });
 
     if (error) throw error;
