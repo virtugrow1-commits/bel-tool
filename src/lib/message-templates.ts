@@ -36,7 +36,8 @@ Het invullen duurt slechts 2 minuten en helpt ons om zzp'ers en MKB beter te adv
 
 Alvast bedankt voor uw tijd!
 
-Met vriendelijke groet,`,
+Met vriendelijke groet,
+{brandName}`,
   },
   {
     id: 'stuur-enquete',
