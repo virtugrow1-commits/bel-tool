@@ -47,7 +47,7 @@ Met vriendelijke groet,
     channels: ['whatsapp', 'sms', 'email'],
     ghlTemplateName: 'enquete_digitaal_sturen',
     ghlPlaceholderKeys: ['voornaam', 'beller'],
-    subject: 'Uw praktijkonderzoek van CliqMakers',
+    subject: 'Uw praktijkonderzoek van {brandName}',
     body: `Hallo {voornaam},
 
 Zoals zojuist besproken stuur ik u hierbij de link naar ons praktijkonderzoek:
@@ -62,7 +62,7 @@ Met vriendelijke groet,
 
 {beller}
 
-Team CliqMakers`,
+Team {brandName}`,
   },
   {
     id: 'opvolg-enquete',
