@@ -46,7 +46,7 @@ async function isDNC(phone: string): Promise<boolean> {
   }
 }
 
-export function CallButton({ phoneNumber, leadId, leadName, deviceId, onCallStarted, className }: CallButtonProps) {
+export function CallButton({ phoneNumber, leadId, leadName, deviceId, organizationId, onCallStarted, className }: CallButtonProps) {
   const [state,    setState]    = useState<'idle' | 'loading' | 'success' | 'error' | 'dnc'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
 
