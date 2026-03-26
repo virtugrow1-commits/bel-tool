@@ -1,0 +1,1 @@
+ALTER TABLE incoming_calls ADD COLUMN IF NOT EXISTS organization_id uuid REFERENCES organizations(id);
