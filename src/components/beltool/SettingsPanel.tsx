@@ -812,16 +812,47 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
           {/* Existing orgs */}
           <div className="space-y-2">
             {organizations.map(org => (
-              <div key={org.id} className="p-4 rounded-xl bg-foreground/[0.02] border border-border/40">
-                <div className="flex items-center justify-between mb-2">
+              <details key={org.id} className="p-4 rounded-xl bg-foreground/[0.02] border border-border/40 group">
+                <summary className="flex items-center justify-between cursor-pointer">
                   <div className="font-semibold text-sm">{org.name}</div>
                   <span className="text-[10px] font-mono text-muted-foreground/40">{org.slug}</span>
+                </summary>
+                <div className="mt-3 space-y-2">
+                  <div className="text-[11px] text-muted-foreground/50">
+                    {org.ghl_api_key ? '🔗 GHL gekoppeld' : '⚠️ Geen GHL API key'}
+                    {org.ghl_location_id ? ` · Location: ${org.ghl_location_id.slice(0, 8)}...` : ''}
+                  </div>
+                  <div className="grid gap-2">
+                    <div>
+                      <label className="text-[11px] text-muted-foreground mb-1 block">Bedrijfsnaam (branding)</label>
+                      <input
+                        defaultValue={org.brand_name || ''}
+                        onBlur={e => updateOrg(org.id, { brand_name: e.target.value || undefined } as any)}
+                        placeholder={org.name}
+                        className={inputCls}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] text-muted-foreground mb-1 block">Enquête-link</label>
+                      <input
+                        defaultValue={org.enquete_link || ''}
+                        onBlur={e => updateOrg(org.id, { enquete_link: e.target.value || undefined } as any)}
+                        placeholder="https://enquete.bedrijf.nl/enquete/..."
+                        className={cn(inputCls, 'font-mono text-[11px]')}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] text-muted-foreground mb-1 block">Booking-link</label>
+                      <input
+                        defaultValue={org.booking_link || ''}
+                        onBlur={e => updateOrg(org.id, { booking_link: e.target.value || undefined } as any)}
+                        placeholder="https://adviesgesprekken.bedrijf.nl/"
+                        className={cn(inputCls, 'font-mono text-[11px]')}
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div className="text-[11px] text-muted-foreground/50">
-                  {org.ghl_api_key ? '🔗 GHL gekoppeld' : '⚠️ Geen GHL API key'}
-                  {org.ghl_location_id ? ` · Location: ${org.ghl_location_id.slice(0, 8)}...` : ''}
-                </div>
-              </div>
+              </details>
             ))}
           </div>
 
