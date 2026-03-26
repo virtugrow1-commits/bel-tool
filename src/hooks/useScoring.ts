@@ -92,18 +92,8 @@ export function useScoring(user: User | null, organizationId?: string) {
       const next = { ...prev, [user.id]: s };
       store.set('scores', next);
 
-      // Async Supabase sync (fire and forget)
-      upsertDayScore(user.id, s);
-      // Also sync organization_id if available
-      if (organizationId) {
-        (supabase as any)
-          .from('user_scores')
-          .update({ organization_id: organizationId })
-          .eq('user_id', user.id)
-          .eq('score_date', TODAY)
-          .then(() => {})
-          .catch(() => {});
-      }
+      // Async Supabase sync (fire and forget) — includes org_id
+      upsertDayScore(user.id, s, organizationId);
 
       return next;
     });
