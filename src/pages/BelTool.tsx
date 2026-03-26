@@ -43,6 +43,7 @@ import { useAdvisors } from '@/hooks/useAdvisors';
 import { useOrganizations } from '@/hooks/useOrganizations';
 import { recordAttempt, smartSort, getAttemptCount, loadAttemptCache } from '@/lib/smart-queue';
 
+
 function normalizeEmail(email?: string) {
   if (typeof email !== 'string') return '';
   const trimmed = email.trim();
