@@ -204,7 +204,7 @@ export function useCallFlow({
     }
 
     setTimeout(() => setCallState('idle'), 1500);
-  }, [activeCallId, activeContactId]);
+  }, [activeCallId, activeContactId, organizationId]);
 
   // ── endCall ────────────────────────────────────────────────────────────────
   const endCall = useCallback((
