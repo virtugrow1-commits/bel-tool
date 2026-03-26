@@ -99,7 +99,7 @@ export default function BelTool() {
     selectContact, startDialing, confirmConnected, hangup, endCall, nextContact,
   } = callFlow;
 
-  const callbacksHook = useCallbacks();
+  const callbacksHook = useCallbacks(user?.id);
   const { callbacks, showCallbackQueue, setShowCallbackQueue, callbackPopup, dueCallbacks, todayStr, scheduledCallbacks, saveCallback: rawSaveCallback, completeCallback: rawCompleteCallback, dismissPopup, clearPopup } = callbacksHook;
 
   // Derived state
