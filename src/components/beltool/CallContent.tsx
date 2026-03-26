@@ -279,73 +279,76 @@ export function CallContent({
   const stepIndex: Record<string, number> = { intro: 0, q1: 1, q2: 2, q3: 3, q4: 4, bridge: 5 };
   const currentStepNum = stepIndex[phase] ?? -1;
   const contactName = `${activeContact.firstName} ${activeContact.lastName}`;
-
-  // Idle screen — show scores in the center
-  if (phase === 'idle') {
-    return (
-      <div className="flex-1 flex flex-col items-center justify-center text-center gap-3 bg-background">
-        <div className="text-5xl">📞</div>
-        <div className="text-lg font-bold text-foreground/50 mt-4">{t.selectContact}</div>
-        <div className="text-[13px] text-muted-foreground mt-1.5">{t.clickName}</div>
-        <div className="animate-fade-in mt-6 bg-card rounded-2xl p-6 border border-border shadow-sm w-full max-w-lg">
-          <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-4 text-center">{t.sessionOverview || 'Sessie overzicht'}</div>
-          <div className="grid grid-cols-5 gap-4">
-            {[
-              { l: t.called, v: scores.gebeld, c: 'hsl(var(--navy))' },
-              { l: t.surveys, v: scores.enquetes, c: 'hsl(var(--primary))' },
-              { l: t.appointments, v: scores.afspraken, c: 'hsl(var(--success))' },
-              { l: t.conversion, v: scores.gebeld > 0 ? Math.round(((scores.enquetes + scores.afspraken) / scores.gebeld) * 100) + '%' : '0%', c: 'hsl(var(--warning))' },
-              { l: t.bestStreak, v: scores.bestReeks, c: 'hsl(var(--warning))' },
-            ].map(x => (
-              <div key={x.l} className="text-center">
-                <div className="text-[28px] font-extrabold leading-none" style={{ color: x.c }}>{x.v}</div>
-                <div className="text-[11px] text-muted-foreground mt-1.5">{x.l}</div>
-              </div>
-            ))}
-          </div>
-          {scores.reeks >= 2 && (
-            <div className="mt-4 text-center">
-              <span className="text-sm font-bold px-3 py-1 rounded-full bg-warning/10 text-warning border border-warning/20">🔥 {scores.reeks}x streak!</span>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-
-  return (
-    <>
-      {/* Top bar: contact + stats + quick notes */}
-      <div className="border-b border-border bg-card">
-        {/* Row 1: Contact info + call controls */}
-        <div className="flex items-center gap-3 px-5 py-2.5">
-          <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center font-bold text-[12px] flex-shrink-0 text-white">
-            {activeContact.firstName[0]}{activeContact.lastName[0]}
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="font-bold text-[14px] text-foreground">
-              {contactName} {activeContact.role && <span className="font-normal text-muted-foreground text-[12px]">• {activeContact.role}</span>}
-            </div>
-            <div className="text-[12px] text-muted-foreground">
-              {activeComp.name}
-            </div>
-          </div>
-          <div className="text-right mr-2 hidden sm:block">
-            <div className="text-[12px] text-foreground/70 font-mono tabular-nums">{activeContact.phone}</div>
-            <div className="text-[11px] text-muted-foreground">{activeContact.email}</div>
-          </div>
-          {onShowDetail && (
-            <button onClick={onShowDetail} className="w-8 h-8 rounded-lg bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors text-[13px] border border-border">ℹ️</button>
-          )}
-          <CallButton
-            phoneNumber={activeContact.phone}
-            leadId={activeContact.id}
-            leadName={`${activeContact.firstName} ${activeContact.lastName}`}
-            deviceId={user?.deviceId}
-            organizationId={organization?.id}
-            onCallStarted={(callId) => { onStartDialing(callId); }}
-          />
+  const trimmedUserDeviceId = user?.deviceId?.trim() || '';
+  const trimmedOrgDeviceId = organization?.voys_device_id?.trim() || '';
+  const resolvedDeviceId = trimmedUserDeviceId || trimmedOrgDeviceId || undefined;
+ 
+   // Idle screen — show scores in the center
+   if (phase === 'idle') {
+     return (
+       <div className="flex-1 flex flex-col items-center justify-center text-center gap-3 bg-background">
+         <div className="text-5xl">📞</div>
+         <div className="text-lg font-bold text-foreground/50 mt-4">{t.selectContact}</div>
+         <div className="text-[13px] text-muted-foreground mt-1.5">{t.clickName}</div>
+         <div className="animate-fade-in mt-6 bg-card rounded-2xl p-6 border border-border shadow-sm w-full max-w-lg">
+           <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-4 text-center">{t.sessionOverview || 'Sessie overzicht'}</div>
+           <div className="grid grid-cols-5 gap-4">
+             {[
+               { l: t.called, v: scores.gebeld, c: 'hsl(var(--navy))' },
+               { l: t.surveys, v: scores.enquetes, c: 'hsl(var(--primary))' },
+               { l: t.appointments, v: scores.afspraken, c: 'hsl(var(--success))' },
+               { l: t.conversion, v: scores.gebeld > 0 ? Math.round(((scores.enquetes + scores.afspraken) / scores.gebeld) * 100) + '%' : '0%', c: 'hsl(var(--warning))' },
+               { l: t.bestStreak, v: scores.bestReeks, c: 'hsl(var(--warning))' },
+             ].map(x => (
+               <div key={x.l} className="text-center">
+                 <div className="text-[28px] font-extrabold leading-none" style={{ color: x.c }}>{x.v}</div>
+                 <div className="text-[11px] text-muted-foreground mt-1.5">{x.l}</div>
+               </div>
+             ))}
+           </div>
+           {scores.reeks >= 2 && (
+             <div className="mt-4 text-center">
+               <span className="text-sm font-bold px-3 py-1 rounded-full bg-warning/10 text-warning border border-warning/20">🔥 {scores.reeks}x streak!</span>
+             </div>
+           )}
+         </div>
+       </div>
+     );
+   }
+ 
+ 
+   return (
+     <>
+       {/* Top bar: contact + stats + quick notes */}
+       <div className="border-b border-border bg-card">
+         {/* Row 1: Contact info + call controls */}
+         <div className="flex items-center gap-3 px-5 py-2.5">
+           <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center font-bold text-[12px] flex-shrink-0 text-white">
+             {activeContact.firstName[0]}{activeContact.lastName[0]}
+           </div>
+           <div className="flex-1 min-w-0">
+             <div className="font-bold text-[14px] text-foreground">
+               {contactName} {activeContact.role && <span className="font-normal text-muted-foreground text-[12px]">• {activeContact.role}</span>}
+             </div>
+             <div className="text-[12px] text-muted-foreground">
+               {activeComp.name}
+             </div>
+           </div>
+           <div className="text-right mr-2 hidden sm:block">
+             <div className="text-[12px] text-foreground/70 font-mono tabular-nums">{activeContact.phone}</div>
+             <div className="text-[11px] text-muted-foreground">{activeContact.email}</div>
+           </div>
+           {onShowDetail && (
+             <button onClick={onShowDetail} className="w-8 h-8 rounded-lg bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors text-[13px] border border-border">ℹ️</button>
+           )}
+           <CallButton
+             phoneNumber={activeContact.phone}
+             leadId={activeContact.id}
+             leadName={`${activeContact.firstName} ${activeContact.lastName}`}
+             deviceId={resolvedDeviceId}
+             organizationId={organization?.id}
+             onCallStarted={(callId) => { onStartDialing(callId); }}
+           />
           {callState !== 'idle' && callState !== 'ended' && (
             <div className={cn(
               'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold border',
