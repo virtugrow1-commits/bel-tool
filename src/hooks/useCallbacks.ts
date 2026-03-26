@@ -41,7 +41,7 @@ function entryToRow(cb: Omit<CallbackEntry, 'id' | 'userId'>, userId?: string) {
 
 let _localSeq = Date.now();
 
-export function useCallbacks() {
+export function useCallbacks(currentUserId?: string) {
   const [callbacks, setCallbacks] = useState<CallbackEntry[]>(() =>
     store.get<CallbackEntry[]>('callbacks', [])
   );
