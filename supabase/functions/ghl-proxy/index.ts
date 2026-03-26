@@ -28,22 +28,22 @@ function isRetryable(err: unknown): boolean {
 async function fetchGHL(
   url: string,
   options: RequestInit,
-  maxRetries = 3,
+  maxRetries = 2,
 ): Promise<Response> {
   let lastErr: unknown;
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
-      const res = await fetch(url, { ...options, signal: AbortSignal.timeout(15_000) });
+      const res = await fetch(url, { ...options, signal: AbortSignal.timeout(10_000) });
       // 502/503/504 are retryable
       if ([502, 503, 504].includes(res.status) && attempt < maxRetries) {
-        await new Promise(r => setTimeout(r, 800 * Math.pow(2, attempt)));
+        await new Promise(r => setTimeout(r, 600 * Math.pow(2, attempt)));
         continue;
       }
       return res;
     } catch (err) {
       lastErr = err;
       if (!isRetryable(err) || attempt >= maxRetries) throw err;
-      const delay = 800 * Math.pow(2, attempt) + Math.random() * 400;
+      const delay = 600 * Math.pow(2, attempt) + Math.random() * 300;
       console.warn(`[GHL Proxy] Retry ${attempt + 1}/${maxRetries} for ${url} after: ${err}`);
       await new Promise(r => setTimeout(r, delay));
     }
