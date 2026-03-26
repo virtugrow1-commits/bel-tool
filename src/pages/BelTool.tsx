@@ -43,6 +43,7 @@ import { useAdvisors } from '@/hooks/useAdvisors';
 import { useOrganizations } from '@/hooks/useOrganizations';
 import { recordAttempt, smartSort, getAttemptCount, loadAttemptCache } from '@/lib/smart-queue';
 
+
 function normalizeEmail(email?: string) {
   if (typeof email !== 'string') return '';
   const trimmed = email.trim();
@@ -64,6 +65,7 @@ export default function BelTool() {
   const { scores, convRate, addScore, allScores, setAllScores, setContactInfo } = scoring;
   const sfx = useSoundEffects();
   const { advisors } = useAdvisors();
+  const { organizations } = useOrganizations();
 
   // Set current organization ID for all CLIQ calls
   useEffect(() => {
@@ -328,7 +330,6 @@ export default function BelTool() {
   if (!user) return <LoginScreen onLogin={login} onResetPassword={resetPassword} />;
 
   // Resolve current organization from user's organizationId
-  const { organizations } = useOrganizations();
   const currentOrg = organizations.find(o => o.id === user?.organizationId) || null;
 
   const ctx = {
