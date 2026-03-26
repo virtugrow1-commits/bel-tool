@@ -42,10 +42,11 @@ function addMinutesToTime(time: string, minutesToAdd: number) {
 }
 
 async function callCliq(action: string, params: Record<string, unknown> = {}) {
+  const orgPayload = _currentOrgId ? { organizationId: _currentOrgId } : {};
   return withRetry(
     async () => {
       const { data, error } = await supabase.functions.invoke('ghl-proxy', {
-        body: { action, ...params },
+        body: { action, ...orgPayload, ...params },
       });
       if (error) {
         const msg = error.message || '';
