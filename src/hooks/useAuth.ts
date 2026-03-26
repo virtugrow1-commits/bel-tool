@@ -28,14 +28,13 @@ async function fetchGhlUsers(organizationId?: string): Promise<any[]> {
 
   if (!res.ok) throw new Error(`GHL users fetch failed: ${res.status}`);
   const data = await res.json();
-  // GHL returns { users: [...] } or just an array
   return data?.users || data || [];
 }
 
 /**
  * Upserts a GHL user into the profiles table so the rest of the app can use it.
  */
-async function syncProfileToDb(ghlUser: any): Promise<User> {
+async function syncProfileToDb(ghlUser: any, organizationId?: string): Promise<User> {
   const name = [ghlUser.firstName, ghlUser.lastName].filter(Boolean).join(' ') || ghlUser.name || ghlUser.email;
   const email = ghlUser.email || '';
   const avatar = name.split(' ').map((w: string) => w[0]).join('').substring(0, 2).toUpperCase() || 'U';
@@ -48,6 +47,7 @@ async function syncProfileToDb(ghlUser: any): Promise<User> {
     role,
     avatar,
     deviceId: ghlUser.phone || '',
+    organizationId,
   };
 
   // Upsert into profiles table
@@ -59,12 +59,24 @@ async function syncProfileToDb(ghlUser: any): Promise<User> {
       role: profile.role,
       avatar,
       device_id: profile.deviceId,
+      organization_id: organizationId || null,
     }, { onConflict: 'id' });
   } catch (e) {
     console.warn('[Auth] Profile sync failed:', e);
   }
 
   return profile;
+}
+
+/**
+ * Fetch all organizations from the database.
+ */
+async function fetchOrganizations(): Promise<Array<{ id: string; name: string; ghl_api_key?: string }>> {
+  const { data } = await (supabase as any)
+    .from('organizations')
+    .select('id, name, ghl_api_key')
+    .order('name');
+  return data || [];
 }
 
 export function useAuth() {
@@ -77,22 +89,48 @@ export function useAuth() {
     setState(prev => ({ ...prev, loading: true }));
 
     try {
-      // Fetch all GHL users for the default org
-      const ghlUsers = await fetchGhlUsers();
+      // Fetch all organizations and try to find the user in each
+      const orgs = await fetchOrganizations();
+      const orgsWithKey = orgs.filter(o => o.ghl_api_key);
 
-      // Find matching user by email (case-insensitive)
-      const match = ghlUsers.find((u: any) => {
-        const ghlEmail = (u.email || '').toLowerCase();
-        return ghlEmail === email.toLowerCase().trim();
-      });
+      let match: any = null;
+      let matchedOrgId: string | undefined;
+
+      // Try each org's GHL users
+      for (const org of orgsWithKey) {
+        try {
+          const ghlUsers = await fetchGhlUsers(org.id);
+          const found = ghlUsers.find((u: any) =>
+            (u.email || '').toLowerCase() === email.toLowerCase().trim()
+          );
+          if (found) {
+            match = found;
+            matchedOrgId = org.id;
+            break;
+          }
+        } catch (err) {
+          console.warn(`[Auth] Failed to fetch users for org ${org.name}:`, err);
+        }
+      }
+
+      // Fallback: try without org (uses default GHL_API_KEY secret)
+      if (!match) {
+        try {
+          const ghlUsers = await fetchGhlUsers();
+          match = ghlUsers.find((u: any) =>
+            (u.email || '').toLowerCase() === email.toLowerCase().trim()
+          );
+        } catch {
+          // ignore
+        }
+      }
 
       if (!match) {
         setState(prev => ({ ...prev, loading: false }));
         return { error: 'Je account is niet gevonden in GHL. Neem contact op met de beheerder.' };
       }
 
-      // Sync to profiles and set as current user
-      const user = await syncProfileToDb(match);
+      const user = await syncProfileToDb(match, matchedOrgId);
       store.set('user', user);
       setState({ user, loading: false });
       return {};
