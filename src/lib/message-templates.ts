@@ -97,11 +97,11 @@ Met vriendelijke groet,
     ghlPlaceholderKeys: ['voornaam', 'beller'],
     body: `Hallo {voornaam},
 
-U sprak met {beller} van CliqMakers. Fijn dat u geïnteresseerd bent!
+U sprak met {beller} van {brandName}. Fijn dat u geïnteresseerd bent!
 
 Hier is de link om direct een vrijblijvend adviesgesprek in te plannen op een moment dat u uitkomt: 
 
-https://adviesgesprekken.cliqmakers.nl/`,
+{bookingLink}`,
   },
   {
     id: 'booking-link',
