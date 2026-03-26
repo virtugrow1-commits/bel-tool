@@ -1,6 +1,12 @@
 import { supabase } from '@/integrations/supabase/client';
 import { withRetry, isRetryableError } from '@/lib/retry';
 
+/** Module-level organization ID — set by BelTool on login */
+let _currentOrgId: string | undefined;
+export function setCurrentOrganizationId(orgId: string | undefined) {
+  _currentOrgId = orgId;
+}
+
 function normalizeEmail(email?: string) {
   if (typeof email !== 'string') return undefined;
   const trimmed = email.trim();
