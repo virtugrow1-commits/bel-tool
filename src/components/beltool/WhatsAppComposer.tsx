@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { cliq } from '@/lib/beltool-ghl';
 import { MESSAGE_TEMPLATES, renderTemplate, renderSubject, buildPlaceholders, type MessageTemplate } from '@/lib/message-templates';
+import { useBelTool } from '@/contexts/BelToolContext';
 import type { CompanyContact, Company, SurveyAnswers } from '@/types/beltool';
 
 type Channel = 'whatsapp' | 'sms' | 'email';
@@ -34,6 +35,7 @@ const CONTEXT_TO_TEMPLATE: Record<string, string> = {
 };
 
 export function WhatsAppComposer({ contact, company, callerName, answers, bookingLink, context, onSent, onClose }: WhatsAppComposerProps) {
+  const { organization } = useBelTool();
   const defaultTemplateId = context ? CONTEXT_TO_TEMPLATE[context] : MESSAGE_TEMPLATES[0].id;
   const [selectedTemplate, setSelectedTemplate] = useState<string>(defaultTemplateId || MESSAGE_TEMPLATES[0].id);
   const [channel, setChannel] = useState<Channel>('whatsapp');
@@ -42,12 +44,21 @@ export function WhatsAppComposer({ contact, company, callerName, answers, bookin
   const [status, setStatus] = useState<SendStatus>('idle');
   const [errorMsg, setErrorMsg] = useState('');
 
-  const template = MESSAGE_TEMPLATES.find(t => t.id === selectedTemplate) || MESSAGE_TEMPLATES[0];
+  // Resolve template: check if org has a whatsapp_templates override
+  const baseTemplate = MESSAGE_TEMPLATES.find(t => t.id === selectedTemplate) || MESSAGE_TEMPLATES[0];
+  const template: MessageTemplate = organization?.whatsapp_templates?.[baseTemplate.id]
+    ? { ...baseTemplate, ghlTemplateName: organization.whatsapp_templates[baseTemplate.id] }
+    : baseTemplate;
+
   const taskString = answers
     ? answers.tasks.concat(answers.tasksOther ? [answers.tasksOther] : []).filter(Boolean).join(', ')
     : '';
 
-  const enqueteLink = `https://enquete.cliqmakers.nl/enquete/${contact.id}`;
+  const orgEnqueteLink = organization?.enquete_link
+    ? `${organization.enquete_link.replace(/\/$/, '')}/${contact.id}`
+    : `https://enquete.cliqmakers.nl/enquete/${contact.id}`;
+  const orgBookingLink = organization?.booking_link || 'https://adviesgesprekken.cliqmakers.nl/';
+  const brandName = organization?.brand_name || organization?.name || 'CliqMakers';
 
   const vars = {
     voornaam: contact.firstName,
@@ -55,13 +66,14 @@ export function WhatsAppComposer({ contact, company, callerName, answers, bookin
     beller: callerName,
     uren: answers?.hours || '',
     taken: taskString,
-    bookingLink: bookingLink || 'https://adviesgesprekken.cliqmakers.nl/',
-    enqueteLink,
+    bookingLink: bookingLink || orgBookingLink,
+    enqueteLink: orgEnqueteLink,
     contactId: contact.id,
+    brandName,
   };
 
   const renderedMessage = editing ? editedMessage : renderTemplate(template, vars);
-  const renderedSubject = renderSubject(template, { voornaam: contact.firstName });
+  const renderedSubject = renderSubject(template, { voornaam: contact.firstName, brandName });
 
   const availableChannels = template.channels;
 

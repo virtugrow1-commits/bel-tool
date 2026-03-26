@@ -36,7 +36,8 @@ Het invullen duurt slechts 2 minuten en helpt ons om zzp'ers en MKB beter te adv
 
 Alvast bedankt voor uw tijd!
 
-Met vriendelijke groet,`,
+Met vriendelijke groet,
+{brandName}`,
   },
   {
     id: 'stuur-enquete',
@@ -46,7 +47,7 @@ Met vriendelijke groet,`,
     channels: ['whatsapp', 'sms', 'email'],
     ghlTemplateName: 'enquete_digitaal_sturen',
     ghlPlaceholderKeys: ['voornaam', 'beller'],
-    subject: 'Uw praktijkonderzoek van CliqMakers',
+    subject: 'Uw praktijkonderzoek van {brandName}',
     body: `Hallo {voornaam},
 
 Zoals zojuist besproken stuur ik u hierbij de link naar ons praktijkonderzoek:
@@ -61,7 +62,7 @@ Met vriendelijke groet,
 
 {beller}
 
-Team CliqMakers`,
+Team {brandName}`,
   },
   {
     id: 'opvolg-enquete',
@@ -80,11 +81,11 @@ Graag plan ik een gratis adviesgesprek van 15 minuten voor u in, waarin we concr
 
 Plan direct in via deze link:
 
-https://adviesgesprekken.cliqmakers.nl/
+{bookingLink}
 
 Met vriendelijke groet,
 
-{beller} — CliqMakers`,
+{beller} — {brandName}`,
   },
   {
     id: 'opvolg-interesse',
@@ -96,11 +97,11 @@ Met vriendelijke groet,
     ghlPlaceholderKeys: ['voornaam', 'beller'],
     body: `Hallo {voornaam},
 
-U sprak met {beller} van CliqMakers. Fijn dat u geïnteresseerd bent!
+U sprak met {beller} van {brandName}. Fijn dat u geïnteresseerd bent!
 
 Hier is de link om direct een vrijblijvend adviesgesprek in te plannen op een moment dat u uitkomt: 
 
-https://adviesgesprekken.cliqmakers.nl/`,
+{bookingLink}`,
   },
   {
     id: 'booking-link',
@@ -114,9 +115,9 @@ https://adviesgesprekken.cliqmakers.nl/`,
 
 hier is de link om uw gratis adviesgesprek in te plannen:  
 
-https://adviesgesprekken.cliqmakers.nl/
+{bookingLink}
 
- Groet, {beller} (CliqMakers)`,
+ Groet, {beller} ({brandName})`,
   },
   {
     id: 'afspraak-bevestiging',
@@ -127,7 +128,7 @@ https://adviesgesprekken.cliqmakers.nl/
     ghlTemplateName: 'afspraak_bevestiging',
     ghlPlaceholderKeys: ['voornaam', 'datum', 'tijd', 'locatie'],
     body: `Hi {voornaam}
-Je afspraak met CliqMakers is ingepland.
+Je afspraak met {brandName} is ingepland.
 
 📅 Datum: {datum}
 
@@ -137,7 +138,7 @@ Je afspraak met CliqMakers is ingepland.
 
 We kijken ernaar uit om je te spreken!
 
-CliqMakers`,
+{brandName}`,
   },
 ];
 
@@ -155,9 +156,11 @@ export function renderTemplate(
     datum?: string;
     tijd?: string;
     locatie?: string;
+    brandName?: string;
   }
 ): string {
   const surveyLink = vars.enqueteLink || `https://enquete.cliqmakers.nl/enquete/${vars.contactId || 'contact.id'}`;
+  const brand = vars.brandName || 'CliqMakers';
   return template.body
     .replace(/\{voornaam\}/g, vars.voornaam || '[Naam]')
     .replace(/\{bedrijf\}/g, vars.bedrijf || '[Bedrijf]')
@@ -165,17 +168,20 @@ export function renderTemplate(
     .replace(/\{uren\}/g, vars.uren || 'aanzienlijke uren')
     .replace(/\{taken\}/g, vars.taken || 'repetitieve taken')
     .replace(/\{enqueteLink\}/g, surveyLink)
+    .replace(/\{bookingLink\}/g, vars.bookingLink || 'https://adviesgesprekken.cliqmakers.nl/')
     .replace(/\{datum\}/g, vars.datum || '[Datum]')
     .replace(/\{tijd\}/g, vars.tijd || '[Tijd]')
-    .replace(/\{locatie\}/g, vars.locatie || '[Locatie]');
+    .replace(/\{locatie\}/g, vars.locatie || '[Locatie]')
+    .replace(/\{brandName\}/g, brand);
 }
 
 export function renderSubject(
   template: MessageTemplate,
-  vars: { voornaam: string }
+  vars: { voornaam: string; brandName?: string }
 ): string {
   return (template.subject || '')
-    .replace(/\{voornaam\}/g, vars.voornaam || '[Naam]');
+    .replace(/\{voornaam\}/g, vars.voornaam || '[Naam]')
+    .replace(/\{brandName\}/g, vars.brandName || 'CliqMakers');
 }
 
 /**

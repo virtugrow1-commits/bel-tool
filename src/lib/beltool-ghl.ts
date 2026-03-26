@@ -1,6 +1,12 @@
 import { supabase } from '@/integrations/supabase/client';
 import { withRetry, isRetryableError } from '@/lib/retry';
 
+/** Module-level organization ID — set by BelTool on login */
+let _currentOrgId: string | undefined;
+export function setCurrentOrganizationId(orgId: string | undefined) {
+  _currentOrgId = orgId;
+}
+
 function normalizeEmail(email?: string) {
   if (typeof email !== 'string') return undefined;
   const trimmed = email.trim();
@@ -36,10 +42,11 @@ function addMinutesToTime(time: string, minutesToAdd: number) {
 }
 
 async function callCliq(action: string, params: Record<string, unknown> = {}) {
+  const orgPayload = _currentOrgId ? { organizationId: _currentOrgId } : {};
   return withRetry(
     async () => {
       const { data, error } = await supabase.functions.invoke('ghl-proxy', {
-        body: { action, ...params },
+        body: { action, ...orgPayload, ...params },
       });
       if (error) {
         const msg = error.message || '';

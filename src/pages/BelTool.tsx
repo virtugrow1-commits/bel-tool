@@ -15,6 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { store } from '@/lib/beltool-store';
 import { cliq } from '@/lib/beltool-ghl';
+import { setCurrentOrganizationId } from '@/lib/beltool-ghl';
 import { fmtDate } from '@/lib/beltool-data';
 import { BelToolContext } from '@/contexts/BelToolContext';
 import { ContactSidebar } from '@/components/beltool/ContactSidebar';
@@ -39,6 +40,7 @@ import { AutoDialCountdown } from '@/components/beltool/AutoDialCountdown';
 import { WhatsAppComposer } from '@/components/beltool/WhatsAppComposer';
 import { useSoundEffects } from '@/hooks/useSoundEffects';
 import { useAdvisors } from '@/hooks/useAdvisors';
+import { useOrganizations } from '@/hooks/useOrganizations';
 import { recordAttempt, smartSort, getAttemptCount, loadAttemptCache } from '@/lib/smart-queue';
 
 function normalizeEmail(email?: string) {
@@ -62,6 +64,11 @@ export default function BelTool() {
   const { scores, convRate, addScore, allScores, setAllScores, setContactInfo } = scoring;
   const sfx = useSoundEffects();
   const { advisors } = useAdvisors();
+
+  // Set current organization ID for all CLIQ calls
+  useEffect(() => {
+    setCurrentOrganizationId(user?.organizationId);
+  }, [user?.organizationId]);
 
   // Load smart-queue attempt cache from Supabase on login
   useEffect(() => {
@@ -320,12 +327,17 @@ export default function BelTool() {
   if (authLoading) return <AuthGuard loading={true}><div /></AuthGuard>;
   if (!user) return <LoginScreen onLogin={login} onResetPassword={resetPassword} />;
 
+  // Resolve current organization from user's organizationId
+  const { organizations } = useOrganizations();
+  const currentOrg = organizations.find(o => o.id === user?.organizationId) || null;
+
   const ctx = {
     lang, setLang, user, t, allScores, setAllScores,
     webhooks: settings.webhooks, setWebhooks: settings.setWebhooks,
     apiKey: settings.apiKey, setApiKey: settings.setApiKey,
     surveyConfig: settings.surveyConfig, setSurveyConfig: settings.setSurveyConfig,
     cliqConfig: settings.cliqConfig, setCliqConfig: settings.setCliqConfig,
+    organization: currentOrg,
   };
 
   return (

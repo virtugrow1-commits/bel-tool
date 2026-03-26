@@ -7,6 +7,10 @@ export interface Organization {
   ghl_api_key?: string;
   ghl_location_id?: string;
   logo_url?: string;
+  enquete_link?: string;
+  booking_link?: string;
+  brand_name?: string;
+  whatsapp_templates?: Record<string, string>;
 }
 
 export interface User {
