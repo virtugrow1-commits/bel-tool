@@ -320,12 +320,17 @@ export default function BelTool() {
   if (authLoading) return <AuthGuard loading={true}><div /></AuthGuard>;
   if (!user) return <LoginScreen onLogin={login} onResetPassword={resetPassword} />;
 
+  // Resolve current organization from user's organizationId
+  const { organizations } = useOrganizations();
+  const currentOrg = organizations.find(o => o.id === user?.organizationId) || null;
+
   const ctx = {
     lang, setLang, user, t, allScores, setAllScores,
     webhooks: settings.webhooks, setWebhooks: settings.setWebhooks,
     apiKey: settings.apiKey, setApiKey: settings.setApiKey,
     surveyConfig: settings.surveyConfig, setSurveyConfig: settings.setSurveyConfig,
     cliqConfig: settings.cliqConfig, setCliqConfig: settings.setCliqConfig,
+    organization: currentOrg,
   };
 
   return (

@@ -177,7 +177,7 @@ export function renderTemplate(
 
 export function renderSubject(
   template: MessageTemplate,
-  vars: { voornaam: string }
+  vars: { voornaam: string; brandName?: string }
 ): string {
   return (template.subject || '')
     .replace(/\{voornaam\}/g, vars.voornaam || '[Naam]')
