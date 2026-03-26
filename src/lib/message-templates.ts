@@ -81,11 +81,11 @@ Graag plan ik een gratis adviesgesprek van 15 minuten voor u in, waarin we concr
 
 Plan direct in via deze link:
 
-https://adviesgesprekken.cliqmakers.nl/
+{bookingLink}
 
 Met vriendelijke groet,
 
-{beller} — CliqMakers`,
+{beller} — {brandName}`,
   },
   {
     id: 'opvolg-interesse',
