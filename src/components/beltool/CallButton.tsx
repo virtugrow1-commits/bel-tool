@@ -17,6 +17,7 @@ interface CallButtonProps {
   leadId:         string;
   leadName:       string;
   deviceId?:      string;
+  organizationId?: string;
   onCallStarted?: (callId: string) => void;
   className?:     string;
 }
@@ -45,7 +46,7 @@ async function isDNC(phone: string): Promise<boolean> {
   }
 }
 
-export function CallButton({ phoneNumber, leadId, leadName, deviceId, onCallStarted, className }: CallButtonProps) {
+export function CallButton({ phoneNumber, leadId, leadName, deviceId, organizationId, onCallStarted, className }: CallButtonProps) {
   const [state,    setState]    = useState<'idle' | 'loading' | 'success' | 'error' | 'dnc'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -64,7 +65,7 @@ export function CallButton({ phoneNumber, leadId, leadName, deviceId, onCallStar
       }
 
       const { data, error } = await supabase.functions.invoke('voys-call', {
-        body: { phone: phoneNumber, leadId, leadName, ...(deviceId ? { deviceId } : {}) },
+        body: { phone: phoneNumber, leadId, leadName, ...(deviceId ? { deviceId } : {}), ...(organizationId ? { organizationId } : {}) },
       });
 
       if (error) throw new Error(error.message || 'Functie aanroep mislukt');

@@ -270,7 +270,7 @@ export function CallContent({
   scores, onShowCallback, onStartDialing, onHangup, onConfirmConnected, activeCompId, onShowDetail,
   notes, onNotesChange, dailyTargets, onShowWhatsApp, advisors, onAppointmentBooked,
 }: CallContentProps) {
-  const { t, surveyConfig, user } = useBelTool();
+  const { t, surveyConfig, user, organization } = useBelTool();
   const [locationType, setLocationType] = useState<LocationType>('');
   const [customAddress, setCustomAddress] = useState('');
   const [selectedCalId, setSelectedCalId] = useState('');
@@ -343,6 +343,7 @@ export function CallContent({
             leadId={activeContact.id}
             leadName={`${activeContact.firstName} ${activeContact.lastName}`}
             deviceId={user?.deviceId}
+            organizationId={organization?.id}
             onCallStarted={(callId) => { onStartDialing(callId); }}
           />
           {callState !== 'idle' && callState !== 'ended' && (

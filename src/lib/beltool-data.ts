@@ -11,6 +11,10 @@ export interface Organization {
   booking_link?: string;
   brand_name?: string;
   whatsapp_templates?: Record<string, string>;
+  voys_api_token?: string;
+  voys_email?: string;
+  voys_device_id?: string;
+  voys_outbound_number?: string;
 }
 
 export interface User {

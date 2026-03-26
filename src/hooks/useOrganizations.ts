@@ -28,6 +28,10 @@ export function useOrganizations() {
           booking_link: row.booking_link,
           brand_name: row.brand_name,
           whatsapp_templates: row.whatsapp_templates,
+          voys_api_token: row.voys_api_token,
+          voys_email: row.voys_email,
+          voys_device_id: row.voys_device_id,
+          voys_outbound_number: row.voys_outbound_number,
         })));
       }
     } catch {
