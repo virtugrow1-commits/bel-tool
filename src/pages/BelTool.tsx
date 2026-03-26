@@ -330,7 +330,6 @@ export default function BelTool() {
   if (!user) return <LoginScreen onLogin={login} onResetPassword={resetPassword} />;
 
   // Resolve current organization from user's organizationId
-  const { organizations } = useOrganizations();
   const currentOrg = organizations.find(o => o.id === user?.organizationId) || null;
 
   const ctx = {
