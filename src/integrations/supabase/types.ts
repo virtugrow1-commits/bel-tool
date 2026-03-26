@@ -24,6 +24,7 @@ export type Database = {
           contact_id: string | null
           created_at: string
           id: string
+          organization_id: string | null
           status: string
         }
         Insert: {
@@ -35,6 +36,7 @@ export type Database = {
           contact_id?: string | null
           created_at?: string
           id?: string
+          organization_id?: string | null
           status?: string
         }
         Update: {
@@ -46,9 +48,18 @@ export type Database = {
           contact_id?: string | null
           created_at?: string
           id?: string
+          organization_id?: string | null
           status?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "incoming_calls_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       organizations: {
         Row: {

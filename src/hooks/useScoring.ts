@@ -13,22 +13,23 @@ import type { User } from '@/lib/beltool-data';
 
 const TODAY = new Date().toISOString().split('T')[0];
 
-async function upsertDayScore(userId: string, scores: Scores) {
+async function upsertDayScore(userId: string, scores: Scores, organizationId?: string) {
   try {
     const { error } = await (supabase as any)
       .from('user_scores')
       .upsert({
-        user_id:    userId,
-        score_date: TODAY,
-        gebeld:     scores.gebeld,
-        enquetes:   scores.enquetes,
-        afspraken:  scores.afspraken,
-        verstuurd:  scores.verstuurd,
-        afgevallen: scores.afgevallen,
-        geen_gehoor: scores.geenGehoor,
-        callbacks:  scores.callbacks,
-        best_reeks: scores.bestReeks,
-        updated_at: new Date().toISOString(),
+        user_id:         userId,
+        score_date:      TODAY,
+        gebeld:          scores.gebeld,
+        enquetes:        scores.enquetes,
+        afspraken:       scores.afspraken,
+        verstuurd:       scores.verstuurd,
+        afgevallen:      scores.afgevallen,
+        geen_gehoor:     scores.geenGehoor,
+        callbacks:       scores.callbacks,
+        best_reeks:      scores.bestReeks,
+        updated_at:      new Date().toISOString(),
+        ...(organizationId ? { organization_id: organizationId } : {}),
       }, { onConflict: 'user_id,score_date' });
 
     if (error) throw error;
@@ -91,18 +92,8 @@ export function useScoring(user: User | null, organizationId?: string) {
       const next = { ...prev, [user.id]: s };
       store.set('scores', next);
 
-      // Async Supabase sync (fire and forget)
-      upsertDayScore(user.id, s);
-      // Also sync organization_id if available
-      if (organizationId) {
-        (supabase as any)
-          .from('user_scores')
-          .update({ organization_id: organizationId })
-          .eq('user_id', user.id)
-          .eq('score_date', TODAY)
-          .then(() => {})
-          .catch(() => {});
-      }
+      // Async Supabase sync (fire and forget) — includes org_id
+      upsertDayScore(user.id, s, organizationId);
 
       return next;
     });

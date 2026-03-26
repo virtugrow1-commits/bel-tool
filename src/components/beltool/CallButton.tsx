@@ -80,7 +80,8 @@ export function CallButton({ phoneNumber, leadId, leadName, deviceId, organizati
           call_id:       callId,
           contact_id:    leadId,
           status:        'ringing',
-        }).then(({ error: insertErr }) => {
+          ...(organizationId ? { organization_id: organizationId } : {}),
+        } as any).then(({ error: insertErr }: any) => {
           if (insertErr) console.warn('[CallButton] Could not register outgoing call:', insertErr);
         });
       }

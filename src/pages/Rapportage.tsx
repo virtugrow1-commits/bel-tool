@@ -303,6 +303,7 @@ export default function Rapportage() {
   const navigate = useNavigate();
   const currentUser: User | null = store.get('user', null);
   const localScores: Record<string, Scores> = store.get('scores', {});
+  const orgId = currentUser?.organizationId || null;
 
   const [period, setPeriod] = useState<'today' | 'week' | 'month' | 'all'>('today');
   const [sessions, setSessions] = useState<CallSession[]>([]);
@@ -333,6 +334,7 @@ export default function Rapportage() {
       .from('user_scores')
       .select('*')
       .order('score_date', { ascending: false });
+    if (orgId) scoreQuery = scoreQuery.eq('organization_id', orgId);
     if (period === 'today') scoreQuery = scoreQuery.eq('score_date', new Date().toISOString().split('T')[0]);
 
     Promise.all([sessionQuery, scoreQuery])
