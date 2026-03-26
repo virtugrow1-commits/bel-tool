@@ -62,6 +62,10 @@ export type Database = {
           logo_url: string | null
           name: string
           slug: string
+          voys_api_token: string | null
+          voys_device_id: string | null
+          voys_email: string | null
+          voys_outbound_number: string | null
           whatsapp_templates: Json | null
         }
         Insert: {
@@ -75,6 +79,10 @@ export type Database = {
           logo_url?: string | null
           name: string
           slug: string
+          voys_api_token?: string | null
+          voys_device_id?: string | null
+          voys_email?: string | null
+          voys_outbound_number?: string | null
           whatsapp_templates?: Json | null
         }
         Update: {
@@ -88,6 +96,10 @@ export type Database = {
           logo_url?: string | null
           name?: string
           slug?: string
+          voys_api_token?: string | null
+          voys_device_id?: string | null
+          voys_email?: string | null
+          voys_outbound_number?: string | null
           whatsapp_templates?: Json | null
         }
         Relationships: []
