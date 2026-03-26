@@ -51,10 +51,11 @@ interface CallDisplayProps {
   onHangup:           () => void;
   onConfirmConnected?: () => void;
   activeCallId?:      string | null;
+  organizationId?:    string;
   onElapsedChange?:   (seconds: number) => void;
 }
 
-export function CallDisplay({ callState, contact, company, onHangup, onConfirmConnected, activeCallId, onElapsedChange }: CallDisplayProps) {
+export function CallDisplay({ callState, contact, company, onHangup, onConfirmConnected, activeCallId, organizationId, onElapsedChange }: CallDisplayProps) {
   const [elapsed,     setElapsed]     = useState(0);
   const [muted,       setMuted]       = useState(false);
   const [held,        setHeld]        = useState(false);
@@ -85,7 +86,7 @@ export function CallDisplay({ callState, contact, company, onHangup, onConfirmCo
   const pollVoysStatus = useCallback(async (callId: string) => {
     try {
       const { data } = await supabase.functions.invoke('voys-call', {
-        body: { action: 'status', callId },
+        body: { action: 'status', callId, ...(organizationId ? { organizationId } : {}) },
       });
       if (data?.status === 'connected' || data?.status === 'active') {
         onConfirmConnected?.();
@@ -93,7 +94,7 @@ export function CallDisplay({ callState, contact, company, onHangup, onConfirmCo
     } catch {
       // Silent fail — user can always confirm manually
     }
-  }, [onConfirmConnected]);
+  }, [onConfirmConnected, organizationId]);
 
   useEffect(() => {
     if (callState === 'ringing' && activeCallId) {

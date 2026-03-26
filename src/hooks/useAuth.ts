@@ -46,7 +46,7 @@ async function syncProfileToDb(ghlUser: any, organizationId?: string): Promise<U
     email,
     role,
     avatar,
-    deviceId: ghlUser.phone || '',
+    deviceId: '',
     organizationId,
   };
 

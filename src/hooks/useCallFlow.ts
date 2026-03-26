@@ -73,7 +73,8 @@ export function useCallFlow({
   addScore,
   pipelineInfo,
   stageMap,
-}: UseCallFlowOptions) {
+  organizationId,
+}: UseCallFlowOptions & { organizationId?: string }) {
   const [activeCompId,    setActiveCompId]    = useState<string | null>(null);
   const [activeContactId, setActiveContactId] = useState<string | null>(null);
   const [expandedComp,    setExpandedComp]    = useState<string | null>(null);
