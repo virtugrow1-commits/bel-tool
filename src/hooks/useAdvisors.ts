@@ -7,7 +7,7 @@ import { store } from '@/lib/beltool-store';
  * Loads advisors from GHL users, falls back to hardcoded ADVISORS.
  * Caches the result in localStorage to avoid repeated API calls.
  */
-export function useAdvisors() {
+export function useAdvisors(organizationId?: string) {
   const [advisors, setAdvisors] = useState<Advisor[]>(() => {
     const cached = store.get<Advisor[] | null>('ghlAdvisors', null);
     return cached && cached.length > 0 ? cached : ADVISORS;
@@ -20,7 +20,8 @@ export function useAdvisors() {
     const load = async () => {
       setLoading(true);
       try {
-        const data = await cliq.getUsers();
+        if (!organizationId) return;
+        const data = await cliq.getUsers(organizationId);
         const users = data?.users || data?.Users || [];
 
         if (users.length > 0 && mounted) {
@@ -48,12 +49,13 @@ export function useAdvisors() {
 
     load();
     return () => { mounted = false; };
-  }, []);
+  }, [organizationId]);
 
   const refresh = async () => {
     setLoading(true);
     try {
-      const data = await cliq.getUsers();
+      if (!organizationId) return;
+      const data = await cliq.getUsers(organizationId);
       const users = data?.users || data?.Users || [];
 
       const mapped: Advisor[] = users

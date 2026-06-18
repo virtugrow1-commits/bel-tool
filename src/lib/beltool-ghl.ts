@@ -243,8 +243,8 @@ export const cliq = {
     return callCliq('getFreeSlots', { calendarId, startDate, endDate });
   },
 
-  async getUsers() {
-    return callCliq('getUsers');
+  async getUsers(organizationId?: string) {
+    return callCliq('getUsers', organizationId ? { organizationId } : {});
   },
 
   async getPipelines() {
