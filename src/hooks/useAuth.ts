@@ -89,6 +89,31 @@ export function useAuth() {
     setState(prev => ({ ...prev, loading: true }));
 
     try {
+      const normalizedEmail = email.trim();
+
+      // First use the local profile table. This keeps manually added users (like Willem)
+      // from being blocked by an expired/invalid GHL integration token.
+      const { data: existingProfile } = await (supabase as any)
+        .from('profiles')
+        .select('*')
+        .ilike('email', normalizedEmail)
+        .maybeSingle();
+
+      if (existingProfile) {
+        const user: User = {
+          id: existingProfile.id,
+          name: existingProfile.name,
+          email: existingProfile.email,
+          role: existingProfile.role,
+          avatar: existingProfile.avatar || existingProfile.name?.[0]?.toUpperCase() || 'U',
+          deviceId: existingProfile.device_id || '',
+          organizationId: existingProfile.organization_id || undefined,
+        };
+        store.set('user', user);
+        setState({ user, loading: false });
+        return {};
+      }
+
       // Fetch all organizations and try to find the user in each
       const orgs = await fetchOrganizations();
       const orgsWithKey = orgs.filter(o => o.ghl_api_key);
@@ -101,7 +126,7 @@ export function useAuth() {
         try {
           const ghlUsers = await fetchGhlUsers(org.id);
           const found = ghlUsers.find((u: any) =>
-            (u.email || '').toLowerCase() === email.toLowerCase().trim()
+            (u.email || '').toLowerCase() === normalizedEmail.toLowerCase()
           );
           if (found) {
             match = found;
@@ -118,7 +143,7 @@ export function useAuth() {
         try {
           const ghlUsers = await fetchGhlUsers();
           match = ghlUsers.find((u: any) =>
-            (u.email || '').toLowerCase() === email.toLowerCase().trim()
+            (u.email || '').toLowerCase() === normalizedEmail.toLowerCase()
           );
         } catch {
           // ignore
@@ -126,28 +151,6 @@ export function useAuth() {
       }
 
       if (!match) {
-        // Fallback: look up profile directly in the database (for users not reachable via GHL)
-        const { data: profileRow } = await (supabase as any)
-          .from('profiles')
-          .select('*')
-          .ilike('email', email.trim())
-          .maybeSingle();
-
-        if (profileRow) {
-          const user: User = {
-            id: profileRow.id,
-            name: profileRow.name,
-            email: profileRow.email,
-            role: profileRow.role,
-            avatar: profileRow.avatar || profileRow.name?.[0]?.toUpperCase() || 'U',
-            deviceId: profileRow.device_id || '',
-            organizationId: profileRow.organization_id || undefined,
-          };
-          store.set('user', user);
-          setState({ user, loading: false });
-          return {};
-        }
-
         setState(prev => ({ ...prev, loading: false }));
         return { error: 'Je account is niet gevonden. Neem contact op met de beheerder.' };
       }

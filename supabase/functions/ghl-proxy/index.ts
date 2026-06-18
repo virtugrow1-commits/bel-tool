@@ -421,7 +421,15 @@ serve(async (req) => {
         if (!res.ok) {
           // Try location-based endpoint
           const res2 = await fetchGHL(`${GHL_BASE}/users/?locationId=${GHL_LOCATION_ID}`, { headers: ghlHeaders });
-          if (!res2.ok) throw new Error(`GHL users error [${res2.status}]: ${await res2.text()}`);
+          if (!res2.ok) {
+            const errorText = await res2.text();
+            if (res2.status === 401 && (errorText.includes('Invalid Private Integration token') || errorText.includes('Location is not active'))) {
+              console.warn(`[GHL Proxy] getUsers skipped because GHL credentials are invalid: ${errorText}`);
+              result = { users: [], warning: 'GHL credentials are invalid for this organization' };
+              break;
+            }
+            throw new Error(`GHL users error [${res2.status}]: ${errorText}`);
+          }
           result = await res2.json();
         } else {
           result = await res.json();
