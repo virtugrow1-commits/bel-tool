@@ -126,8 +126,30 @@ export function useAuth() {
       }
 
       if (!match) {
+        // Fallback: look up profile directly in the database (for users not reachable via GHL)
+        const { data: profileRow } = await (supabase as any)
+          .from('profiles')
+          .select('*')
+          .ilike('email', email.trim())
+          .maybeSingle();
+
+        if (profileRow) {
+          const user: User = {
+            id: profileRow.id,
+            name: profileRow.name,
+            email: profileRow.email,
+            role: profileRow.role,
+            avatar: profileRow.avatar || profileRow.name?.[0]?.toUpperCase() || 'U',
+            deviceId: profileRow.device_id || '',
+            organizationId: profileRow.organization_id || undefined,
+          };
+          store.set('user', user);
+          setState({ user, loading: false });
+          return {};
+        }
+
         setState(prev => ({ ...prev, loading: false }));
-        return { error: 'Je account is niet gevonden in GHL. Neem contact op met de beheerder.' };
+        return { error: 'Je account is niet gevonden. Neem contact op met de beheerder.' };
       }
 
       const user = await syncProfileToDb(match, matchedOrgId);
