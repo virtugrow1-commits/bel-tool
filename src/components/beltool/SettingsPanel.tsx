@@ -39,7 +39,7 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
   onUpdateUsers: (users: User[]) => void;
 }) {
   const { lang, setLang, user, allScores, setAllScores, webhooks, setWebhooks, apiKey, setApiKey, t, surveyConfig, setSurveyConfig, cliqConfig, setCliqConfig } = useBelTool();
-  const { advisors, loading: advisorsLoading, refresh: refreshAdvisors } = useAdvisors();
+  const { advisors, loading: advisorsLoading, refresh: refreshAdvisors } = useAdvisors(user?.organizationId);
   const { organizations, createOrg, updateOrg } = useOrganizations();
   const [newOrgName, setNewOrgName] = useState('');
   const [newOrgSlug, setNewOrgSlug] = useState('');
