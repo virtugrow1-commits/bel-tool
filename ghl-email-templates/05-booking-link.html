@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Uw adviesgesprek inplannen</title>
+</head>
+<body style="margin:0;padding:0;background:#F9FAFB;font-family:'Plus Jakarta Sans',Helvetica,Arial,sans-serif;color:#1F2937;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#F9FAFB;padding:32px 16px;">
+    <tr><td align="center">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #E5E7EB;">
+        <tr><td style="background:#0D1B3E;padding:24px 32px;">
+          <h1 style="margin:0;color:#ffffff;font-size:20px;font-weight:700;">{{custom_values.brand_name}}</h1>
+        </td></tr>
+        <tr><td style="padding:32px;">
+          <h2 style="margin:0 0 16px;color:#0D1B3E;font-size:22px;font-weight:700;">Hallo {{contact.first_name}},</h2>
+          <p style="margin:0 0 24px;font-size:16px;line-height:1.6;">Hier is de link om uw <strong>gratis adviesgesprek</strong> in te plannen:</p>
+          <div style="text-align:center;margin:28px 0;">
+            <a href="{{custom_values.booking_link}}" style="display:inline-block;background:#00C4B4;color:#ffffff;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:700;font-size:16px;">Plan in</a>
+          </div>
+          <p style="margin:24px 0 0;font-size:16px;line-height:1.6;">Groet,<br/><strong>{{user.first_name}}</strong> ({{custom_values.brand_name}})</p>
+        </td></tr>
+        <tr><td style="background:#F9FAFB;padding:16px 32px;border-top:1px solid #E5E7EB;">
+          <p style="margin:0;font-size:12px;color:#6B7280;text-align:center;">{{custom_values.brand_name}}</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
