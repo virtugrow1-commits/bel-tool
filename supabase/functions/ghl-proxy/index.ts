@@ -51,6 +51,45 @@ async function fetchGHL(
   throw lastErr;
 }
 
+function isInvalidGhlCredentials(status: number, errorText: string): boolean {
+  const lower = errorText.toLowerCase();
+  return status === 401 && (
+    lower.includes('invalid private integration token') ||
+    lower.includes('location is not active') ||
+    lower.includes('unauthorized')
+  );
+}
+
+function invalidGhlCredentialsResult<T extends Record<string, unknown>>(
+  action: string,
+  errorText: string,
+  fallback: T,
+) {
+  console.warn(`[GHL Proxy] ${action} skipped because GHL credentials are invalid: ${errorText}`);
+  return {
+    ...fallback,
+    success: false,
+    warning: 'GHL credentials are invalid for this organization',
+    ghlUnavailable: true,
+  };
+}
+
+async function parseGhlReadResponse<T extends Record<string, unknown>>(
+  action: string,
+  label: string,
+  res: Response,
+  fallback: T,
+) {
+  if (res.ok) return await res.json();
+
+  const errorText = await res.text();
+  if (isInvalidGhlCredentials(res.status, errorText)) {
+    return invalidGhlCredentialsResult(action, errorText, fallback);
+  }
+
+  throw new Error(`GHL ${label} error [${res.status}]: ${errorText}`);
+}
+
 function hasValidContactId(value: unknown): value is string {
   return typeof value === 'string' && value.trim().length > 0 && value.trim() !== ':id' && !value.trim().startsWith(':');
 }
@@ -136,8 +175,7 @@ serve(async (req) => {
         const query = params.query || '';
         const url = `${GHL_BASE}/contacts/?locationId=${GHL_LOCATION_ID}&limit=${limit}${query ? `&query=${encodeURIComponent(query)}` : ''}`;
         const res = await fetchGHL(url, { headers: ghlHeaders });
-        if (!res.ok) throw new Error(`GHL contacts error [${res.status}]: ${await res.text()}`);
-        result = await res.json();
+        result = await parseGhlReadResponse('getContacts', 'contacts', res, { contacts: [] });
         break;
       }
 
@@ -145,8 +183,7 @@ serve(async (req) => {
       case 'getContact': {
         const contactId = requireContactId(params);
         const res = await fetchGHL(`${GHL_BASE}/contacts/${contactId}`, { headers: ghlHeaders });
-        if (!res.ok) throw new Error(`GHL contact error [${res.status}]: ${await res.text()}`);
-        result = await res.json();
+        result = await parseGhlReadResponse('getContact', 'contact', res, { contact: null });
         break;
       }
 
@@ -266,8 +303,7 @@ serve(async (req) => {
         const endMs = new Date(`${endDate}T23:59:59+02:00`).getTime();
         const url = `${GHL_BASE}/calendars/${calendarId}/free-slots?startDate=${startMs}&endDate=${endMs}&timezone=Europe/Amsterdam`;
         const res = await fetchGHL(url, { headers: ghlHeaders });
-        if (!res.ok) throw new Error(`GHL free-slots error [${res.status}]: ${await res.text()}`);
-        result = await res.json();
+        result = await parseGhlReadResponse('getFreeSlots', 'free-slots', res, {});
         break;
       }
 
@@ -295,16 +331,14 @@ serve(async (req) => {
       // ─── GET CALENDARS ───
       case 'getCalendars': {
         const res = await fetchGHL(`${GHL_BASE}/calendars/?locationId=${GHL_LOCATION_ID}`, { headers: ghlHeaders });
-        if (!res.ok) throw new Error(`GHL calendars error [${res.status}]: ${await res.text()}`);
-        result = await res.json();
+        result = await parseGhlReadResponse('getCalendars', 'calendars', res, { calendars: [] });
         break;
       }
 
       // ─── GET PIPELINES ───
       case 'getPipelines': {
         const res = await fetchGHL(`${GHL_BASE}/opportunities/pipelines?locationId=${GHL_LOCATION_ID}`, { headers: ghlHeaders });
-        if (!res.ok) throw new Error(`GHL pipelines error [${res.status}]: ${await res.text()}`);
-        result = await res.json();
+        result = await parseGhlReadResponse('getPipelines', 'pipelines', res, { pipelines: [] });
         break;
       }
 
@@ -319,8 +353,7 @@ serve(async (req) => {
         if (params.startAfter) url += `&startAfter=${params.startAfter}`;
         if (params.startAfterId) url += `&startAfterId=${params.startAfterId}`;
         const res = await fetchGHL(url, { headers: ghlHeaders });
-        if (!res.ok) throw new Error(`GHL search opportunities error [${res.status}]: ${await res.text()}`);
-        result = await res.json();
+        result = await parseGhlReadResponse('searchOpportunities', 'search opportunities', res, { opportunities: [], meta: { total: 0 } });
         break;
       }
 
