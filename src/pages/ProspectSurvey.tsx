@@ -129,6 +129,9 @@ export default function ProspectSurvey() {
   const [step,          setStep]          = useState(0);
   const [status,        setStatus]        = useState<'loading' | 'active' | 'submitting' | 'done' | 'error'>('loading');
   const [contactLoaded, setContactLoaded] = useState(false);
+  // Contact-id die we meegeven aan de boekingspagina, zodat die de gegevens
+  // uit GHL overneemt en de lead niets opnieuw hoeft in te vullen.
+  const [bookingContactId, setBookingContactId] = useState<string | null>(contactId);
 
   // ── Load contact from GHL on mount ─────────────────────────────────────────
   useEffect(() => {
@@ -247,6 +250,9 @@ export default function ProspectSurvey() {
           console.error('[Enquête] createContact mislukt:', err);
         }
       }
+
+      // Onthoud de contact-id voor de boekingsknop (prefill op de afspraakpagina)
+      if (ghlContactId) setBookingContactId(ghlContactId);
 
       // 3. Save to GHL (alle calls parallel, niet-blocking)
       if (ghlContactId) {
@@ -536,7 +542,7 @@ export default function ProspectSurvey() {
           </div>
 
           <a
-            href={BOOKING_URL}
+            href={bookingContactId ? `${BOOKING_URL}?contactId=${encodeURIComponent(bookingContactId)}` : BOOKING_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center justify-center gap-2 w-full px-8 py-4 rounded-xl bg-primary text-white text-[16px] font-bold hover:bg-primary/90 active:scale-[0.97] transition-all shadow-lg shadow-primary/25"
