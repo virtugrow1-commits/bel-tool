@@ -128,9 +128,12 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  let currentAction = 'unknown';
+
   try {
     const body = await req.json();
     const { action, organizationId, ...params } = body;
+    currentAction = action || 'unknown';
 
     // Try to resolve API key per organization
     let GHL_API_KEY = Deno.env.get('GHL_API_KEY') || '';
@@ -661,6 +664,15 @@ serve(async (req) => {
   } catch (error: unknown) {
     console.error('GHL proxy error:', error);
     const msg = error instanceof Error ? error.message : 'Unknown error';
+
+    if (isInvalidGhlCredentials(401, msg)) {
+      return new Response(JSON.stringify(
+        invalidGhlCredentialsResult(currentAction, msg, {})
+      ), {
+        status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     return new Response(JSON.stringify({ error: msg }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
