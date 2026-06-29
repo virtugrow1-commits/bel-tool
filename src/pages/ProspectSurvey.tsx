@@ -542,13 +542,23 @@ export default function ProspectSurvey() {
           </div>
 
           <a
-            href={bookingContactId ? `${BOOKING_URL}?contactId=${encodeURIComponent(bookingContactId)}` : BOOKING_URL}
+            href={(() => {
+              const params = new URLSearchParams();
+              if (bookingContactId) params.set('contactId', bookingContactId);
+              if (answers.naam)     params.set('name', answers.naam);
+              if (answers.email)    params.set('email', answers.email);
+              if (answers.telefoon) params.set('phone', answers.telefoon);
+              if (answers.bedrijf)  params.set('company', answers.bedrijf);
+              const qs = params.toString();
+              return qs ? `${BOOKING_URL}?${qs}` : BOOKING_URL;
+            })()}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center justify-center gap-2 w-full px-8 py-4 rounded-xl bg-primary text-white text-[16px] font-bold hover:bg-primary/90 active:scale-[0.97] transition-all shadow-lg shadow-primary/25"
           >
             Plan nu uw gratis adviesgesprek
           </a>
+
           <div className="flex items-center justify-center gap-4 mt-3 text-[12px] text-muted-foreground">
             <span>15 minuten</span>
             <span>·</span>
