@@ -62,23 +62,40 @@ type Step = 'contact' | 'calendar' | 'date' | 'time' | 'confirm' | 'done';
 export default function Afspraak() {
   const [searchParams] = useSearchParams();
   const contactIdParam = searchParams.get('contactId');
+
+  // Prefill from URL params (sent by survey, no GHL fetch needed)
+  const prefillName    = searchParams.get('name')    || '';
+  const prefillEmail   = searchParams.get('email')   || '';
+  const prefillPhone   = searchParams.get('phone')   || '';
+  const prefillCompany = searchParams.get('company') || '';
+  const hasUrlPrefill  = !!(prefillName && prefillEmail && prefillPhone);
+
   const [ghlContactId, setGhlContactId] = useState<string | null>(contactIdParam);
-  const [step, setStep] = useState<Step>(contactIdParam ? 'date' : 'contact');
-  const [contact, setContact] = useState<ContactForm>(EMPTY_CONTACT);
+  const [step, setStep] = useState<Step>(
+    contactIdParam || hasUrlPrefill ? 'date' : 'contact'
+  );
+  const [contact, setContact] = useState<ContactForm>({
+    naam:      prefillName,
+    email:     prefillEmail,
+    telefoon:  prefillPhone,
+    bedrijf:   prefillCompany,
+    opmerking: '',
+  });
   const [calendars, setCalendars] = useState<GHLCalendar[]>([]);
   const [selectedCalendar, setSelectedCalendar] = useState<string>('');
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [slots, setSlots] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
-  const [loadingContact, setLoadingContact] = useState(!!contactIdParam);
+  const [loadingContact, setLoadingContact] = useState(!!contactIdParam && !hasUrlPrefill);
   const [error, setError] = useState('');
   const [calendarMonth, setCalendarMonth] = useState(() => {
     const now = new Date();
     return { year: now.getFullYear(), month: now.getMonth() };
   });
 
-  // Fetch contact from GHL if contactId is in URL
+  // Fetch contact from GHL if contactId is in URL — only as enrichment;
+  // URL prefill always wins when present (CLIQ token may be unavailable).
   useEffect(() => {
     if (!contactIdParam) return;
     setLoadingContact(true);
@@ -86,22 +103,23 @@ export default function Afspraak() {
       .then((data) => {
         const c = data?.contact || data;
         if (c) {
-          setContact({
-            naam: c.name || c.contactName || [c.firstName, c.lastName].filter(Boolean).join(' ') || '',
-            email: c.email || '',
-            telefoon: c.phone || '',
-            bedrijf: c.companyName || '',
-            opmerking: '',
-          });
+          setContact((prev) => ({
+            naam:      prev.naam     || c.name || c.contactName || [c.firstName, c.lastName].filter(Boolean).join(' ') || '',
+            email:     prev.email    || c.email || '',
+            telefoon:  prev.telefoon || c.phone || '',
+            bedrijf:   prev.bedrijf  || c.companyName || '',
+            opmerking: prev.opmerking,
+          }));
           setGhlContactId(contactIdParam);
         }
       })
       .catch(() => {
-        // If contact fetch fails, show contact form
-        setStep('contact');
+        // If contact fetch fails and we have no URL prefill, show contact form
+        if (!hasUrlPrefill) setStep('contact');
       })
       .finally(() => setLoadingContact(false));
-  }, [contactIdParam]);
+  }, [contactIdParam, hasUrlPrefill]);
+
 
   // Fetch calendars on mount
   useEffect(() => {
