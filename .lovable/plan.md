@@ -1,21 +1,36 @@
-## Probleem
+## Status CLIQ-verbinding
 
-Na het invullen van het praktijkonderzoek opent "Plan nu uw gratis adviesgesprek" de boekingspagina (`/afspraak`) met alleen `?contactId=...`. De boekingspagina probeert vervolgens de klantgegevens uit CLIQ te halen — maar omdat het CLIQ token van die organisatie momenteel een 401 geeft, valt de proxy terug op een lege response en blijft het contactformulier leeg. De lead moet daardoor naam/email/telefoon/bedrijf opnieuw invullen.
+Beide organisaties hebben momenteel **geen werkende verbinding** met CLIQ:
 
-## Oplossing
+- **Future Media** — token `pit-2cf811ea…` aanwezig, maar CLIQ antwoordt met `401 Invalid Private Integration token` (ingetrokken of verlopen).
+- **CliqMakers** — geen `ghl_api_key` en geen `ghl_location_id` ingesteld.
 
-Stuur de klantgegevens die de enquête al kent rechtstreeks mee in de URL, en laat de boekingspagina die direct gebruiken (zonder afhankelijk te zijn van CLIQ).
+De `ghl-proxy` edge function zelf werkt correct: 401-fouten worden afgevangen en als lege response teruggegeven, zodat de app niet crasht. Maar alle CLIQ-data (contacten, pipelines, agenda's, gebruikers) blijft daardoor leeg.
 
-### 1. `src/pages/ProspectSurvey.tsx`
-- Bouw de booking-URL met extra query-parameters: `name`, `email`, `phone`, `company` (URL-encoded), naast de bestaande `contactId`.
-- Geldt zowel wanneer de enquête vanuit een CLIQ-link kwam (gegevens al ingevuld) als wanneer de lead ze zelf op stap 0 heeft ingetypt.
+## Wat er nodig is van jou
 
-### 2. `src/pages/Afspraak.tsx`
-- Lees `name` / `email` / `phone` / `company` uit `useSearchParams` en gebruik ze als initial state voor `contact`.
-- Als die query-parameters aanwezig zijn én er staan nog geen gegevens uit `getContact`, sla stap `contact` over en ga direct naar `date`.
-- Gebruik de URL-waarden als fallback wanneer `getContact` faalt of een lege response geeft (huidige CLIQ 401-scenario), zodat het formulier nooit meer leeg start.
-- Wanneer er geen `contactId` is maar wel `name`+`email`+`phone`, sla het contact-formulier ook over (lead heeft alles al ingevuld in de enquête).
+Per organisatie waarvoor je CLIQ-functionaliteit wil herstellen, een nieuw Private Integration token + Location ID:
 
-## Resultaat
+1. Log in op CLIQ → switch naar het juiste sub-account.
+2. **Settings → Private Integrations → Create New Integration**.
+3. Scopes aanvinken:
+   - `users.readonly`
+   - `contacts.readonly`, `contacts.write`
+   - `opportunities.readonly`, `opportunities.write`
+   - `conversations/message.write`
+   - `calendars.readonly`, `calendars/events.write`
+   - `locations.readonly`
+4. Kopieer het `pit-…` token (wordt maar één keer getoond) en de Location ID (Settings → Business Profile).
 
-De klant klikt aan het einde van de enquête op "Plan nu uw gratis adviesgesprek" en komt direct op de datum/tijd-selectie van `/afspraak` — naam, e-mail, telefoon en bedrijf staan al klaar, ongeacht of CLIQ bereikbaar is.
+## Wat ik dan doe (in build mode)
+
+1. Update `organizations.ghl_api_key` en `organizations.ghl_location_id` voor de betreffende org via een migration/insert.
+2. Verifieer met `supabase--curl_edge_functions` (`getUsers`, `getPipelines`, `getCalendars`) dat de proxy nu 200 met echte data teruggeeft i.p.v. het `ghlUnavailable`-warning-object.
+3. Bevestig in de UI dat contacten/leads/agenda's laden.
+
+## Te beantwoorden voor ik begin
+
+- Voor welke organisatie(s) lever je nieuwe credentials aan: Future Media, CliqMakers, of beide?
+- Plak het nieuwe `pit-…` token + bijbehorende Location ID per organisatie hier in de chat.
+
+Zonder nieuwe credentials kan ik de verbinding niet herstellen — een code-fix lost dit niet op, het probleem zit bij de CLIQ-token zelf.
