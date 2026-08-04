@@ -118,6 +118,33 @@ Deno.serve(async (req) => {
       );
     }
 
+    // ── PING (credential check, no call is placed) ──
+    if (action === 'ping') {
+      const creds = await getVoysCredentials(organizationId);
+      if (!creds.email || !creds.token) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Voys configuratie ontbreekt', device: creds.device }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      const res = await fetchVoys('https://api.voipgrid.nl/api/permission/systemuser/profile/', {
+        method: 'GET',
+        headers: { 'Authorization': `Token ${creds.email}:${creds.token}`, 'Accept': 'application/json' },
+      });
+      const text = await res.text();
+      return new Response(
+        JSON.stringify({
+          success: res.ok,
+          httpStatus: res.status,
+          email: creds.email,
+          device: creds.device,
+          outbound: creds.outbound,
+          details: text.slice(0, 400),
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // ── STATUS CHECK ──
     if (action === 'status') {
       const { callId } = body;
