@@ -1,36 +1,39 @@
-## Status CLIQ-verbinding
+# Eigen accounts en Voys-instellingen per medewerker
 
-Beide organisaties hebben momenteel **geen werkende verbinding** met CLIQ:
+## Doel
+Nieuwe CliqMakers-medewerkers krijgen elk een eigen account in de bel-tool, met per gebruiker instelbaar e-mailadres, Voys API-token en toestelnummer. Blijft een veld leeg, dan gebruikt de tool automatisch de instellingen van de organisatie.
 
-- **Future Media** — token `pit-2cf811ea…` aanwezig, maar CLIQ antwoordt met `401 Invalid Private Integration token` (ingetrokken of verlopen).
-- **CliqMakers** — geen `ghl_api_key` en geen `ghl_location_id` ingesteld.
+## Wat er verandert
 
-De `ghl-proxy` edge function zelf werkt correct: 401-fouten worden afgevangen en als lege response teruggegeven, zodat de app niet crasht. Maar alle CLIQ-data (contacten, pipelines, agenda's, gebruikers) blijft daardoor leeg.
+### 1. Gebruikers centraal in de database
+- Het gebruikersbeheer in Instellingen werkt nu op de centrale gebruikerstabel in plaats van op de lijst in de browser. Toegevoegde, gewijzigde of verwijderde medewerkers zijn direct zichtbaar op elk apparaat.
+- Per gebruiker instelbaar: naam, e-mail, rol (beller/admin), toestelnummer, Voys-e-mail en Voys API-token.
+- Het Voys-token wordt in de interface gemaskeerd getoond (alleen invullen/overschrijven, niet uitlezen).
 
-## Wat er nodig is van jou
+### 2. E-mailadres Willem aanpassen
+`willem@virtugrow.nl` wordt `willem@cliqmakers.nl`. Inloggen gebeurt daarna met het nieuwe adres.
 
-Per organisatie waarvoor je CLIQ-functionaliteit wil herstellen, een nieuw Private Integration token + Location ID:
+### 3. Bellen met de juiste gegevens
+De belfunctie kiest de Voys-gegevens in deze volgorde:
+1. Persoonlijke gegevens van de ingelogde medewerker
+2. Instellingen van de organisatie (CliqMakers)
+3. Globale fallback-instellingen
 
-1. Log in op CLIQ → switch naar het juiste sub-account.
-2. **Settings → Private Integrations → Create New Integration**.
-3. Scopes aanvinken:
-   - `users.readonly`
-   - `contacts.readonly`, `contacts.write`
-   - `opportunities.readonly`, `opportunities.write`
-   - `conversations/message.write`
-   - `calendars.readonly`, `calendars/events.write`
-   - `locations.readonly`
-4. Kopieer het `pit-…` token (wordt maar één keer getoond) en de Location ID (Settings → Business Profile).
+Zo kan elke medewerker met een eigen Voys-account bellen, of meeliften op het CliqMakers-account met alleen een eigen toestelnummer.
 
-## Wat ik dan doe (in build mode)
+### 4. Verbinding testen
+In Instellingen komt per gebruiker een knop "Voys testen" die de inloggegevens controleert zonder daadwerkelijk te bellen, met duidelijke melding of het werkt.
 
-1. Update `organizations.ghl_api_key` en `organizations.ghl_location_id` voor de betreffende org via een migration/insert.
-2. Verifieer met `supabase--curl_edge_functions` (`getUsers`, `getPipelines`, `getCalendars`) dat de proxy nu 200 met echte data teruggeeft i.p.v. het `ghlUnavailable`-warning-object.
-3. Bevestig in de UI dat contacten/leads/agenda's laden.
+## Technisch
 
-## Te beantwoorden voor ik begin
+- **Migratie**: kolommen `voys_email` en `voys_api_token` toevoegen aan `profiles`; RLS-policies blijven zoals ze zijn.
+- **Data-update**: e-mail van Willem bijwerken naar `willem@cliqmakers.nl`.
+- **`src/hooks/useTeamProfiles.ts`**: uitbreiden met `createProfile`, `updateProfile`, `deleteProfile` en de nieuwe velden.
+- **`src/components/beltool/SettingsPanel.tsx`**: gebruikersbeheer omzetten van `managedUsers` (localStorage) naar de profielen-hook; velden voor Voys-e-mail/token en een testknop toevoegen.
+- **`src/lib/beltool-data.ts` / `src/types`**: `User` uitbreiden met `voysEmail` en `voysApiToken` (token alleen bij opslaan verzonden).
+- **`supabase/functions/voys-call/index.ts`**: `getVoysCredentials` uitbreiden met een optionele `profileId`; eerst het profiel lezen (token/e-mail/toestel), dan de organisatie, dan de globale secrets. De `ping`-actie werkt op dezelfde volgorde.
+- **`src/components/beltool/CallButton.tsx` / `CallContent.tsx`**: `profileId` van de ingelogde gebruiker meesturen bij bellen.
+- **`src/hooks/useAuth.ts`**: inloggen blijft op e-mail matchen tegen `profiles`, dus nieuwe medewerkers kunnen direct inloggen zodra ze zijn toegevoegd.
 
-- Voor welke organisatie(s) lever je nieuwe credentials aan: Future Media, CliqMakers, of beide?
-- Plak het nieuwe `pit-…` token + bijbehorende Location ID per organisatie hier in de chat.
-
-Zonder nieuwe credentials kan ik de verbinding niet herstellen — een code-fix lost dit niet op, het probleem zit bij de CLIQ-token zelf.
+## Let op
+De Voys API-token van het huidige account gaf eerder een 401. Nieuwe medewerkers met een eigen Voys-login werken pas als hun token geldig is; de testknop maakt dat direct zichtbaar.
