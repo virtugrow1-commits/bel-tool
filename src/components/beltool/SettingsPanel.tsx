@@ -8,6 +8,8 @@ import { cliq } from '@/lib/beltool-ghl';
 import { cn } from '@/lib/utils';
 import { useAdvisors } from '@/hooks/useAdvisors';
 import { useOrganizations } from '@/hooks/useOrganizations';
+import { useTeamProfiles } from '@/hooks/useTeamProfiles';
+import { supabase } from '@/integrations/supabase/client';
 import type { SelectOption } from '@/types/beltool';
 
 const DEFAULT_CUSTOM_FIELDS = [
@@ -54,7 +56,7 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
   const [testStatus, setTestStatus] = useState<string | null>(null);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [newUser, setNewUser] = useState<Partial<User> & { name: string; email: string }>({ name: '', email: '', role: 'caller', voipzekerExtension: '' });
-  const { profiles: teamProfiles, refresh: refreshProfiles, createProfile, updateProfile } = useTeamProfiles(user?.organizationId);
+  const { profiles: teamProfiles, createProfile, updateProfile } = useTeamProfiles(user?.organizationId);
   const [vzInvitation, setVzInvitation] = useState('');
   const [vzBusy, setVzBusy] = useState<string | null>(null);
   const [vzMsg, setVzMsg] = useState<{ ok: boolean; text: string } | null>(null);
