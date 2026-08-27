@@ -763,25 +763,18 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
         <div className="space-y-4">
           <div className="bg-primary/[0.06] border border-primary/15 rounded-xl p-4">
             <h3 className="text-sm font-bold text-primary mb-2">👥 Gebruikersbeheer</h3>
-            <p className="text-muted-foreground text-sm">Beheer teamleden en hun rollen. Authenticatie loopt via Supabase Auth — wachtwoorden worden veilig beheerd door Supabase.</p>
-          </div>
-
-          <div className="bg-info/[0.06] border border-info/15 rounded-xl p-3">
-            <div className="text-[11px] font-semibold text-info mb-1">🔒 Beveiligde authenticatie</div>
-            <div className="text-[10px] text-muted-foreground">
-              Wachtwoorden worden gehasht opgeslagen in Supabase Auth. Gebruikers kunnen hun wachtwoord herstellen via de "Wachtwoord vergeten" link op het loginscherm.
-            </div>
+            <p className="text-muted-foreground text-sm">Medewerkers staan centraal in de database, zodat iedereen op elk apparaat kan inloggen. Maximaal {MAX_TEAM} medewerkers.</p>
           </div>
 
           {/* Existing users */}
           <div className="space-y-1.5">
-            {managedUsers.map(u => (
+            {teamProfiles.map(u => (
               <div key={u.id} className="flex items-center gap-3 p-3 rounded-xl border border-border/30 bg-foreground/[0.02]">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-info to-primary flex items-center justify-center text-[11px] font-bold text-white flex-shrink-0">{u.avatar}</div>
                 <div className="flex-1 min-w-0">
                   <div className="font-semibold text-[13px]">{u.name}</div>
                   <div className="text-[11px] text-muted-foreground/40">{u.email}</div>
-                  {u.deviceId && <div className="text-[10px] text-muted-foreground/30 font-mono">Device: {u.deviceId}</div>}
+                  {u.voipzekerExtension && <div className="text-[10px] text-muted-foreground/30 font-mono">Extensie: {u.voipzekerExtension}</div>}
                 </div>
                 <span
                   className="text-[10px] font-bold px-2 py-0.5 rounded-full"
@@ -798,23 +791,12 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
                 >
                   Bewerk
                 </button>
-                {u.id !== user?.id && (
-                  <button
-                    onClick={() => {
-                      if (confirm(`Weet je zeker dat je ${u.name} wilt verwijderen?`)) {
-                        onUpdateUsers(managedUsers.filter(mu => mu.id !== u.id));
-                      }
-                    }}
-                    className="text-destructive bg-transparent border-none text-sm"
-                  >
-                    ✕
-                  </button>
-                )}
               </div>
             ))}
+            {teamProfiles.length === 0 && <p className="text-[12px] text-muted-foreground">Nog geen medewerkers in de database.</p>}
           </div>
 
-          {/* Edit user modal inline */}
+          {/* Edit user inline */}
           {editingUser && (
             <div className="border border-primary/20 rounded-xl p-4 bg-primary/[0.03] space-y-3">
               <div className="text-sm font-bold text-primary">✏️ {editingUser.name} bewerken</div>
@@ -836,17 +818,26 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
                   </select>
                 </div>
                 <div>
-                  <label className="text-[11px] text-muted-foreground mb-1 block">Device ID</label>
-                  <input value={editingUser.deviceId || ''} onChange={e => setEditingUser({ ...editingUser, deviceId: e.target.value })} placeholder="bijv. 201" className={cn(inputCls, 'font-mono')} />
+                  <label className="text-[11px] text-muted-foreground mb-1 block">VoIPzeker extensie</label>
+                  <input value={editingUser.voipzekerExtension || ''} onChange={e => setEditingUser({ ...editingUser, voipzekerExtension: e.target.value })} placeholder="bijv. 201" className={cn(inputCls, 'font-mono')} />
                 </div>
               </div>
               <div className="flex gap-2 pt-2">
                 <button onClick={() => setEditingUser(null)} className="px-4 py-2 rounded-lg border border-border text-muted-foreground text-[12px] font-semibold">Annuleren</button>
                 <button
-                  onClick={() => {
-                    const updated = managedUsers.map(mu => mu.id === editingUser.id ? { ...editingUser, avatar: editingUser.name.substring(0, 2).toUpperCase() } : mu);
-                    onUpdateUsers(updated);
-                    setEditingUser(null);
+                  onClick={async () => {
+                    try {
+                      await updateProfile(editingUser.id, {
+                        name: editingUser.name,
+                        email: editingUser.email,
+                        role: editingUser.role,
+                        avatar: editingUser.name.substring(0, 2).toUpperCase(),
+                        voipzekerExtension: editingUser.voipzekerExtension || '',
+                      });
+                      setEditingUser(null);
+                    } catch (e) {
+                      setVzMsg({ ok: false, text: e instanceof Error ? e.message : 'Opslaan mislukt' });
+                    }
                   }}
                   className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-[12px] font-semibold"
                 >
@@ -858,7 +849,7 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
 
           {/* Add new user */}
           <div className="border border-border/30 rounded-xl p-4 space-y-3">
-            <div className="text-xs font-bold text-muted-foreground/50">➕ NIEUWE BELLER TOEVOEGEN</div>
+            <div className="text-xs font-bold text-muted-foreground/50">➕ NIEUWE MEDEWERKER TOEVOEGEN</div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-[11px] text-muted-foreground mb-1 block">Naam</label>
@@ -866,7 +857,7 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
               </div>
               <div>
                 <label className="text-[11px] text-muted-foreground mb-1 block">Email</label>
-                <input value={newUser.email} onChange={e => setNewUser({ ...newUser, email: e.target.value })} placeholder="jan@bedrijf.nl" className={inputCls} />
+                <input value={newUser.email} onChange={e => setNewUser({ ...newUser, email: e.target.value })} placeholder="jan@cliqmakers.nl" className={inputCls} />
               </div>
               <div>
                 <label className="text-[11px] text-muted-foreground mb-1 block">Rol</label>
@@ -877,27 +868,33 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
                 </select>
               </div>
               <div>
-                <label className="text-[11px] text-muted-foreground mb-1 block">Device ID</label>
-                <input value={newUser.deviceId || ''} onChange={e => setNewUser({ ...newUser, deviceId: e.target.value })} placeholder="bijv. 203" className={cn(inputCls, 'font-mono')} />
+                <label className="text-[11px] text-muted-foreground mb-1 block">VoIPzeker extensie</label>
+                <input value={newUser.voipzekerExtension || ''} onChange={e => setNewUser({ ...newUser, voipzekerExtension: e.target.value })} placeholder="bijv. 203" className={cn(inputCls, 'font-mono')} />
               </div>
             </div>
+            {teamProfiles.length >= MAX_TEAM && (
+              <p className="text-[11px] text-warning">Maximaal {MAX_TEAM} medewerkers bereikt.</p>
+            )}
             <button
-              onClick={() => {
+              onClick={async () => {
                 if (!newUser.name.trim() || !newUser.email.trim()) return;
-                const id = `u${Date.now()}`;
-                const avatar = newUser.name.trim().substring(0, 2).toUpperCase();
-                const created: User = {
-                  id, name: newUser.name.trim(), email: newUser.email.trim(),
-                  role: newUser.role || 'caller',
-                  avatar, deviceId: newUser.deviceId || '',
-                };
-                onUpdateUsers([...managedUsers, created]);
-                setNewUser({ name: '', email: '', role: 'caller', deviceId: '' });
+                try {
+                  await createProfile({
+                    name: newUser.name.trim(),
+                    email: newUser.email.trim(),
+                    role: newUser.role || 'caller',
+                    voipzekerExtension: newUser.voipzekerExtension || '',
+                    organizationId: user?.organizationId,
+                  });
+                  setNewUser({ name: '', email: '', role: 'caller', voipzekerExtension: '' });
+                } catch (e) {
+                  setVzMsg({ ok: false, text: e instanceof Error ? e.message : 'Toevoegen mislukt' });
+                }
               }}
-              disabled={!newUser.name.trim() || !newUser.email.trim()}
+              disabled={!newUser.name.trim() || !newUser.email.trim() || teamProfiles.length >= MAX_TEAM}
               className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-[12px] font-semibold active:scale-[0.97] transition-transform disabled:opacity-40"
             >
-              Gebruiker toevoegen
+              Medewerker toevoegen
             </button>
           </div>
         </div>
