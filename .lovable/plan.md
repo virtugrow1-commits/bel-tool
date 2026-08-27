@@ -1,39 +1,54 @@
-# Eigen accounts en Voys-instellingen per medewerker
+# Overstap naar VoIPzeker + 5 medewerkers
 
 ## Doel
-Nieuwe CliqMakers-medewerkers krijgen elk een eigen account in de bel-tool, met per gebruiker instelbaar e-mailadres, Voys API-token en toestelnummer. Blijft een veld leeg, dan gebruikt de tool automatisch de instellingen van de organisatie.
+De bel-tool belt niet langer via Voys/VoIPGRID maar via de VoIPzeker Unite API. Daarnaast kunnen 5 medewerkers elk met hun eigen toestel (extensie) uitbellen vanuit hun eigen account.
 
-## Wat er verandert
+## Hoe VoIPzeker werkt (kort)
+1. In het Unite-portaal maak je een "App provisioning template" aan met een **invitation ID** (6 tekens).
+2. De tool wisselt dat eenmalig in voor een **logintoken** (blijft geldig).
+3. Met dat logintoken wordt telkens een **accesstoken** opgehaald; die verloopt na 30 minuten.
+4. Bellen gebeurt met accesstoken + de **username van de extensie** (bijv. `1234*0200`) + het te bellen nummer.
 
-### 1. Gebruikers centraal in de database
-- Het gebruikersbeheer in Instellingen werkt nu op de centrale gebruikerstabel in plaats van op de lijst in de browser. Toegevoegde, gewijzigde of verwijderde medewerkers zijn direct zichtbaar op elk apparaat.
-- Per gebruiker instelbaar: naam, e-mail, rol (beller/admin), toestelnummer, Voys-e-mail en Voys API-token.
-- Het Voys-token wordt in de interface gemaskeerd getoond (alleen invullen/overschrijven, niet uitlezen).
+Belangrijk: het invitation ID werkt maar één keer — na gebruik moet de template opnieuw aangezet worden voor een nieuwe. Er geldt een limiet van 30 API-verzoeken per minuut.
 
-### 2. E-mailadres Willem aanpassen
-`willem@virtugrow.nl` wordt `willem@cliqmakers.nl`. Inloggen gebeurt daarna met het nieuwe adres.
+## Wat er gebouwd wordt
 
-### 3. Bellen met de juiste gegevens
-De belfunctie kiest de Voys-gegevens in deze volgorde:
-1. Persoonlijke gegevens van de ingelogde medewerker
-2. Instellingen van de organisatie (CliqMakers)
-3. Globale fallback-instellingen
+### 1. VoIPzeker-instellingen per organisatie
+Nieuwe velden op de organisatie: invitation ID (eenmalig invoeren), logintoken (automatisch opgeslagen na provisioning), en het standaard uitbelnummer. In Instellingen komt een blok "Telefonie (VoIPzeker)" waar een admin het invitation ID invoert en op "Koppelen" klikt; de tool haalt dan het logintoken op en bewaart dat.
 
-Zo kan elke medewerker met een eigen Voys-account bellen, of meeliften op het CliqMakers-account met alleen een eigen toestelnummer.
+### 2. Toestel per medewerker
+Per medewerker wordt de VoIPzeker-extensie ingesteld (de username uit VoIPzeker, bijv. `1234*0200`). In Instellingen komt een keuzelijst die de beschikbare extensies live uit VoIPzeker ophaalt, zodat je per medewerker gewoon het juiste toestel aanklikt in plaats van een code te typen.
 
-### 4. Verbinding testen
-In Instellingen komt per gebruiker een knop "Voys testen" die de inloggegevens controleert zonder daadwerkelijk te bellen, met duidelijke melding of het werkt.
+### 3. Vijf accounts
+Gebruikersbeheer verhuist van de browser-opslag naar de centrale gebruikerstabel, zodat je tot 5 (of meer) medewerkers kunt toevoegen die op elk apparaat kunnen inloggen. Per medewerker: naam, e-mail, rol en extensie. Willems e-mailadres wordt gelijk `willem@cliqmakers.nl`.
+
+### 4. Bellen en ophangen
+De belknop start het gesprek via VoIPzeker met de extensie van de ingelogde medewerker. Werkt de extensie niet of ontbreekt de koppeling, dan volgt een duidelijke melding in plaats van een technische fout.
+
+### 5. Verbinding testen
+Een testknop controleert of de koppeling werkt (accesstoken ophalen + extensies opsommen) zonder te bellen.
 
 ## Technisch
 
-- **Migratie**: kolommen `voys_email` en `voys_api_token` toevoegen aan `profiles`; RLS-policies blijven zoals ze zijn.
-- **Data-update**: e-mail van Willem bijwerken naar `willem@cliqmakers.nl`.
-- **`src/hooks/useTeamProfiles.ts`**: uitbreiden met `createProfile`, `updateProfile`, `deleteProfile` en de nieuwe velden.
-- **`src/components/beltool/SettingsPanel.tsx`**: gebruikersbeheer omzetten van `managedUsers` (localStorage) naar de profielen-hook; velden voor Voys-e-mail/token en een testknop toevoegen.
-- **`src/lib/beltool-data.ts` / `src/types`**: `User` uitbreiden met `voysEmail` en `voysApiToken` (token alleen bij opslaan verzonden).
-- **`supabase/functions/voys-call/index.ts`**: `getVoysCredentials` uitbreiden met een optionele `profileId`; eerst het profiel lezen (token/e-mail/toestel), dan de organisatie, dan de globale secrets. De `ping`-actie werkt op dezelfde volgorde.
-- **`src/components/beltool/CallButton.tsx` / `CallContent.tsx`**: `profileId` van de ingelogde gebruiker meesturen bij bellen.
-- **`src/hooks/useAuth.ts`**: inloggen blijft op e-mail matchen tegen `profiles`, dus nieuwe medewerkers kunnen direct inloggen zodra ze zijn toegevoegd.
+- **Migratie**
+  - `organizations`: kolommen `voipzeker_invitation_id`, `voipzeker_login_token`, `voipzeker_outbound_number`.
+  - `profiles`: kolom `voipzeker_extension` (username van de extensie).
+  - Oude `voys_*` kolommen blijven voorlopig staan (niet meer gebruikt) om niets te breken.
+- **Nieuwe edge function `voipzeker-call`** (vervangt `voys-call`), acties:
+  - `provision` — invitation ID → logintoken, opslaan in `organizations`.
+  - `extensions` — `listextensions` voor de keuzelijst.
+  - `call` — `callnumber` met `username` (extensie) + genormaliseerd nummer.
+  - `ping` — koppeling testen.
+  - Accesstoken wordt per organisatie in geheugen gecached (25 min) en automatisch vernieuwd bij foutcode 21/90; bij 429 een nette "te veel verzoeken"-melding.
+  - Telefoonnummers worden genormaliseerd naar E.164 (bestaande logica hergebruiken).
+  - Let op: VoIPzeker's `callnumber` geeft geen call-ID terug. Het ophangen-vanuit-de-tool en de live belstatus vervallen daarmee; de tool toont de belstatus op basis van de eigen UI-fasen (starten → in gesprek → afronden). De hangup-knop verdwijnt of wordt "gesprek afronden" (alleen in de tool, niet op de telefoon).
+- **Frontend**
+  - `src/components/beltool/CallButton.tsx` en `CallContent.tsx`: aanroep naar `voipzeker-call` met `organizationId` + extensie van de gebruiker.
+  - `src/hooks/useTeamProfiles.ts`: toevoegen/wijzigen/verwijderen van profielen plus het extensie-veld.
+  - `src/components/beltool/SettingsPanel.tsx`: gebruikersbeheer op de database, VoIPzeker-koppelblok en extensiekeuze per gebruiker.
+  - `src/hooks/useOrganizations.ts` en `src/lib/beltool-data.ts`: nieuwe velden meenemen.
+  - `src/hooks/useCallFlow.ts` / `CallDisplay.tsx`: statusafhandeling losmaken van Voys-callId.
+- **Opruimen**: `supabase/functions/voys-call` blijft tijdelijk staan tot VoIPzeker bevestigd werkt, daarna verwijderen. De secrets `VOYS_*` kunnen dan weg.
 
-## Let op
-De Voys API-token van het huidige account gaf eerder een 401. Nieuwe medewerkers met een eigen Voys-login werken pas als hun token geldig is; de testknop maakt dat direct zichtbaar.
+## Wat ik van jou nodig heb
+Het **invitation ID** uit het VoIPzeker Unite-portaal (App provisioning template). Zodra de koppeling er is, haal ik de extensielijst op en koppelen we per medewerker het juiste toestel.
