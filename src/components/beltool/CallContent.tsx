@@ -345,7 +345,7 @@ export function CallContent({
              phoneNumber={activeContact.phone}
              leadId={activeContact.id}
              leadName={`${activeContact.firstName} ${activeContact.lastName}`}
-             deviceId={resolvedDeviceId}
+             extension={resolvedExtension}
              organizationId={organization?.id}
              onCallStarted={(callId) => { onStartDialing(callId); }}
            />
