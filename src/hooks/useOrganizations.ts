@@ -32,6 +32,9 @@ export function useOrganizations() {
           voys_email: row.voys_email,
           voys_device_id: row.voys_device_id,
           voys_outbound_number: row.voys_outbound_number,
+          voipzeker_invitation_id: row.voipzeker_invitation_id,
+          voipzeker_login_token: row.voipzeker_login_token,
+          voipzeker_outbound_number: row.voipzeker_outbound_number,
         })));
       }
     } catch {
