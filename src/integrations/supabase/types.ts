@@ -73,6 +73,9 @@ export type Database = {
           logo_url: string | null
           name: string
           slug: string
+          voipzeker_invitation_id: string | null
+          voipzeker_login_token: string | null
+          voipzeker_outbound_number: string | null
           voys_api_token: string | null
           voys_device_id: string | null
           voys_email: string | null
@@ -90,6 +93,9 @@ export type Database = {
           logo_url?: string | null
           name: string
           slug: string
+          voipzeker_invitation_id?: string | null
+          voipzeker_login_token?: string | null
+          voipzeker_outbound_number?: string | null
           voys_api_token?: string | null
           voys_device_id?: string | null
           voys_email?: string | null
@@ -107,6 +113,9 @@ export type Database = {
           logo_url?: string | null
           name?: string
           slug?: string
+          voipzeker_invitation_id?: string | null
+          voipzeker_login_token?: string | null
+          voipzeker_outbound_number?: string | null
           voys_api_token?: string | null
           voys_device_id?: string | null
           voys_email?: string | null
@@ -125,6 +134,7 @@ export type Database = {
           name: string
           organization_id: string | null
           role: string
+          voipzeker_extension: string | null
         }
         Insert: {
           avatar?: string | null
@@ -135,6 +145,7 @@ export type Database = {
           name: string
           organization_id?: string | null
           role?: string
+          voipzeker_extension?: string | null
         }
         Update: {
           avatar?: string | null
@@ -145,6 +156,7 @@ export type Database = {
           name?: string
           organization_id?: string | null
           role?: string
+          voipzeker_extension?: string | null
         }
         Relationships: [
           {
