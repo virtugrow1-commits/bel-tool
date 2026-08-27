@@ -53,7 +53,66 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
   const [newOpt, setNewOpt] = useState('');
   const [testStatus, setTestStatus] = useState<string | null>(null);
   const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [newUser, setNewUser] = useState<Partial<User> & { name: string; email: string }>({ name: '', email: '', role: 'caller', deviceId: '' });
+  const [newUser, setNewUser] = useState<Partial<User> & { name: string; email: string }>({ name: '', email: '', role: 'caller', voipzekerExtension: '' });
+  const { profiles: teamProfiles, refresh: refreshProfiles, createProfile, updateProfile } = useTeamProfiles(user?.organizationId);
+  const [vzInvitation, setVzInvitation] = useState('');
+  const [vzBusy, setVzBusy] = useState<string | null>(null);
+  const [vzMsg, setVzMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [vzExtensions, setVzExtensions] = useState<Array<{ id: string; username: string; name: string; extno: string }>>([]);
+  const [savingExt, setSavingExt] = useState<string | null>(null);
+  const MAX_TEAM = 5;
+
+  const callVz = async (action: string, extra: Record<string, unknown> = {}) => {
+    const { data, error } = await supabase.functions.invoke('voipzeker-call', {
+      body: { action, organizationId: user?.organizationId, ...extra },
+    });
+    if (error) {
+      let detail = error.message;
+      try {
+        const ctx = (error as unknown as { context?: { text?: () => Promise<string> } }).context;
+        if (ctx?.text) { const parsed = JSON.parse(await ctx.text()); if (parsed?.error) detail = parsed.error; }
+      } catch { /* keep */ }
+      throw new Error(detail);
+    }
+    if (!data?.success) throw new Error(data?.error || 'Onbekende fout van VoIPzeker');
+    return data;
+  };
+
+  const vzConnect = async () => {
+    setVzBusy('connect'); setVzMsg(null);
+    try {
+      await callVz('provision', { invitationId: vzInvitation.trim() });
+      setVzMsg({ ok: true, text: 'VoIPzeker gekoppeld — de koppelcode is verbruikt en het logintoken is opgeslagen.' });
+      setVzInvitation('');
+    } catch (e) { setVzMsg({ ok: false, text: e instanceof Error ? e.message : 'Koppelen mislukt' }); }
+    setVzBusy(null);
+  };
+
+  const vzTest = async () => {
+    setVzBusy('test'); setVzMsg(null);
+    try {
+      const d = await callVz('ping');
+      setVzMsg({ ok: true, text: `Verbinding OK — ${d.extensionCount ?? '?'} toestellen gevonden.` });
+    } catch (e) { setVzMsg({ ok: false, text: e instanceof Error ? e.message : 'Test mislukt' }); }
+    setVzBusy(null);
+  };
+
+  const vzLoadExtensions = async () => {
+    setVzBusy('ext'); setVzMsg(null);
+    try {
+      const d = await callVz('extensions');
+      setVzExtensions(d.extensions || []);
+      setVzMsg({ ok: true, text: `${(d.extensions || []).length} toestellen opgehaald.` });
+    } catch (e) { setVzMsg({ ok: false, text: e instanceof Error ? e.message : 'Ophalen mislukt' }); }
+    setVzBusy(null);
+  };
+
+  const saveExtension = async (profileId: string, value: string) => {
+    setSavingExt(profileId);
+    try { await updateProfile(profileId, { voipzekerExtension: value }); }
+    catch (e) { setVzMsg({ ok: false, text: e instanceof Error ? e.message : 'Opslaan mislukt' }); }
+    setSavingExt(null);
+  };
 
   const qKeys = ['intro', 'q1', 'q2', 'q3', 'q4', 'bridge'];
   const qLabels: Record<string, string> = { intro: 'Introductie', q1: 'Vraag 1', q2: 'Vraag 2', q3: 'Vraag 3', q4: 'Vraag 4', bridge: 'Aanbod' };
@@ -540,12 +599,54 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
       {tab === 'telefonie' && (
         <div className="space-y-5">
           <div className="bg-primary/[0.06] border border-primary/15 rounded-xl p-4">
-            <h3 className="text-sm font-bold text-primary mb-2">📞 Bel Instellingen</h3>
-            <p className="text-muted-foreground text-sm">Stel per beller het Voys toestelnummer (Device ID) in. Elke beller kan een eigen toestel gebruiken.</p>
+            <h3 className="text-sm font-bold text-primary mb-2">📞 VoIPzeker koppeling</h3>
+            <p className="text-muted-foreground text-sm">Koppel de organisatie één keer met een koppelcode (invitation ID) uit het VoIPzeker Unite-portaal. Daarna kun je per medewerker een toestel (extensie) instellen.</p>
           </div>
 
+          {user?.role === 'admin' && (
+            <div className="border border-border/30 rounded-xl p-4 space-y-3">
+              <div className="text-xs font-bold text-muted-foreground/50">🔑 KOPPELCODE</div>
+              <div className="flex gap-2">
+                <input
+                  value={vzInvitation}
+                  onChange={e => setVzInvitation(e.target.value)}
+                  placeholder="6-cijferige koppelcode"
+                  className={cn(inputCls, 'font-mono')}
+                />
+                <button
+                  onClick={vzConnect}
+                  disabled={!vzInvitation.trim() || vzBusy !== null}
+                  className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-[12px] font-semibold whitespace-nowrap disabled:opacity-40"
+                >
+                  {vzBusy === 'connect' ? 'Koppelen…' : 'Koppelen'}
+                </button>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={vzTest} disabled={vzBusy !== null} className="px-3 py-2 rounded-lg border border-border text-[12px] font-semibold disabled:opacity-40">
+                  {vzBusy === 'test' ? 'Testen…' : 'Verbinding testen'}
+                </button>
+                <button onClick={vzLoadExtensions} disabled={vzBusy !== null} className="px-3 py-2 rounded-lg border border-border text-[12px] font-semibold disabled:opacity-40">
+                  {vzBusy === 'ext' ? 'Ophalen…' : 'Toestellen ophalen'}
+                </button>
+              </div>
+              {vzMsg && (
+                <div className={cn('text-[12px] rounded-lg p-2 border', vzMsg.ok ? 'text-success border-success/20 bg-success/5' : 'text-destructive border-destructive/20 bg-destructive/5')}>
+                  {vzMsg.text}
+                </div>
+              )}
+              {vzExtensions.length > 0 && (
+                <div className="text-[11px] text-muted-foreground/60 space-y-0.5 max-h-40 overflow-auto">
+                  {vzExtensions.map(e => (
+                    <div key={e.id} className="font-mono">{e.extno} · {e.username} <span className="font-sans">{e.name}</span></div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="space-y-2">
-            {managedUsers.map(u => (
+            <div className="text-xs font-bold text-muted-foreground/50">👤 TOESTEL PER MEDEWERKER ({teamProfiles.length}/{MAX_TEAM})</div>
+            {teamProfiles.map(u => (
               <div key={u.id} className="flex items-center gap-3 p-3 rounded-xl bg-foreground/[0.02] border border-border/40">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-info to-primary flex items-center justify-center text-[11px] font-bold text-white flex-shrink-0">{u.avatar}</div>
                 <div className="flex-1 min-w-0">
@@ -553,29 +654,30 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
                   <div className="text-[11px] text-muted-foreground/40">{u.email}</div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <label className="text-[11px] text-muted-foreground/50 whitespace-nowrap">Device ID</label>
+                  <label className="text-[11px] text-muted-foreground/50 whitespace-nowrap">Extensie</label>
                   <input
-                    value={u.deviceId || ''}
-                    onChange={e => {
-                      const updated = managedUsers.map(mu => mu.id === u.id ? { ...mu, deviceId: e.target.value } : mu);
-                      onUpdateUsers(updated);
-                    }}
+                    defaultValue={u.voipzekerExtension || ''}
+                    onBlur={e => { if (e.target.value !== (u.voipzekerExtension || '')) saveExtension(u.id, e.target.value.trim()); }}
                     placeholder="bijv. 201"
-                    className={cn(inputCls, 'w-24 text-center font-mono')}
+                    className={cn(inputCls, 'w-28 text-center font-mono')}
                     disabled={user?.role !== 'admin' && user?.id !== u.id}
                   />
+                  {savingExt === u.id && <span className="text-[10px] text-muted-foreground">…</span>}
                 </div>
               </div>
             ))}
+            {teamProfiles.length === 0 && (
+              <p className="text-[12px] text-muted-foreground">Nog geen medewerkers — voeg ze toe via Gebruikersbeheer.</p>
+            )}
           </div>
 
           <div className="bg-foreground/[0.02] border border-border/30 rounded-xl p-4">
             <div className="text-xs font-bold text-muted-foreground/50 mb-2">💡 UITLEG</div>
             <div className="text-[12px] text-muted-foreground/60 space-y-1">
-              <p>• <strong>201</strong> = Web-call (browser softphone)</p>
-              <p>• <strong>202</strong> = Voys app (mobiel)</p>
-              <p>• Elk toestel heeft een eigen intern nummer in Voys</p>
-              <p>• Het Device ID bepaalt welk toestel eerst overgaat bij click-to-call</p>
+              <p>• De extensie is de <strong>username</strong> van het toestel in VoIPzeker (zie "Toestellen ophalen").</p>
+              <p>• Bij click-to-call gaat eerst dit toestel over, daarna wordt het contact gebeld.</p>
+              <p>• Zonder eigen extensie valt de tool terug op het organisatie-toestel.</p>
+              <p>• VoIPzeker geeft geen call-ID terug: ophangen doe je op je eigen toestel.</p>
             </div>
           </div>
 
