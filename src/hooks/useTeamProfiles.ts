@@ -36,6 +36,7 @@ export function useTeamProfiles(organizationId?: string) {
           role: row.role as User['role'],
           avatar: row.avatar,
           deviceId: row.device_id || '',
+          voipzekerExtension: row.voipzeker_extension || '',
           organizationId: row.organization_id || undefined,
           organizationName: row.organizations?.name || undefined,
         })));
@@ -51,5 +52,35 @@ export function useTeamProfiles(organizationId?: string) {
     fetchProfiles();
   }, [fetchProfiles]);
 
-  return { profiles, loading, refresh: fetchProfiles };
+  const createProfile = useCallback(async (input: {
+    name: string; email: string; role: User['role']; avatar?: string;
+    voipzekerExtension?: string; organizationId?: string;
+  }) => {
+    const { error } = await (supabase as any).from('profiles').insert({
+      name: input.name,
+      email: input.email.trim().toLowerCase(),
+      role: input.role,
+      avatar: input.avatar || input.name.slice(0, 2).toUpperCase(),
+      voipzeker_extension: input.voipzekerExtension || null,
+      organization_id: input.organizationId || organizationId || null,
+    });
+    if (error) throw new Error(error.message);
+    await fetchProfiles();
+  }, [fetchProfiles, organizationId]);
+
+  const updateProfile = useCallback(async (id: string, input: Partial<{
+    name: string; email: string; role: User['role']; avatar: string; voipzekerExtension: string;
+  }>) => {
+    const payload: Record<string, unknown> = {};
+    if (input.name !== undefined) payload.name = input.name;
+    if (input.email !== undefined) payload.email = input.email.trim().toLowerCase();
+    if (input.role !== undefined) payload.role = input.role;
+    if (input.avatar !== undefined) payload.avatar = input.avatar;
+    if (input.voipzekerExtension !== undefined) payload.voipzeker_extension = input.voipzekerExtension || null;
+    const { error } = await (supabase as any).from('profiles').update(payload).eq('id', id);
+    if (error) throw new Error(error.message);
+    await fetchProfiles();
+  }, [fetchProfiles]);
+
+  return { profiles, loading, refresh: fetchProfiles, createProfile, updateProfile };
 }
