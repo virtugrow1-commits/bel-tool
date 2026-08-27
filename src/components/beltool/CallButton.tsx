@@ -68,8 +68,19 @@ export function CallButton({ phoneNumber, leadId, leadName, extension, organizat
         body: { action: 'call', phone: phoneNumber, leadId, leadName, ...(extension ? { extension } : {}), ...(organizationId ? { organizationId } : {}) },
       });
 
-      if (error) throw new Error(error.message || 'Functie aanroep mislukt');
-      if (!data?.success) throw new Error(data?.error || 'Onbekende fout van Voys');
+      if (error) {
+        let detail = error.message || 'Functie aanroep mislukt';
+        try {
+          const ctx = (error as unknown as { context?: { text?: () => Promise<string> } }).context;
+          if (ctx?.text) {
+            const raw = await ctx.text();
+            const parsed = JSON.parse(raw);
+            if (parsed?.error) detail = parsed.error;
+          }
+        } catch { /* keep generic message */ }
+        throw new Error(detail);
+      }
+      if (!data?.success) throw new Error(data?.error || 'Onbekende fout van VoIPzeker');
 
       const callId = data?.callId || '';
 
