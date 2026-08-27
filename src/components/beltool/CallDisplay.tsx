@@ -4,13 +4,11 @@
  *  • DTMF keypad
  *  • Mute / Hold controls
  *  • Script cheatsheet overlay (visible during active call)
- *  • Voys status polling to auto-detect when call becomes active
  */
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Phone, PhoneOff, Mic, MicOff, Pause, Play, Hash, X, BookOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { CompanyContact, Company, CallState } from '@/types/beltool';
-import { supabase } from '@/integrations/supabase/client';
 
 function formatDuration(seconds: number) {
   const m = String(Math.floor(seconds / 60)).padStart(2, '0');
@@ -55,7 +53,7 @@ interface CallDisplayProps {
   onElapsedChange?:   (seconds: number) => void;
 }
 
-export function CallDisplay({ callState, contact, company, onHangup, onConfirmConnected, activeCallId, organizationId, onElapsedChange }: CallDisplayProps) {
+export function CallDisplay({ callState, contact, company, onHangup, onConfirmConnected, onElapsedChange }: CallDisplayProps) {
   const [elapsed,     setElapsed]     = useState(0);
   const [muted,       setMuted]       = useState(false);
   const [held,        setHeld]        = useState(false);
@@ -64,7 +62,6 @@ export function CallDisplay({ callState, contact, company, onHangup, onConfirmCo
   const [dtmfInput,   setDtmfInput]   = useState('');
   const [scriptTab,   setScriptTab]   = useState<'tips' | 'bezwaren'>('tips');
   const startRef      = useRef<number | null>(null);
-  const pollRef       = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // ── Timer ──────────────────────────────────────────────────────────────────
   useEffect(() => {
