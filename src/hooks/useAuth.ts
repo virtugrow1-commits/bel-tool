@@ -107,6 +107,7 @@ export function useAuth() {
           role: existingProfile.role,
           avatar: existingProfile.avatar || existingProfile.name?.[0]?.toUpperCase() || 'U',
           deviceId: existingProfile.device_id || '',
+          voipzekerExtension: existingProfile.voipzeker_extension || '',
           organizationId: existingProfile.organization_id || undefined,
         };
         store.set('user', user);
