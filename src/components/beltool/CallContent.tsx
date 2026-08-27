@@ -279,9 +279,9 @@ export function CallContent({
   const stepIndex: Record<string, number> = { intro: 0, q1: 1, q2: 2, q3: 3, q4: 4, bridge: 5 };
   const currentStepNum = stepIndex[phase] ?? -1;
   const contactName = `${activeContact.firstName} ${activeContact.lastName}`;
-  const trimmedUserDeviceId = user?.deviceId?.trim() || '';
-  const trimmedOrgDeviceId = organization?.voys_device_id?.trim() || '';
-  const resolvedDeviceId = trimmedUserDeviceId || trimmedOrgDeviceId || undefined;
+  const trimmedUserExtension = user?.voipzekerExtension?.trim() || '';
+  const trimmedOrgExtension = organization?.voipzeker_outbound_number?.trim() || '';
+  const resolvedExtension = trimmedUserExtension || trimmedOrgExtension || undefined;
  
    // Idle screen — show scores in the center
    if (phase === 'idle') {
@@ -345,7 +345,7 @@ export function CallContent({
              phoneNumber={activeContact.phone}
              leadId={activeContact.id}
              leadName={`${activeContact.firstName} ${activeContact.lastName}`}
-             deviceId={resolvedDeviceId}
+             extension={resolvedExtension}
              organizationId={organization?.id}
              onCallStarted={(callId) => { onStartDialing(callId); }}
            />

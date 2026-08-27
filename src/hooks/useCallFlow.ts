@@ -184,20 +184,12 @@ export function useCallFlow({
     }
     callStartRef.current = null;
 
-    const callIdToHangup   = activeCallId;
     const contactToClean   = activeContactId;
     setCallState('ended');
     setActiveCallId(null);
 
-    if (callIdToHangup) {
-      try {
-        await supabase.functions.invoke('voys-call', {
-          body: { action: 'hangup', callId: callIdToHangup, ...(organizationId ? { organizationId } : {}) },
-        });
-      } catch (err) {
-        console.error('Voys hangup failed (call may already be ended):', err);
-      }
-    }
+    // VoIPzeker biedt geen remote hangup — het gesprek wordt op het toestel beëindigd.
+
 
     if (contactToClean) {
       cliq.removeTag(contactToClean, ['beltool-call-now', 'beltool-in-gesprek']).catch(console.error);

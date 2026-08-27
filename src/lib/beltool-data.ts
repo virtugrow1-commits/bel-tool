@@ -15,6 +15,9 @@ export interface Organization {
   voys_email?: string;
   voys_device_id?: string;
   voys_outbound_number?: string;
+  voipzeker_invitation_id?: string;
+  voipzeker_login_token?: string;
+  voipzeker_outbound_number?: string;
 }
 
 export interface User {
@@ -24,6 +27,7 @@ export interface User {
   role: 'admin' | 'caller' | 'manager';
   avatar: string;
   deviceId?: string;
+  voipzekerExtension?: string;
   organizationId?: string;
   organizationName?: string;
 }

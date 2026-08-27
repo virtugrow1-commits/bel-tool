@@ -16,7 +16,7 @@ interface CallButtonProps {
   phoneNumber:    string;
   leadId:         string;
   leadName:       string;
-  deviceId?:      string;
+  extension?:     string;
   organizationId?: string;
   onCallStarted?: (callId: string) => void;
   className?:     string;
@@ -46,7 +46,7 @@ async function isDNC(phone: string): Promise<boolean> {
   }
 }
 
-export function CallButton({ phoneNumber, leadId, leadName, deviceId, organizationId, onCallStarted, className }: CallButtonProps) {
+export function CallButton({ phoneNumber, leadId, leadName, extension, organizationId, onCallStarted, className }: CallButtonProps) {
   const [state,    setState]    = useState<'idle' | 'loading' | 'success' | 'error' | 'dnc'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -64,12 +64,23 @@ export function CallButton({ phoneNumber, leadId, leadName, deviceId, organizati
         return;
       }
 
-      const { data, error } = await supabase.functions.invoke('voys-call', {
-        body: { phone: phoneNumber, leadId, leadName, ...(deviceId ? { deviceId } : {}), ...(organizationId ? { organizationId } : {}) },
+      const { data, error } = await supabase.functions.invoke('voipzeker-call', {
+        body: { action: 'call', phone: phoneNumber, leadId, leadName, ...(extension ? { extension } : {}), ...(organizationId ? { organizationId } : {}) },
       });
 
-      if (error) throw new Error(error.message || 'Functie aanroep mislukt');
-      if (!data?.success) throw new Error(data?.error || 'Onbekende fout van Voys');
+      if (error) {
+        let detail = error.message || 'Functie aanroep mislukt';
+        try {
+          const ctx = (error as unknown as { context?: { text?: () => Promise<string> } }).context;
+          if (ctx?.text) {
+            const raw = await ctx.text();
+            const parsed = JSON.parse(raw);
+            if (parsed?.error) detail = parsed.error;
+          }
+        } catch { /* keep generic message */ }
+        throw new Error(detail);
+      }
+      if (!data?.success) throw new Error(data?.error || 'Onbekende fout van VoIPzeker');
 
       const callId = data?.callId || '';
 
