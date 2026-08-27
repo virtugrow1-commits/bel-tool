@@ -82,39 +82,9 @@ export function CallDisplay({ callState, contact, company, onHangup, onConfirmCo
     }
   }, [callState]);
 
-  // ── Voys status polling — auto-confirm when Voys reports call active ───────
-  const pollVoysStatus = useCallback(async (callId: string) => {
-    try {
-      const { data } = await supabase.functions.invoke('voys-call', {
-        body: { action: 'status', callId, ...(organizationId ? { organizationId } : {}) },
-      });
-      if (data?.status === 'connected' || data?.status === 'active') {
-        onConfirmConnected?.();
-      }
-    } catch {
-      // Silent fail — user can always confirm manually
-    }
-  }, [onConfirmConnected, organizationId]);
+  // VoIPzeker returns no call id, so there is no live status to poll.
+  // The caller confirms the connection manually via the UI.
 
-  useEffect(() => {
-    if (callState === 'ringing' && activeCallId) {
-      // Poll every 4s to detect when lead answers
-      pollRef.current = setInterval(() => {
-        pollVoysStatus(activeCallId);
-      }, 4000);
-    } else {
-      if (pollRef.current) {
-        clearInterval(pollRef.current);
-        pollRef.current = null;
-      }
-    }
-    return () => {
-      if (pollRef.current) {
-        clearInterval(pollRef.current);
-        pollRef.current = null;
-      }
-    };
-  }, [callState, activeCallId, pollVoysStatus]);
 
   if (callState === 'idle' || callState === 'ended') return null;
 
