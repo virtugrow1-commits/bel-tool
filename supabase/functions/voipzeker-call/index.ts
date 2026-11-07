@@ -103,6 +103,7 @@ async function extensionStatus(organizationId: string, username: string): Promis
   if (http === 429) throw new Error('RATE_LIMIT');
   if (!res?.status) throw new Error(res?.message || `Status ophalen mislukt (${http})`);
   const d = res.data as unknown;
+  console.log('[voipzeker-call] status shape', JSON.stringify(d).slice(0, 400));
   const list = Array.isArray(d) ? d : ((d as { items?: unknown[] })?.items ?? (d && typeof d === 'object' ? Object.values(d as object) : []));
   const row = (list as Record<string, unknown>[]).find((r) => String(r?.id ?? r?.extensionid ?? id) === id) ?? (list as Record<string, unknown>[])[0];
   const raw = row && typeof row === 'object' ? (row.status ?? row.state ?? row.code) : row;
