@@ -15,7 +15,7 @@ export function useTeamProfiles(organizationId?: string) {
     try {
       let query = (supabase as any)
         .from('profiles')
-        .select('*, organizations(name)')
+        .select('*')
         .order('name');
 
       // Filter by organization if provided
@@ -24,6 +24,7 @@ export function useTeamProfiles(organizationId?: string) {
       }
 
       const { data, error } = await query;
+      const { data: roles } = await supabase.from('user_roles').select('profile_id,role');
 
       if (error) {
         console.warn('[TeamProfiles] Fetch failed:', error.message);
@@ -33,7 +34,7 @@ export function useTeamProfiles(organizationId?: string) {
           id: row.id,
           name: row.name,
           email: row.email,
-          role: row.role as User['role'],
+          role: (roles?.find(r => r.profile_id === row.id)?.role || 'caller') as User['role'],
           avatar: row.avatar,
           deviceId: row.device_id || '',
           voipzekerExtension: row.voipzeker_extension || '',
@@ -56,29 +57,16 @@ export function useTeamProfiles(organizationId?: string) {
     name: string; email: string; role: User['role']; avatar?: string;
     voipzekerExtension?: string; organizationId?: string;
   }) => {
-    const { error } = await (supabase as any).from('profiles').insert({
-      name: input.name,
-      email: input.email.trim().toLowerCase(),
-      role: input.role,
-      avatar: input.avatar || input.name.slice(0, 2).toUpperCase(),
-      voipzeker_extension: input.voipzekerExtension || null,
-      organization_id: input.organizationId || organizationId || null,
-    });
-    if (error) throw new Error(error.message);
+    const { data, error } = await supabase.functions.invoke('team-admin', { body: { action:'invite', ...input, organizationId: input.organizationId || organizationId } });
+    if (error || data?.error) throw new Error(data?.error || 'Uitnodiging versturen mislukt');
     await fetchProfiles();
   }, [fetchProfiles, organizationId]);
 
   const updateProfile = useCallback(async (id: string, input: Partial<{
     name: string; email: string; role: User['role']; avatar: string; voipzekerExtension: string;
   }>) => {
-    const payload: Record<string, unknown> = {};
-    if (input.name !== undefined) payload.name = input.name;
-    if (input.email !== undefined) payload.email = input.email.trim().toLowerCase();
-    if (input.role !== undefined) payload.role = input.role;
-    if (input.avatar !== undefined) payload.avatar = input.avatar;
-    if (input.voipzekerExtension !== undefined) payload.voipzeker_extension = input.voipzekerExtension || null;
-    const { error } = await (supabase as any).from('profiles').update(payload).eq('id', id);
-    if (error) throw new Error(error.message);
+    const { data, error } = await supabase.functions.invoke('team-admin', { body: { action:'update', profileId:id, ...input } });
+    if (error || data?.error) throw new Error(data?.error || 'Medewerker opslaan mislukt');
     await fetchProfiles();
   }, [fetchProfiles]);
 

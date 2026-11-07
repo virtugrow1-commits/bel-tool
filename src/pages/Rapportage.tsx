@@ -1,3 +1,4 @@
+import { useAuth } from '@/hooks/useAuth';
 /**
  * Rapportage — volledig herbouwd met:
  * • Supabase call_sessions voor echte gespreksduur en resultaten
@@ -301,7 +302,7 @@ function ResultBadge({ result }: { result: string }) {
 
 export default function Rapportage() {
   const navigate = useNavigate();
-  const currentUser: User | null = store.get('user', null);
+  const { user: currentUser } = useAuth();
   const localScores: Record<string, Scores> = store.get('scores', {});
   const orgId = currentUser?.organizationId || null;
 
@@ -344,7 +345,7 @@ export default function Rapportage() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [dateFrom, period]);
+  }, [dateFrom, period, orgId]);
 
   // Aggregated totals from sessions (Supabase) or localStorage
   const totals = useMemo(() => {

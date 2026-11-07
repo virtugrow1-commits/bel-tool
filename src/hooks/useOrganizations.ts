@@ -1,70 +1,23 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { Organization } from '@/lib/beltool-data';
-
-export function useOrganizations() {
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchOrgs = useCallback(async () => {
+export function useOrganizations(){
+  const [organizations,setOrganizations]=useState<Organization[]>([]);
+  const [loading,setLoading]=useState(true);
+  const fetchOrgs=useCallback(async()=>{
     setLoading(true);
-    try {
-      const { data, error } = await (supabase as any)
-        .from('organizations')
-        .select('*')
-        .order('name');
-
-      if (error) {
-        console.warn('[Organizations] Fetch failed:', error.message);
-      } else if (data) {
-        setOrganizations(data.map((row: any) => ({
-          id: row.id,
-          name: row.name,
-          slug: row.slug,
-          ghl_api_key: row.ghl_api_key,
-          ghl_location_id: row.ghl_location_id,
-          logo_url: row.logo_url,
-          enquete_link: row.enquete_link,
-          booking_link: row.booking_link,
-          brand_name: row.brand_name,
-          whatsapp_templates: row.whatsapp_templates,
-          voys_api_token: row.voys_api_token,
-          voys_email: row.voys_email,
-          voys_device_id: row.voys_device_id,
-          voys_outbound_number: row.voys_outbound_number,
-          voipzeker_invitation_id: row.voipzeker_invitation_id,
-          voipzeker_login_token: row.voipzeker_login_token,
-          voipzeker_outbound_number: row.voipzeker_outbound_number,
-        })));
-      }
-    } catch {
-      console.warn('[Organizations] Fetch error');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { fetchOrgs(); }, [fetchOrgs]);
-
-  const createOrg = useCallback(async (org: { name: string; slug: string; ghl_api_key?: string; ghl_location_id?: string }) => {
-    const { data, error } = await (supabase as any)
-      .from('organizations')
-      .insert(org)
-      .select()
-      .single();
-    if (error) throw error;
+    const {data:{user}}=await supabase.auth.getUser();
+    if(!user){setOrganizations([]);setLoading(false);return;}
+    const {data,error}=await supabase.rpc('safe_organizations');
+    setOrganizations(error?[]:(data || []).map(row=>({id:row.id,name:row.name,slug:'',voipzeker_outbound_number:row.voipzeker_outbound_number || undefined,has_ghl_key:row.has_ghl_key,voipzeker_connected:row.voipzeker_connected})));
+    setLoading(false);
+  },[]);
+  useEffect(()=>{void fetchOrgs();const {data:{subscription}}=supabase.auth.onAuthStateChange(()=>{setTimeout(()=>void fetchOrgs(),0);});return ()=>subscription.unsubscribe();},[fetchOrgs]);
+  const createOrg=useCallback(async(_org:unknown)=>{throw new Error('Je mag alleen je eigen organisatie beheren.');},[]);
+  const updateOrg=useCallback(async(id:string,updates:Partial<Organization>)=>{
+    const {data,error}=await supabase.functions.invoke('organization-settings',{body:{organizationId:id,updates}});
+    if(error || data?.error)throw new Error(data?.error || 'Instellingen opslaan mislukt');
     await fetchOrgs();
-    return data;
-  }, [fetchOrgs]);
-
-  const updateOrg = useCallback(async (id: string, updates: Partial<Organization>) => {
-    const { error } = await (supabase as any)
-      .from('organizations')
-      .update(updates)
-      .eq('id', id);
-    if (error) throw error;
-    await fetchOrgs();
-  }, [fetchOrgs]);
-
-  return { organizations, loading, refresh: fetchOrgs, createOrg, updateOrg };
+  },[fetchOrgs]);
+  return {organizations,loading,refresh:fetchOrgs,createOrg,updateOrg};
 }

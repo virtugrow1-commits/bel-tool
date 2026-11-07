@@ -4,19 +4,18 @@ export interface Organization {
   id: string;
   name: string;
   slug: string;
-  ghl_api_key?: string;
+  has_ghl_key?: boolean;
+  voipzeker_connected?: boolean;
   ghl_location_id?: string;
   logo_url?: string;
   enquete_link?: string;
   booking_link?: string;
   brand_name?: string;
   whatsapp_templates?: Record<string, string>;
-  voys_api_token?: string;
   voys_email?: string;
   voys_device_id?: string;
   voys_outbound_number?: string;
   voipzeker_invitation_id?: string;
-  voipzeker_login_token?: string;
   voipzeker_outbound_number?: string;
 }
 

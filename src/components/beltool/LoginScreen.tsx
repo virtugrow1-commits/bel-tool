@@ -43,8 +43,8 @@ export function LoginScreen({ onLogin, onResetPassword, loading }: LoginScreenPr
           </div>
           <div className="text-[13px] text-white/40 mt-1.5">
             {mode === 'reset'
-              ? 'Neem contact op met de beheerder'
-              : 'Log in met je GHL account email'}
+              ? 'Ontvang een link per e-mail'
+              : 'Log in met je e-mail en wachtwoord'}
           </div>
         </div>
 
@@ -57,7 +57,7 @@ export function LoginScreen({ onLogin, onResetPassword, loading }: LoginScreenPr
         {resetSent ? (
           <div className="text-center">
             <div className="bg-success/15 border border-success/25 rounded-lg px-4 py-4 text-[13px] text-green-300 mb-4">
-              Reset-link is verstuurd naar <strong>{email}</strong>. Check je inbox (en spam-map).
+              Als dit account bestaat, ontvang je een reset-link op <strong>{email}</strong>.
             </div>
             <button
               onClick={() => { setMode('login'); setResetSent(false); setErr(null); }}

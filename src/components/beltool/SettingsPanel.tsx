@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import { Modal } from './Modal';
 import { useBelTool } from '@/contexts/BelToolContext';
 import { USERS, defaultSurvey, type User } from '@/lib/beltool-data';
@@ -139,13 +140,12 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
   };
 
   const testConnection = async () => {
-    if (!cliqConfig.apiKey || !cliqConfig.locationId) {
-      setTestStatus('error');
-      setTimeout(() => setTestStatus(null), 3000);
-      return;
-    }
     setTestStatus('testing');
     try {
+      if (cliqConfig.apiKey || cliqConfig.locationId) {
+        await updateOrg(user?.organizationId || '', { ...(cliqConfig.apiKey ? { ghl_api_key: cliqConfig.apiKey } : {}), ...(cliqConfig.locationId ? { ghl_location_id: cliqConfig.locationId } : {}) } as any);
+        updateCliqConfig({apiKey:'', locationId:''});
+      }
       await cliq.getPipelines();
       setTestStatus('success');
     } catch {
@@ -155,7 +155,7 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
   };
 
   const tabs = [
-    { id: 'cliq', label: '🔗 CLIQ Integratie' },
+    ...(user?.role === 'admin' ? [{ id: 'cliq', label: '🔗 CLIQ Integratie' }] : []),
     { id: 'telefonie', label: '📞 Telefonie' },
     { id: 'vragen', label: '❓ Enquêtevragen' },
     { id: 'pipeline', label: '📊 Pipeline' },
@@ -174,7 +174,7 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
     <Modal open={open} onClose={onClose} title={t.settings} wide>
       <div className="flex gap-1.5 mb-5 flex-wrap">
         {tabs.map(tb => (
-          <button
+          <Button
             key={tb.id}
             onClick={() => setTab(tb.id)}
             className={cn(
@@ -183,12 +183,12 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
             )}
           >
             {tb.label}
-          </button>
+          </Button>
         ))}
       </div>
 
       {/* CLIQ INTEGRATIE TAB */}
-      {tab === 'cliq' && (
+      {tab === 'cliq' && user?.role === 'admin' && (
         <div className="space-y-5">
           <div className="bg-primary/[0.06] border border-primary/15 rounded-xl p-4">
             <h3 className="text-sm font-bold text-primary mb-2">🔗 GoHighLevel Integratie</h3>
@@ -202,7 +202,7 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
                 type="password"
                 value={cliqConfig.apiKey}
                 onChange={e => updateCliqConfig({ apiKey: e.target.value })}
-                placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                placeholder="Nieuwe sleutel (bestaande blijft verborgen)"
                 className={cn(inputCls, 'font-mono')}
               />
               <p className="text-xs text-muted-foreground/40 mt-1">Vind deze in CLIQ → Settings → Integrations → Private Integrations</p>
@@ -241,9 +241,9 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
           </div>
 
           <div className="flex items-center gap-3 flex-wrap">
-            <button onClick={testConnection} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold active:scale-[0.97] transition-transform">
+            <Button onClick={testConnection} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold active:scale-[0.97] transition-transform">
               {testStatus === 'testing' ? '⏳ Testen...' : '🔌 Test verbinding'}
-            </button>
+            </Button>
             {testStatus === 'success' && <span className="text-sm text-green-400 font-semibold">✅ Verbinding succesvol!</span>}
             {testStatus === 'error' && <span className="text-sm text-destructive font-semibold">❌ Vul API Key en Location ID in</span>}
           </div>
@@ -291,7 +291,7 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
                   <div className="text-sm font-semibold">{item.label}</div>
                   <div className="text-[11px] text-muted-foreground/50">{item.desc}</div>
                 </div>
-                <button
+                <Button
                   onClick={async () => {
                     setTestStatus(`syncing-${item.key}`);
                     try {
@@ -310,12 +310,12 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
                   className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-semibold active:scale-[0.97] transition-transform disabled:opacity-40"
                 >
                   {testStatus === `syncing-${item.key}` ? '⏳ Bezig...' : testStatus === `synced-${item.key}` ? '✅ Klaar!' : testStatus === `error-${item.key}` ? '❌ Fout' : '🔄 Sync'}
-                </button>
+                </Button>
               </div>
             ))}
           </div>
 
-          <button
+          <Button
             onClick={async () => {
               setTestStatus('syncing-all');
               try {
@@ -330,9 +330,9 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
             className="w-full py-3 rounded-lg bg-primary text-primary-foreground text-sm font-bold active:scale-[0.97] transition-transform disabled:opacity-40"
           >
             {testStatus === 'syncing-all' ? '⏳ Alles synchroniseren...' : testStatus === 'synced-all' ? '✅ Alles gesynchroniseerd!' : testStatus === 'error-all' ? '❌ Synchronisatie mislukt' : '🔄 Alles synchroniseren'}
-          </button>
+          </Button>
 
-          {!cliqConfig.apiKey && (
+          {!organizations.find(o => o.id === user?.organizationId)?.has_ghl_key && (
             <div className="bg-warning/[0.08] border border-warning/15 rounded-xl p-4">
               <p className="text-warning text-sm">⚠️ Stel eerst de CLIQ API koppeling in via het CLIQ Integratie tabblad.</p>
             </div>
@@ -360,12 +360,12 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
             ))}
           </div>
 
-          <button
+          <Button
             onClick={() => { setTestStatus('creating-pipeline'); setTimeout(() => { setTestStatus('pipeline-created'); setTimeout(() => setTestStatus(null), 3000); }, 2000); }}
             className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold active:scale-[0.97] transition-transform"
           >
             {testStatus === 'creating-pipeline' ? '⏳ Aanmaken...' : testStatus === 'pipeline-created' ? '✅ Pipeline aangemaakt!' : '📊 Pipeline aanmaken in CLIQ'}
-          </button>
+          </Button>
         </div>
       )}
 
@@ -390,12 +390,12 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
             ))}
           </div>
 
-          <button
+          <Button
             onClick={() => { setTestStatus('creating-fields'); setTimeout(() => { setTestStatus('fields-created'); setTimeout(() => setTestStatus(null), 3000); }, 2000); }}
             className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold active:scale-[0.97] transition-transform"
           >
             {testStatus === 'creating-fields' ? '⏳ Aanmaken...' : testStatus === 'fields-created' ? '✅ Fields aangemaakt!' : '📝 Custom Fields aanmaken in CLIQ'}
-          </button>
+          </Button>
 
           <div className="bg-warning/[0.08] border border-warning/15 rounded-xl p-4">
             <p className="text-warning text-sm">⚠️ Zorg dat je eerst de CLIQ API koppeling hebt ingesteld voordat je custom fields aanmaakt.</p>
@@ -407,7 +407,7 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
       {tab === 'lang' && (
         <div className="flex gap-2">
           {['nl', 'en'].map(l => (
-            <button
+            <Button
               key={l}
               onClick={() => { setLang(l); }}
               className={cn(
@@ -416,7 +416,7 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
               )}
             >
               {l === 'nl' ? '🇳🇱 Nederlands' : '🇬🇧 English'}
-            </button>
+            </Button>
           ))}
         </div>
       )}
@@ -428,7 +428,7 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
           {qKeys.map(k => {
             const q = surveyConfig[k];
             return (
-              <button
+              <Button
                 key={k}
                 onClick={() => openEditor(k)}
                 className="flex items-center gap-3 p-3 rounded-xl border border-border/40 bg-foreground/[0.02] text-left w-full mb-1.5 hover:border-border transition-colors"
@@ -444,23 +444,23 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
                   </span>
                 )}
                 <span className="text-muted-foreground/30">›</span>
-              </button>
+              </Button>
             );
           })}
-          <button
+          <Button
             onClick={() => { setSurveyConfig(defaultSurvey()); }}
             className="mt-3 px-3 py-1.5 rounded-lg bg-destructive text-destructive-foreground text-[11px] font-semibold active:scale-95 transition-transform"
           >
             Reset naar standaard
-          </button>
+          </Button>
         </div>
       )}
 
       {tab === 'vragen' && editQ && draft && (
         <div>
-          <button onClick={() => { setEditQ(null); setDraft(null); }} className="text-primary text-[13px] font-semibold mb-3 bg-transparent border-none">
+          <Button onClick={() => { setEditQ(null); setDraft(null); }} className="text-primary text-[13px] font-semibold mb-3 bg-transparent border-none">
             ← Terug
-          </button>
+          </Button>
           <div className="text-base font-bold mb-3.5">{draft.icon} {qLabels[editQ]} bewerken</div>
 
           <div className="flex gap-2.5 mb-3">
@@ -499,12 +499,12 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
               {(draft.options as string[]).map((o: string, i: number) => (
                 <div key={i} className="flex gap-1.5 mb-1">
                   <input value={o} onChange={e => { const x = [...draft.options]; x[i] = e.target.value; setDraft({ ...draft, options: x }); }} className={cn(inputCls, 'flex-1')} />
-                  <button onClick={() => setDraft({ ...draft, options: draft.options.filter((_: any, j: number) => j !== i) })} className="text-destructive bg-transparent border-none">✕</button>
+                  <Button onClick={() => setDraft({ ...draft, options: draft.options.filter((_: any, j: number) => j !== i) })} className="text-destructive bg-transparent border-none">✕</Button>
                 </div>
               ))}
               <div className="flex gap-1.5 mt-1">
                 <input value={newOpt} onChange={e => setNewOpt(e.target.value)} placeholder="Nieuwe optie" className={cn(inputCls, 'flex-1')} />
-                <button onClick={() => { if (newOpt.trim()) { setDraft({ ...draft, options: [...draft.options, newOpt.trim()] }); setNewOpt(''); } }} className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-[11px] font-semibold">+</button>
+                <Button onClick={() => { if (newOpt.trim()) { setDraft({ ...draft, options: [...draft.options, newOpt.trim()] }); setNewOpt(''); } }} className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-[11px] font-semibold">+</Button>
               </div>
             </div>
           )}
@@ -517,18 +517,18 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
                   <div className="flex gap-1.5 mb-1">
                     <input value={o.icon || ''} onChange={e => { const x = [...draft.options]; x[i] = { ...x[i], icon: e.target.value }; setDraft({ ...draft, options: x }); }} className={cn(inputCls, 'w-11 text-center text-base p-1')} />
                     <input value={o.value} onChange={e => { const x = [...draft.options]; x[i] = { ...x[i], value: e.target.value }; setDraft({ ...draft, options: x }); }} className={cn(inputCls, 'flex-1')} placeholder="Waarde" />
-                    <button onClick={() => setDraft({ ...draft, options: draft.options.filter((_: any, j: number) => j !== i) })} className="text-destructive bg-transparent border-none">✕</button>
+                    <Button onClick={() => setDraft({ ...draft, options: draft.options.filter((_: any, j: number) => j !== i) })} className="text-destructive bg-transparent border-none">✕</Button>
                   </div>
                   <input value={o.label} onChange={e => { const x = [...draft.options]; x[i] = { ...x[i], label: e.target.value }; setDraft({ ...draft, options: x }); }} className={inputCls} placeholder="Toelichting" />
                 </div>
               ))}
-              <button onClick={() => setDraft({ ...draft, options: [...draft.options, { value: '', label: '', icon: '📌' }] })} className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-[11px] font-semibold">+ Optie</button>
+              <Button onClick={() => setDraft({ ...draft, options: [...draft.options, { value: '', label: '', icon: '📌' }] })} className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-[11px] font-semibold">+ Optie</Button>
             </div>
           )}
 
           <div className="flex gap-2 mt-3.5 pt-3 border-t border-border/40">
-            <button onClick={() => { setEditQ(null); setDraft(null); }} className="px-4 py-2 rounded-lg border border-border text-muted-foreground text-[13px] font-semibold">Annuleren</button>
-            <button onClick={saveDraft} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-[13px] font-semibold">Opslaan</button>
+            <Button onClick={() => { setEditQ(null); setDraft(null); }} className="px-4 py-2 rounded-lg border border-border text-muted-foreground text-[13px] font-semibold">Annuleren</Button>
+            <Button onClick={saveDraft} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-[13px] font-semibold">Opslaan</Button>
           </div>
         </div>
       )}
@@ -542,18 +542,18 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
           {webhooks.map((wh, i) => (
             <div key={i} className="flex gap-1.5 mb-1 items-center">
               <input value={wh.url} readOnly className={cn(inputCls, 'flex-1')} />
-              <button
+              <Button
                 onClick={() => { const n = [...webhooks]; n[i].active = !n[i].active; setWebhooks(n); }}
                 className={cn('px-2.5 py-1.5 rounded-md text-[10px] font-bold border-none', wh.active ? 'bg-green-500/10 text-green-400' : 'bg-destructive/10 text-destructive')}
               >
                 {wh.active ? 'ON' : 'OFF'}
-              </button>
-              <button onClick={() => { const n = webhooks.filter((_, j) => j !== i); setWebhooks(n); }} className="text-destructive bg-transparent border-none">✕</button>
+              </Button>
+              <Button onClick={() => { const n = webhooks.filter((_, j) => j !== i); setWebhooks(n); }} className="text-destructive bg-transparent border-none">✕</Button>
             </div>
           ))}
           <div className="flex gap-1.5 mt-1.5">
             <input value={newWh} onChange={e => setNewWh(e.target.value)} placeholder="https://..." className={cn(inputCls, 'flex-1')} />
-            <button onClick={() => { if (newWh.trim()) { const n = [...webhooks, { url: newWh.trim(), active: true }]; setWebhooks(n); setNewWh(''); } }} className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-[11px] font-semibold">+</button>
+            <Button onClick={() => { if (newWh.trim()) { const n = [...webhooks, { url: newWh.trim(), active: true }]; setWebhooks(n); setNewWh(''); } }} className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-[11px] font-semibold">+</Button>
           </div>
         </div>
       )}
@@ -563,17 +563,17 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
         <div>
           {!confirmReset ? (
             <div className="flex flex-col gap-2">
-              <button onClick={() => setConfirmReset('mine')} className="px-4 py-2.5 rounded-lg bg-warning text-warning-foreground font-semibold text-[13px]">{t.resetMyStats}</button>
+              <Button onClick={() => setConfirmReset('mine')} className="px-4 py-2.5 rounded-lg bg-warning text-warning-foreground font-semibold text-[13px]">{t.resetMyStats}</Button>
               {user?.role === 'admin' && (
-                <button onClick={() => setConfirmReset('all')} className="px-4 py-2.5 rounded-lg bg-destructive text-destructive-foreground font-semibold text-[13px]">{t.resetAll}</button>
+                <Button onClick={() => setConfirmReset('all')} className="px-4 py-2.5 rounded-lg bg-destructive text-destructive-foreground font-semibold text-[13px]">{t.resetAll}</Button>
               )}
             </div>
           ) : (
             <div className="text-center">
               <div className="text-sm mb-4">{t.resetConfirm}</div>
               <div className="flex gap-2 justify-center">
-                <button onClick={() => setConfirmReset(null)} className="px-4 py-2 rounded-lg border border-border text-muted-foreground text-[13px] font-semibold">{t.cancel}</button>
-                <button
+                <Button onClick={() => setConfirmReset(null)} className="px-4 py-2 rounded-lg border border-border text-muted-foreground text-[13px] font-semibold">{t.cancel}</Button>
+                <Button
                   onClick={() => {
                     if (confirmReset === 'mine' && user) {
                       const n = { ...allScores, [user.id]: initScores() };
@@ -590,7 +590,7 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
                   className="px-4 py-2 rounded-lg bg-destructive text-destructive-foreground text-[13px] font-semibold"
                 >
                   {t.confirm}
-                </button>
+                </Button>
               </div>
             </div>
           )}
@@ -615,21 +615,21 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
                   placeholder="6-cijferige koppelcode"
                   className={cn(inputCls, 'font-mono')}
                 />
-                <button
+                <Button
                   onClick={vzConnect}
                   disabled={!vzInvitation.trim() || vzBusy !== null}
                   className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-[12px] font-semibold whitespace-nowrap disabled:opacity-40"
                 >
                   {vzBusy === 'connect' ? 'Koppelen…' : 'Koppelen'}
-                </button>
+                </Button>
               </div>
               <div className="flex gap-2">
-                <button onClick={vzTest} disabled={vzBusy !== null} className="px-3 py-2 rounded-lg border border-border text-[12px] font-semibold disabled:opacity-40">
+                <Button onClick={vzTest} disabled={vzBusy !== null} className="px-3 py-2 rounded-lg border border-border text-[12px] font-semibold disabled:opacity-40">
                   {vzBusy === 'test' ? 'Testen…' : 'Verbinding testen'}
-                </button>
-                <button onClick={vzLoadExtensions} disabled={vzBusy !== null} className="px-3 py-2 rounded-lg border border-border text-[12px] font-semibold disabled:opacity-40">
+                </Button>
+                <Button onClick={vzLoadExtensions} disabled={vzBusy !== null} className="px-3 py-2 rounded-lg border border-border text-[12px] font-semibold disabled:opacity-40">
                   {vzBusy === 'ext' ? 'Ophalen…' : 'Toestellen ophalen'}
-                </button>
+                </Button>
               </div>
               {vzMsg && (
                 <div className={cn('text-[12px] rounded-lg p-2 border', vzMsg.ok ? 'text-success border-success/20 bg-success/5' : 'text-destructive border-destructive/20 bg-destructive/5')}>
@@ -662,7 +662,7 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
                     onBlur={e => { if (e.target.value !== (u.voipzekerExtension || '')) saveExtension(u.id, e.target.value.trim()); }}
                     placeholder="bijv. 201"
                     className={cn(inputCls, 'w-28 text-center font-mono')}
-                    disabled={user?.role !== 'admin' && user?.id !== u.id}
+                    disabled={user?.role !== 'admin'}
                   />
                   {savingExt === u.id && <span className="text-[10px] text-muted-foreground">…</span>}
                 </div>
@@ -726,13 +726,13 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
           <div className="bg-foreground/[0.02] border border-border/30 rounded-xl p-4 space-y-3">
             <div className="flex items-center justify-between">
               <div className="text-xs font-bold text-muted-foreground/50">👥 ADVISEURS</div>
-              <button
+              <Button
                 onClick={refreshAdvisors}
                 disabled={advisorsLoading}
                 className="text-[11px] text-primary font-semibold hover:underline disabled:opacity-50"
               >
                 {advisorsLoading ? 'Laden...' : '🔄 Ververs uit CLIQ'}
-              </button>
+              </Button>
             </div>
             <p className="text-[11px] text-muted-foreground/60">
               Adviseurs worden automatisch opgehaald uit je CLIQ-account. Deze verschijnen als opties bij het inplannen van afspraken.
@@ -761,13 +761,14 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
       )}
 
       {/* USERS TAB */}
-      {tab === 'users' && (
+      {tab === 'users' && user?.role === 'admin' && (
         <div className="space-y-4">
           <div className="bg-primary/[0.06] border border-primary/15 rounded-xl p-4">
             <h3 className="text-sm font-bold text-primary mb-2">👥 Gebruikersbeheer</h3>
             <p className="text-muted-foreground text-sm">Medewerkers staan centraal in de database, zodat iedereen op elk apparaat kan inloggen. Maximaal {MAX_TEAM} medewerkers.</p>
           </div>
 
+          {vzMsg && <p role="status" className={vzMsg.ok ? 'text-success text-sm' : 'text-destructive text-sm'}>{vzMsg.text}</p>}
           {/* Existing users */}
           <div className="space-y-1.5">
             {teamProfiles.map(u => (
@@ -787,12 +788,12 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
                 >
                   {u.role}
                 </span>
-                <button
+                <Button
                   onClick={() => setEditingUser({ ...u })}
                   className="text-[11px] text-primary font-semibold bg-transparent border-none hover:underline"
                 >
                   Bewerk
-                </button>
+                </Button>
               </div>
             ))}
             {teamProfiles.length === 0 && <p className="text-[12px] text-muted-foreground">Nog geen medewerkers in de database.</p>}
@@ -825,8 +826,8 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
                 </div>
               </div>
               <div className="flex gap-2 pt-2">
-                <button onClick={() => setEditingUser(null)} className="px-4 py-2 rounded-lg border border-border text-muted-foreground text-[12px] font-semibold">Annuleren</button>
-                <button
+                <Button onClick={() => setEditingUser(null)} className="px-4 py-2 rounded-lg border border-border text-muted-foreground text-[12px] font-semibold">Annuleren</Button>
+                <Button
                   onClick={async () => {
                     try {
                       await updateProfile(editingUser.id, {
@@ -844,7 +845,7 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
                   className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-[12px] font-semibold"
                 >
                   Opslaan
-                </button>
+                </Button>
               </div>
             </div>
           )}
@@ -877,7 +878,7 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
             {teamProfiles.length >= MAX_TEAM && (
               <p className="text-[11px] text-warning">Maximaal {MAX_TEAM} medewerkers bereikt.</p>
             )}
-            <button
+            <Button
               onClick={async () => {
                 if (!newUser.name.trim() || !newUser.email.trim()) return;
                 try {
@@ -889,6 +890,7 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
                     organizationId: user?.organizationId,
                   });
                   setNewUser({ name: '', email: '', role: 'caller', voipzekerExtension: '' });
+                  setVzMsg({ok:true,text:'Uitnodiging verstuurd.'});
                 } catch (e) {
                   setVzMsg({ ok: false, text: e instanceof Error ? e.message : 'Toevoegen mislukt' });
                 }
@@ -897,7 +899,7 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
               className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-[12px] font-semibold active:scale-[0.97] transition-transform disabled:opacity-40"
             >
               Medewerker toevoegen
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -920,7 +922,7 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
                 </summary>
                 <div className="mt-3 space-y-2">
                   <div className="text-[11px] text-muted-foreground/50">
-                    {org.ghl_api_key ? '🔗 GHL gekoppeld' : '⚠️ Geen GHL API key'}
+                    {org.has_ghl_key ? '🔗 GHL gekoppeld' : '⚠️ Geen GHL API key'}
                     {org.ghl_location_id ? ` · Location: ${org.ghl_location_id.slice(0, 8)}...` : ''}
                   </div>
                   <div className="grid gap-2">
@@ -986,7 +988,7 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
                 placeholder="GHL Location ID (optioneel)"
                 className={cn(inputCls, 'font-mono')}
               />
-              <button
+              <Button
                 onClick={async () => {
                   if (!newOrgName.trim() || !newOrgSlug.trim()) return;
                   try {
@@ -1008,7 +1010,7 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
                 className="px-4 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold active:scale-[0.97] transition-transform disabled:opacity-40"
               >
                 🏢 Organisatie toevoegen
-              </button>
+              </Button>
             </div>
           </div>
         </div>
