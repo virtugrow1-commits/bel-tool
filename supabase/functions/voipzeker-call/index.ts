@@ -100,6 +100,7 @@ async function extensionId(organizationId: string, username: string): Promise<st
 async function extensionStatus(organizationId: string, username: string): Promise<number> {
   const id = await extensionId(organizationId, username);
   const { http, body: res } = await vzAuthed('listextensionsstatus', { 'extensionids[]': id }, organizationId);
+  console.log('[voipzeker-call] status raw', http, JSON.stringify(res).slice(0, 500));
   if (http === 429) throw new Error('RATE_LIMIT');
   if (!res?.status) throw new Error(res?.message || `Status ophalen mislukt (${http})`);
   const d = res.data as unknown;
