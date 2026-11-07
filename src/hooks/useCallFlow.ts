@@ -174,7 +174,7 @@ export function useCallFlow({
   const confirmConnected = useCallback(() => {
     setCallState('active');
     setPhase('intro');
-    pollRef.current.answered = true; // manual fallback; keep polling (5s) to detect the end
+    pollRef.current.answered = true; pollRef.current.until = Date.now() + 4 * 60 * 60 * 1000; // manual fallback; keep polling (5s) to detect the end
     callStartRef.current = callStartRef.current || Date.now();
 
     if (activeCompId) {
