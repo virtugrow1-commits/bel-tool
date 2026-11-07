@@ -11,8 +11,11 @@ export async function authorize(req: Request, requestedOrg?: unknown, adminOnly 
   const header = req.headers.get('Authorization');
   if (!header?.startsWith('Bearer ')) throw new AccessError('Log eerst in', 401);
   const db = serviceClient();
-  const { data, error } = await db.auth.getUser(header.slice(7));
-  if (error || !data.user) throw new AccessError('Ongeldige of verlopen sessie', 401);
+  // Local JWT signature check (JWKS) — avoids one auth-server round trip per request.
+  const { data: claimData, error } = await db.auth.getClaims(header.slice(7));
+  const claims = claimData?.claims;
+  if (error || !claims?.sub) throw new AccessError('Ongeldige of verlopen sessie', 401);
+  const data = { user: { id: String(claims.sub), email: typeof claims.email === 'string' ? claims.email : undefined } };
   const { data: profile } = await db.from('profiles').select('id, organization_id, voipzeker_extension, device_id').eq('auth_user_id', data.user.id).single();
   if (!profile?.organization_id) throw new AccessError('Geen medewerkerprofiel', 403);
   const { data: grant } = await db.from('user_roles').select('role').eq('user_id', data.user.id).single();
