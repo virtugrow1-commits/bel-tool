@@ -11,6 +11,7 @@ const SurveyResults = lazy(() => import("./pages/SurveyResults"));
 const Rapportage = lazy(() => import("./pages/Rapportage"));
 const Afspraak = lazy(() => import("./pages/Afspraak"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 
 function LoadingFallback() {
   return (
@@ -34,6 +35,7 @@ const App = () => (
         <Suspense fallback={<LoadingFallback />}>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/enquete/:id" element={<ProspectSurvey />} />
             <Route path="/resultaten" element={<SurveyResults />} />
             <Route path="/rapportage" element={<Rapportage />} />
