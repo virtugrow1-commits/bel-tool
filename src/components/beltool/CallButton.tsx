@@ -11,6 +11,7 @@ import { useState } from 'react';
 import { Phone, Loader2, CheckCircle, Ban } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
+import { invokeAuthenticated } from '@/lib/authenticated-functions';
 
 interface CallButtonProps {
   phoneNumber:    string;
@@ -64,7 +65,7 @@ export function CallButton({ phoneNumber, leadId, leadName, extension, organizat
         return;
       }
 
-      const { data, error } = await supabase.functions.invoke('voipzeker-call', {
+      const { data, error } = await invokeAuthenticated('voipzeker-call', {
         body: { action: 'call', phone: phoneNumber, leadId, leadName, ...(extension ? { extension } : {}), ...(organizationId ? { organizationId } : {}) },
       });
 

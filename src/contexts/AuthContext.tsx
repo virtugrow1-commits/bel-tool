@@ -3,6 +3,7 @@ import type { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import type { User } from '@/lib/beltool-data';
 import { store, setStoreScope } from '@/lib/beltool-store';
+import { setFunctionSession } from '@/lib/authenticated-functions';
 
 export const AUTH_LOAD_TIMEOUT_MS = 8_000;
 type AuthValue = {
@@ -50,20 +51,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!alive) return;
       bootstrapExpired.current = true;
       generation.current++;
+      setFunctionSession(null);
       setSession(null); setUser(null); setStoreScope(); setLoading(false);
     }, Math.max(0, AUTH_LOAD_TIMEOUT_MS - (Date.now() - loadStartedAt.current)));
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, next) => {
       if (!alive || bootstrapExpired.current) return;
       receivedEvent = true;
       clearTimeout(timer);
+      setFunctionSession(next);
       setSession(next);
     });
     void supabase.auth.getSession().then(({ data, error }) => {
       if (!alive || receivedEvent || bootstrapExpired.current) return;
       clearTimeout(timer);
+      setFunctionSession(error ? null : data.session);
       setSession(error ? null : data.session);
     }).catch(() => {
-      if (alive && !receivedEvent && !bootstrapExpired.current) { clearTimeout(timer); setSession(null); }
+      if (alive && !receivedEvent && !bootstrapExpired.current) { clearTimeout(timer); setFunctionSession(null); setSession(null); }
     });
     return () => { alive = false; clearTimeout(timer); subscription.unsubscribe(); };
   }, []);
@@ -78,6 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const timer = setTimeout(() => {
       active = false;
       bootstrapExpired.current = true;
+      setFunctionSession(null);
       setSession(null); setUser(null); setStoreScope(); setLoading(false);
     }, Math.max(0, AUTH_LOAD_TIMEOUT_MS - (Date.now() - loadStartedAt.current)));
     // Separate effect, never an awaited operation in the Auth event callback.
@@ -96,11 +101,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loadStartedAt.current = Date.now();
     const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
     if (error || !data.session) { setLoading(false); return { error: 'E-mailadres of wachtwoord is onjuist.' }; }
+    setFunctionSession(data.session);
     setSession(data.session);
     // Profile hydration is handled only by the effect, with the same deadline.
     return {};
   }, []);
   const logout = useCallback(async () => {
+    setFunctionSession(null);
     generation.current++; setUser(null); setSession(null); setStoreScope(); setLoading(false); store.del('user');
     await supabase.auth.signOut();
   }, []);

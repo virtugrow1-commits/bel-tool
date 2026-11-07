@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { Organization } from '@/lib/beltool-data';
 import { useAuth } from '@/hooks/useAuth';
+import { invokeAuthenticated } from '@/lib/authenticated-functions';
 export function useOrganizations(){
   const { user } = useAuth();
   const [organizations,setOrganizations]=useState<Organization[]>([]);
@@ -16,7 +17,7 @@ export function useOrganizations(){
   useEffect(()=>{void fetchOrgs();},[fetchOrgs]);
   const createOrg=useCallback(async(_org:unknown)=>{throw new Error('Je mag alleen je eigen organisatie beheren.');},[]);
   const updateOrg=useCallback(async(id:string,updates:Partial<Organization>)=>{
-    const {data,error}=await supabase.functions.invoke('organization-settings',{body:{organizationId:id,updates}});
+    const {data,error}=await invokeAuthenticated('organization-settings',{body:{organizationId:id,updates}});
     if(error || data?.error)throw new Error(data?.error || 'Instellingen opslaan mislukt');
     await fetchOrgs();
   },[fetchOrgs]);
