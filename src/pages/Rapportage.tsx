@@ -335,7 +335,7 @@ export default function Rapportage() {
       if(error){setLoadError('Rapportage ophalen mislukt');setSessions([]);setDbScores([]);}
       else{
         setSessions(data || []);
-        const grouped=new Map<string,any[]>();for(const row of data || []){if(row.caller_id){const profile=managedUsers.find(u=>u.name===row.caller_name);const id=profile?.id || row.caller_id;grouped.set(id,[...(grouped.get(id)||[]),row]);}}
+        const grouped=new Map<string,any[]>();for(const row of data || []){if(row.caller_id){const id=row.caller_name===currentUser?.name ? currentUser.id : row.caller_id;grouped.set(id,[...(grouped.get(id)||[]),row]);}}
         setDbScores(Array.from(grouped.entries()).map(([id,rows])=>{const totals=summarizeResults(rows);return {user_id:id,score_date:'',...totals,geen_gehoor:totals.geenGehoor,best_reeks:0};}));
       }
       setLoading(false);
