@@ -25,12 +25,17 @@ export function useSettings() {
   const [showCallback, setShowCallback] = useState(false);
   const [appts, setAppts] = useState<Appointment[]>(() => store.get('appointments', []));
   const [webhooks, setWebhooksRaw] = useState<Webhook[]>(() => store.get('webhooks', []));
-  const [apiKey, setApiKeyRaw] = useState(() => store.get('apiKey', ''));
+  const [apiKey, setApiKeyRaw] = useState('');
   const [surveyConfig, setSurveyConfigRaw] = useState<SurveyConfig>(() => migrateSurveyConfig(store.get('surveyConfig', defaultSurvey())));
-  const [cliqConfig, setCliqConfigRaw] = useState<CliqConfig>(() => store.get('cliqConfig', {
+  const [cliqConfig, setCliqConfigRaw] = useState<CliqConfig>(() => {
+    const saved = store.get<Partial<CliqConfig>>('cliqConfig', {});
+    const clean = { ...saved, apiKey: '', locationId: '' };
+    store.set('cliqConfig', clean);
+    return { ...{
     apiKey: '', locationId: '', pipelineId: '', calendarId: '',
     syncContacts: true, syncOpportunities: true, syncAppointments: true, createNotes: true,
-  }));
+  }, ...clean };
+  });
 
   const setWebhooks = useCallback((v: Webhook[] | ((prev: Webhook[]) => Webhook[])) => {
     setWebhooksRaw(prev => {
@@ -42,7 +47,7 @@ export function useSettings() {
 
   const setApiKey = useCallback((v: string) => {
     setApiKeyRaw(v);
-    store.set('apiKey', v);
+    store.del('apiKey');
   }, []);
 
   const setSurveyConfig = useCallback((v: SurveyConfig | ((prev: SurveyConfig) => SurveyConfig)) => {
@@ -56,7 +61,7 @@ export function useSettings() {
   const setCliqConfig = useCallback((v: CliqConfig | ((prev: CliqConfig) => CliqConfig)) => {
     setCliqConfigRaw(prev => {
       const next = typeof v === 'function' ? v(prev) : v;
-      store.set('cliqConfig', next);
+      store.set('cliqConfig', { ...next, apiKey: '', locationId: '' });
       return next;
     });
   }, []);

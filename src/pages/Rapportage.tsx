@@ -1,3 +1,5 @@
+import { useAuth } from '@/hooks/useAuth';
+import { LoginScreen } from '@/components/beltool/LoginScreen';
 /**
  * Rapportage — volledig herbouwd met:
  * • Supabase call_sessions voor echte gespreksduur en resultaten
@@ -301,8 +303,8 @@ function ResultBadge({ result }: { result: string }) {
 
 export default function Rapportage() {
   const navigate = useNavigate();
-  const currentUser: User | null = store.get('user', null);
-  const localScores: Record<string, Scores> = store.get('scores', {});
+  const { user: currentUser, loading: authLoading, login, resetPassword } = useAuth();
+  const localScores: Record<string, Scores> = currentUser ? store.get('scores', {}) : {};
   const orgId = currentUser?.organizationId || null;
 
   const [period, setPeriod] = useState<'today' | 'week' | 'month' | 'all'>('today');
@@ -344,7 +346,7 @@ export default function Rapportage() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [dateFrom, period]);
+  }, [dateFrom, period, orgId]);
 
   // Aggregated totals from sessions (Supabase) or localStorage
   const totals = useMemo(() => {
@@ -380,6 +382,8 @@ export default function Rapportage() {
     { k: 'all',   l: 'Alles' },
   ] as const;
 
+  if (authLoading) return <div className="min-h-screen bg-background flex items-center justify-center">Laden...</div>;
+  if (!currentUser) return <LoginScreen onLogin={login} onResetPassword={resetPassword} />;
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Header */}

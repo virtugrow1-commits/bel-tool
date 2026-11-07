@@ -1,10 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { authorize, AccessError } from '../_shared/auth.ts';
 
 const GHL_BASE = 'https://services.leadconnectorhq.com';
 const GHL_VERSION = '2021-07-28';
@@ -132,24 +130,25 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { action, organizationId, ...params } = body;
-    currentAction = action || 'unknown';
-
-    // Try to resolve API key per organization
-    let GHL_API_KEY = Deno.env.get('GHL_API_KEY') || '';
-    let GHL_LOCATION_ID = Deno.env.get('GHL_LOCATION_ID') || '';
-
-    if (organizationId) {
-      try {
-        const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-        const sb = createClient(supabaseUrl, supabaseKey);
-        const { data: org } = await sb.from('organizations').select('ghl_api_key, ghl_location_id').eq('id', organizationId).single();
-        if (org?.ghl_api_key) GHL_API_KEY = org.ghl_api_key;
-        if (org?.ghl_location_id) GHL_LOCATION_ID = org.ghl_location_id;
-      } catch (e) {
-        console.warn('[GHL Proxy] Org lookup failed, using default keys:', e);
-      }
+    if (!body || typeof body.action !== 'string' || JSON.stringify(body).length > 100000) throw new AccessError('Ongeldige invoer',400);
+    const { action, organizationId: requestedOrg, ...params } = body;
+    const { db, organizationId } = await authorize(req, requestedOrg);
+    currentAction = action;
+    const { data: org, error: orgError } = await db.from('organizations').select('ghl_api_key,ghl_location_id').eq('id',organizationId).single();
+    if (orgError || !org) throw new AccessError('Organisatie niet gevonden',403);
+    const GHL_API_KEY = org.ghl_api_key || '';
+    const GHL_LOCATION_ID = org.ghl_location_id || '';
+    // Every resource identifier must belong to the authenticated location.
+    const resources = [['contactId','contacts','contact'],['opportunityId','opportunities','opportunity'],['calendarId','calendars','calendar'],['conversationId','conversations','conversation'],['appointmentId','calendars/events','event']];
+    for (const [key,path,wrapper] of resources) {
+      const id = params[key];
+      if (id === undefined || id === null || id === '') continue;
+      if (typeof id !== 'string' || !/^[a-zA-Z0-9_-]{1,100}$/.test(id)) throw new AccessError('Ongeldig resource ID',400);
+      const check = await fetchGHL(`${GHL_BASE}/${path}/${id}`,{headers:{Authorization:`Bearer ${GHL_API_KEY}`,Version:GHL_VERSION}});
+      if (!check.ok) throw new AccessError('Resource niet beschikbaar in deze organisatie',403);
+      const payload = await check.json();
+      const resource = payload[wrapper] || payload;
+      if (resource.locationId !== GHL_LOCATION_ID) throw new AccessError('Resource hoort bij een andere organisatie',403);
     }
 
     if (!GHL_API_KEY) {
@@ -662,7 +661,8 @@ serve(async (req) => {
     });
 
   } catch (error: unknown) {
-    console.error('GHL proxy error:', error);
+    if (error instanceof AccessError) return new Response(JSON.stringify({error:error.message}),{status:error.status,headers:{...corsHeaders,'Content-Type':'application/json'}});
+    console.error('CLIQ proxy request failed');
     const msg = error instanceof Error ? error.message : 'Unknown error';
 
     if (isInvalidGhlCredentials(401, msg)) {

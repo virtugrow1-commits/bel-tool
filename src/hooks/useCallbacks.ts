@@ -43,7 +43,7 @@ let _localSeq = Date.now();
 
 export function useCallbacks(currentUserId?: string) {
   const [callbacks, setCallbacks] = useState<CallbackEntry[]>(() =>
-    store.get<CallbackEntry[]>('callbacks', [])
+    []
   );
   const [showCallbackQueue, setShowCallbackQueue] = useState(false);
   const [callbackPopup, setCallbackPopup] = useState<CallbackEntry | null>(null);
@@ -57,8 +57,7 @@ export function useCallbacks(currentUserId?: string) {
 
   // Load from Supabase on mount
   useEffect(() => {
-    if (loadedRef.current) return;
-    loadedRef.current = true;
+    if (!currentUserId) { setCallbacks([]); setUseSupabase(false); return; }
 
     (async () => {
       try {
@@ -81,7 +80,7 @@ export function useCallbacks(currentUserId?: string) {
         console.warn('[Callbacks] Supabase load failed, using localStorage:', err);
       }
     })();
-  }, []);
+  }, [currentUserId]);
 
   // Realtime subscription for cross-device sync
   useEffect(() => {

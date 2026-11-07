@@ -26,6 +26,7 @@ let   _cacheReady = false;
 
 /** Load attempt counts from Supabase into the in-memory cache. */
 export async function loadAttemptCache(): Promise<void> {
+  _cache.clear();
   try {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {

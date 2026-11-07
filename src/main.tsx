@@ -1,6 +1,7 @@
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
+document.title = 'Beltool — CliqMakers';
 
 // Prevent blank screens from unhandled GHL/Voys network errors
 window.addEventListener('unhandledrejection', (event) => {

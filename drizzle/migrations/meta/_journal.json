@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1794067897325,
+      "tag": "0000_secure_team_and_call_tracking",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794068155628,
+      "tag": "0001_enable_secure_call_realtime",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794068495605,
+      "tag": "0002_unique_employee_login_email",
+      "breakpoints": true
+    }
+  ]
+}

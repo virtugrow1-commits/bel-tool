@@ -78,7 +78,9 @@ function mapOpportunitiesToCompanies(opportunities: Array<{
         contacts: [],
       });
     }
-    companyMap.get(compKey)!.contacts.push({
+    const company = companyMap.get(compKey);
+    if (!company) continue;
+    company.contacts.push({
       id: c.id || opp.contactId || '',
       firstName,
       lastName,
@@ -92,7 +94,7 @@ function mapOpportunitiesToCompanies(opportunities: Array<{
 }
 
 export function useLeads(user: User | null) {
-  const [companies, setCompanies] = useState<Company[]>(() => store.get('leadCompanies', COMPANIES_INIT));
+  const [companies, setCompanies] = useState<Company[]>([]);
   const [cliqLoading, setCliqLoading] = useState(false);
   const [cliqError, setCliqError] = useState<string | null>(null);
   const [pipelineInfo, setPipelineInfo] = useState<PipelineInfo | null>(null);
@@ -245,7 +247,8 @@ export function useLeads(user: User | null) {
 
   // Initial load
   useEffect(() => {
-    if (!user) return;
+    if (!user) { setCompanies([]); return; }
+    setCompanies(store.get('leadCompanies', []));
     setCliqLoading(true);
     setCliqError(null);
 

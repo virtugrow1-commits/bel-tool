@@ -46,8 +46,7 @@ export function useLeaderboardData() {
         .select('id, name, organization_id');
 
       const { data: orgs, error: orgsErr } = await (supabase as any)
-        .from('organizations')
-        .select('id, name, logo_url');
+        .rpc('safe_organizations');
 
       if (scoresErr || profilesErr || orgsErr) {
         console.warn('[Leaderboard] Fetch error');

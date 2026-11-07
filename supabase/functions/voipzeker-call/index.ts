@@ -1,9 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
-};
+import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { authorize, AccessError, serviceClient } from '../_shared/auth.ts';
 
 const BASE = 'https://api.voipzeker.nl/unite/v1';
 
@@ -14,10 +12,7 @@ const json = (body: unknown, status = 200) =>
   });
 
 function admin() {
-  return createClient(
-    Deno.env.get('SUPABASE_URL')!,
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-  );
+  return serviceClient();
 }
 
 interface VzResponse {
@@ -53,7 +48,7 @@ async function getLoginToken(organizationId?: string): Promise<string> {
       .maybeSingle();
     if (data?.voipzeker_login_token) return data.voipzeker_login_token as string;
   }
-  return Deno.env.get('VOIPZEKER_LOGIN_TOKEN') || '';
+  return ''; // Never borrow another organization's global credentials.
 }
 
 async function getAccessToken(organizationId: string | undefined, force = false): Promise<string> {
@@ -99,12 +94,14 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { action, organizationId } = body as { action?: string; organizationId?: string };
+    const { action } = body;
+    if (!['provision','extensions','ping','call'].includes(action)) return json({error:'Ongeldige actie'},400);
+    const { organizationId, profile } = await authorize(req, body.organizationId, ['provision','extensions','ping'].includes(action));
 
     // ── PROVISION: invitation ID → logintoken ──
     if (action === 'provision') {
       const invitationid = String(body.invitationId || '').trim();
-      if (!invitationid) return json({ success: false, error: 'Koppelcode (invitation ID) is verplicht' }, 400);
+      if (!/^[a-zA-Z0-9]{6}$/.test(invitationid)) return json({ success: false, error: 'Koppelcode (invitation ID) is verplicht' }, 400);
 
       const { http, body: res } = await vzPost('appprovision', { invitationid });
       const logintoken = (res?.data as { logintoken?: string } | undefined)?.logintoken;
@@ -116,10 +113,11 @@ Deno.serve(async (req) => {
       }
 
       if (organizationId) {
-        await admin().from('organizations').update({
+        const { error: saveError } = await admin().from('organizations').update({
           voipzeker_invitation_id: invitationid,
           voipzeker_login_token: logintoken,
         }).eq('id', organizationId);
+        if (saveError) throw new Error('Koppeling opslaan mislukt');
         tokenCache.delete(organizationId);
       }
 
@@ -154,9 +152,9 @@ Deno.serve(async (req) => {
 
     // ── CALL (default) ──
     const { phone, extension } = body as { phone?: string; extension?: string };
-    if (!phone) return json({ success: false, error: 'Telefoonnummer is verplicht' }, 400);
+    if (typeof phone !== 'string' || !/^[+0-9 ().-]{6,30}$/.test(phone)) return json({ success: false, error: 'Telefoonnummer is verplicht' }, 400);
 
-    let username = String(extension || '').trim();
+    let username = String(profile.voipzeker_extension || '').trim(); // Client cannot dial from a colleague's extension.
     if (!username && organizationId) {
       const { data } = await admin()
         .from('organizations')
@@ -170,6 +168,9 @@ Deno.serve(async (req) => {
     }
 
     const call_number = normalizePhone(phone);
+    const { data: blocked, error: dncError } = await admin().from('dnc_list').select('id').eq('organization_id', organizationId).eq('phone_norm',call_number).maybeSingle();
+    if (dncError) return json({error:'DNC-controle mislukt'},500);
+    if (blocked) return json({error:'Dit nummer staat op de DNC-lijst'},403);
     const { http, body: res } = await vzAuthed('callnumber', { username, call_number }, organizationId);
 
     console.log('[voipzeker-call]', JSON.stringify({ username, call_number, http, errorCode: res?.errorCode, message: res?.message }));
@@ -182,7 +183,8 @@ Deno.serve(async (req) => {
     // VoIPzeker returns no call id — the tool tracks call state itself.
     return json({ success: true, callId: '', message: 'Gesprek wordt gestart...' });
   } catch (error) {
-    console.error('[voipzeker-call] error:', error);
+    if (error instanceof AccessError) return json({error:error.message},error.status);
+    console.error('[voipzeker-call] request failed');
     return json({ success: false, error: error instanceof Error ? error.message : 'Onbekende fout' }, 500);
   }
 });
