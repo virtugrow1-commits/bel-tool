@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX IF NOT EXISTS callbacks_survey_auto_unique ON public.callbacks(organization_id, contact_id) WHERE status = 'scheduled' AND note LIKE '📋 Enquête digitaal%';
