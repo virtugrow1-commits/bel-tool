@@ -12,6 +12,7 @@ import { Phone, Loader2, CheckCircle, Ban } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { invokeAuthenticated } from '@/lib/authenticated-functions';
+import { normalizePhone } from '@/lib/phone';
 
 interface CallButtonProps {
   phoneNumber:    string;
@@ -19,22 +20,14 @@ interface CallButtonProps {
   leadName:       string;
   extension?:     string;
   organizationId?: string;
+  country?:       string;
   onCallStarted?: (callId: string) => void;
   className?:     string;
 }
 
-/** Normalise to E.164 for DNC check */
-function normalizeE164(phone: string): string {
-  let n = phone.replace(/[\s\-\(\)\.]/g, '');
-  if (n.startsWith('06'))       n = '+316' + n.substring(2);
-  else if (n.startsWith('0'))   n = '+31'  + n.substring(1);
-  else if (!n.startsWith('+'))  n = '+31'  + n;
-  return n;
-}
-
-async function isDNC(phone: string): Promise<boolean> {
+async function isDNC(phone: string, country?: string): Promise<boolean> {
   try {
-    const norm = normalizeE164(phone);
+    const norm = normalizePhone(phone, country);
     const { data } = await (supabase as any)
       .from('dnc_list')
       .select('id')
@@ -47,7 +40,7 @@ async function isDNC(phone: string): Promise<boolean> {
   }
 }
 
-export function CallButton({ phoneNumber, leadId, leadName, extension, organizationId, onCallStarted, className }: CallButtonProps) {
+export function CallButton({ phoneNumber, leadId, leadName, extension, organizationId, country, onCallStarted, className }: CallButtonProps) {
   const [state,    setState]    = useState<'idle' | 'loading' | 'success' | 'error' | 'dnc'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -58,7 +51,7 @@ export function CallButton({ phoneNumber, leadId, leadName, extension, organizat
 
     try {
       // DNC check
-      const blocked = await isDNC(phoneNumber);
+      const blocked = await isDNC(phoneNumber, country);
       if (blocked) {
         setState('dnc');
         setTimeout(() => setState('idle'), 5000);
@@ -66,7 +59,7 @@ export function CallButton({ phoneNumber, leadId, leadName, extension, organizat
       }
 
       const { data, error } = await invokeAuthenticated('voipzeker-call', {
-        body: { action: 'call', phone: phoneNumber, leadId, leadName, ...(extension ? { extension } : {}), ...(organizationId ? { organizationId } : {}) },
+        body: { action: 'call', phone: phoneNumber, country, leadId, leadName, ...(extension ? { extension } : {}), ...(organizationId ? { organizationId } : {}) },
       });
 
       if (error) {
@@ -93,7 +86,7 @@ export function CallButton({ phoneNumber, leadId, leadName, extension, organizat
       setState('error');
       setErrorMsg(msg);
       console.error('[CallButton]', msg);
-      setTimeout(() => setState('idle'), 5000);
+      setTimeout(() => setState('idle'), 8000);
     }
   };
 
@@ -101,11 +94,12 @@ export function CallButton({ phoneNumber, leadId, leadName, extension, organizat
     idle:    <><Phone size={13} /> Bellen</>,
     loading: <><Loader2 size={13} className="animate-spin" /> Verbinden...</>,
     success: <><CheckCircle size={13} /> Gestart!</>,
-    error:   <>{errorMsg.length > 20 ? 'Fout — probeer opnieuw' : errorMsg}</>,
+    error:   <>{/offline/i.test(errorMsg) ? 'Toestel offline' : errorMsg.length > 20 ? 'Fout — probeer opnieuw' : errorMsg}</>,
     dnc:     <><Ban size={13} /> Geblokkeerd (DNC)</>,
   }[state];
 
   return (
+    <span className="inline-flex flex-col items-start gap-1">
     <button
       data-call-button
       onClick={handleCall}
@@ -128,5 +122,7 @@ export function CallButton({ phoneNumber, leadId, leadName, extension, organizat
     >
       {label}
     </button>
+    {state === 'error' && errorMsg && <span role="alert" className="text-[11px] text-destructive max-w-xs">{errorMsg}</span>}
+    </span>
   );
 }
