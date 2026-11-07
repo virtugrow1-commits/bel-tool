@@ -145,6 +145,8 @@ export function useCallFlow({
     p.stopped = false; p.answered = false; p.until = Date.now() + 3 * 60 * 1000;
     const tick = async () => {
       if (p.stopped || Date.now() > p.until) { p.stopped = true; return; }
+      // Paused while the tab is hidden to spare the VoIPzeker limit (30/min)
+      if (typeof document !== 'undefined' && document.hidden) { p.timer = setTimeout(tick, 2000); return; }
       let delay = 2000;
       try {
         const { data, error } = await invokeAuthenticated('voipzeker-call', { body: { action: 'status' } });
@@ -157,6 +159,8 @@ export function useCallFlow({
             p.answered = true;
             callStartRef.current = Date.now();
             setCallState('active');
+            p.stopped = true; // stop polling once answered; ending is done manually
+            return;
           }
           if (step === 'ended') { p.stopped = true; hangupRef.current(); return; }
         }
@@ -170,7 +174,7 @@ export function useCallFlow({
   const confirmConnected = useCallback(() => {
     setCallState('active');
     setPhase('intro');
-    pollRef.current.answered = true; // manual fallback; polling keeps watching for the end
+    stopPolling(); // manual fallback: answered, stop polling
     callStartRef.current = callStartRef.current || Date.now();
 
     if (activeCompId) {
