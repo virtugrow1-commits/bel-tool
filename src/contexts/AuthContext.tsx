@@ -36,7 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { id: profile.id, name: profile.name, email: profile.email, role: grant.role as User['role'], avatar: profile.avatar || profile.name.slice(0, 2), deviceId: profile.device_id || '', voipzekerExtension: profile.voipzeker_extension || '', organizationId: profile.organization_id };
     })();
     profileRequests.current.set(identityId, request);
-    void request.finally(() => profileRequests.current.delete(identityId));
+    void request.then(() => profileRequests.current.delete(identityId), () => profileRequests.current.delete(identityId));
     return request;
   }, []);
 
@@ -77,8 +77,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let active = true;
     const timer = setTimeout(() => {
       active = false;
+      bootstrapExpired.current = true;
       setSession(null); setUser(null); setStoreScope(); setLoading(false);
-    }, AUTH_LOAD_TIMEOUT_MS);
+    }, Math.max(0, AUTH_LOAD_TIMEOUT_MS - (Date.now() - loadStartedAt.current)));
     // Separate effect, never an awaited operation in the Auth event callback.
     void resolveProfile(identityId).then(employee => {
       if (!active || generation.current !== version) return;

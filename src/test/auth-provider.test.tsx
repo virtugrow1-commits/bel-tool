@@ -37,4 +37,14 @@ describe('central session bootstrap', () => {
     await act(async () => { vi.advanceTimersByTime(8000); });
     expect(screen.getByText('login')).toBeTruthy();
   });
+  it('shares the eight-second deadline between session and profile loading', async () => {
+    mocks.getSession.mockReturnValue(new Promise(() => {}));
+    mocks.from.mockReturnValue({ select: () => ({ eq: () => ({ maybeSingle: () => new Promise(() => {}) }) }) });
+    render(<AuthProvider><Consumer /></AuthProvider>);
+    await act(async () => { vi.advanceTimersByTime(6000); mocks.listener?.('INITIAL_SESSION', { user: { id: 'employee-id' } }); });
+    await act(async () => { vi.advanceTimersByTime(1999); });
+    expect(screen.getByText('loading')).toBeTruthy();
+    await act(async () => { vi.advanceTimersByTime(1); });
+    expect(screen.getByText('login')).toBeTruthy();
+  });
 });
