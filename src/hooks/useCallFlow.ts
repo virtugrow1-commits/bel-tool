@@ -184,7 +184,7 @@ export function useCallFlow({
         cliq.addTag(activeContactId, ['beltool-in-gesprek']).catch(() => {});
       }
     }
-  }, [activeCompId, activeContactId, updateCompStage]);
+  }, [activeCompId, activeContactId, updateCompStage, stopPolling]);
 
   // ── hangup ─────────────────────────────────────────────────────────────────
   const hangup = useCallback(async () => {
