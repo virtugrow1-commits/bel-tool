@@ -8,7 +8,9 @@
  *  • Opportunity stage updates use the stored opportunityId where available.
  *  • Company name synced to GHL when contact is updated.
  */
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { invokeAuthenticated } from '@/lib/authenticated-functions';
+import { nextCallState, type DeviceStatus } from '@/lib/call-status';
 import { supabase } from '@/integrations/supabase/client';
 import type { Company, CompanyContact, CallPhase, CallState, SurveyAnswers } from '@/types/beltool';
 import { cliq } from '@/lib/beltool-ghl';
@@ -63,6 +65,7 @@ export function useCallFlow({
   const callDurationRef = useRef<number>(0);
 
   const resetCallState = useCallback(() => {
+    pollRef.current.stopped = true;
     setPhase('idle');
     setCallState('idle');
     setActiveCompId(null);
@@ -123,19 +126,51 @@ export function useCallFlow({
   }, [updateCompStage, updateContact]);
 
   // ── startDialing ───────────────────────────────────────────────────────────
+  const pollRef = useRef<{ timer: ReturnType<typeof setTimeout> | null; until: number; answered: boolean; stopped: boolean }>({ timer: null, until: 0, answered: false, stopped: true });
+  const hangupRef = useRef<() => void>(() => {});
+  const stopPolling = useCallback(() => {
+    const p = pollRef.current; p.stopped = true;
+    if (p.timer) clearTimeout(p.timer); p.timer = null;
+  }, []);
+  useEffect(() => stopPolling, [stopPolling]);
+
   const startDialing = useCallback(async (callId?: string) => {
     setCallState('dialing');
     if (callId) setActiveCallId(callId);
     addScore('gebeld');
-    callStartRef.current = Date.now();
-
-    setTimeout(() => setCallState('ringing'), 800);
-  }, [addScore]);
+    callStartRef.current = null; // duration starts when the contact answers (status 5)
+    callDurationRef.current = 0;
+    stopPolling();
+    const p = pollRef.current;
+    p.stopped = false; p.answered = false; p.until = Date.now() + 3 * 60 * 1000;
+    const tick = async () => {
+      if (p.stopped || Date.now() > p.until) { p.stopped = true; return; }
+      let delay = 2000;
+      try {
+        const { data, error } = await invokeAuthenticated('voipzeker-call', { body: { action: 'status' } });
+        if (p.stopped) return;
+        if (error) delay = 5000;
+        else if (data?.success && typeof data.status === 'number') {
+          const step = nextCallState(data.status as DeviceStatus, p.answered);
+          if (step === 'ringing') setCallState(s => (s === 'active' ? s : 'ringing'));
+          if (step === 'active' && !p.answered) {
+            p.answered = true;
+            callStartRef.current = Date.now();
+            setCallState('active');
+          }
+          if (step === 'ended') { p.stopped = true; hangupRef.current(); return; }
+        }
+      } catch { delay = 5000; }
+      if (!p.stopped) p.timer = setTimeout(tick, delay);
+    };
+    p.timer = setTimeout(tick, 1500);
+  }, [addScore, stopPolling]);
 
   // ── confirmConnected ───────────────────────────────────────────────────────
   const confirmConnected = useCallback(() => {
     setCallState('active');
     setPhase('intro');
+    pollRef.current.answered = true; // manual fallback; polling keeps watching for the end
     callStartRef.current = callStartRef.current || Date.now();
 
     if (activeCompId) {
@@ -149,6 +184,7 @@ export function useCallFlow({
 
   // ── hangup ─────────────────────────────────────────────────────────────────
   const hangup = useCallback(async () => {
+    stopPolling();
     // Capture duration before resetting
     if (callStartRef.current) {
       callDurationRef.current = Math.round((Date.now() - callStartRef.current) / 1000);
@@ -167,7 +203,8 @@ export function useCallFlow({
     }
 
     setTimeout(() => setCallState('idle'), 1500);
-  }, [activeCallId, activeContactId, organizationId]);
+  }, [activeContactId, stopPolling]);
+  hangupRef.current = () => { void hangup(); };
 
   // ── endCall ────────────────────────────────────────────────────────────────
   const endCall = useCallback(async (
@@ -177,7 +214,7 @@ export function useCallFlow({
   ):Promise<boolean> => {
     if(savingRef.current || !activeContact || !activeComp)return false;
     const duration=callDurationRef.current || (callStartRef.current?Math.round((Date.now()-callStartRef.current)/1000):0);
-    const payload={requestId:requestRef.current,contactId:activeContact.id,companyId:activeComp.id,companyName:activeComp.name,contactName:`${activeContact.firstName} ${activeContact.lastName}`,phone:activeContact.phone,result:resultOverride || stage,durationSeconds:duration,notes:currentNotes,...(callback?{callback}:{})};
+    const payload={requestId:requestRef.current,contactId:activeContact.id,companyId:activeComp.id,companyName:activeComp.name,contactName:`${activeContact.firstName} ${activeContact.lastName}`,phone:activeContact.phone,...(activeContact.country?{country:activeContact.country}:{}),result:resultOverride || stage,durationSeconds:duration,notes:currentNotes,...(callback?{callback}:{})};
     const persist=async():Promise<boolean>=>{
       savingRef.current=true;setSaving(true);setSaveError('');
       try{
