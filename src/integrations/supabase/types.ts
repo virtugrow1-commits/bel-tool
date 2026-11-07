@@ -294,6 +294,7 @@ export type Database = {
           id: string
           logo_url: string | null
           name: string
+          shared_settings: Json
           slug: string
           voipzeker_invitation_id: string | null
           voipzeker_login_token: string | null
@@ -314,6 +315,7 @@ export type Database = {
           id?: string
           logo_url?: string | null
           name: string
+          shared_settings?: Json
           slug: string
           voipzeker_invitation_id?: string | null
           voipzeker_login_token?: string | null
@@ -334,6 +336,7 @@ export type Database = {
           id?: string
           logo_url?: string | null
           name?: string
+          shared_settings?: Json
           slug?: string
           voipzeker_invitation_id?: string | null
           voipzeker_login_token?: string | null
@@ -534,6 +537,7 @@ export type Database = {
       current_org_id: { Args: never; Returns: string }
       current_profile_id: { Args: never; Returns: string }
       is_org_admin: { Args: never; Returns: boolean }
+      org_shared_settings: { Args: never; Returns: Json }
       safe_organizations: {
         Args: never
         Returns: {
