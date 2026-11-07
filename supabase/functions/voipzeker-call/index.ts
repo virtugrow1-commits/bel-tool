@@ -100,15 +100,11 @@ async function extensionId(organizationId: string, username: string): Promise<st
 async function extensionStatus(organizationId: string, username: string): Promise<number> {
   const id = await extensionId(organizationId, username);
   const { http, body: res } = await vzAuthed('listextensionsstatus', { 'extensionids[]': id }, organizationId);
-  console.log('[voipzeker-call] status raw', http, JSON.stringify(res).slice(0, 500));
   if (http === 429) throw new Error('RATE_LIMIT');
   if (!res?.status) throw new Error(res?.message || `Status ophalen mislukt (${http})`);
-  const d = res.data as unknown;
-  console.log('[voipzeker-call] status shape', JSON.stringify(d).slice(0, 400));
-  const list = Array.isArray(d) ? d : ((d as { items?: unknown[] })?.items ?? (d && typeof d === 'object' ? Object.values(d as object) : []));
-  const row = (list as Record<string, unknown>[]).find((r) => String(r?.id ?? r?.extensionid ?? id) === id) ?? (list as Record<string, unknown>[])[0];
-  const raw = row && typeof row === 'object' ? (row.status ?? row.state ?? row.code) : row;
-  const code = Number(raw);
+  // Shape: { data: { items: { "<extensionId>": <code> }, status_list: {...} } }
+  const items = ((res.data as { items?: Record<string, unknown> } | undefined)?.items) || {};
+  const code = Number(items[id] ?? Object.values(items)[0]);
   if (!Number.isFinite(code)) throw new Error('Onbekende toestelstatus');
   return code;
 }
