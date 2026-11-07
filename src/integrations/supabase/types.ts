@@ -14,6 +14,206 @@ export type Database = {
   }
   public: {
     Tables: {
+      call_attempts: {
+        Row: {
+          attempted_at: string
+          caller_id: string | null
+          company_id: string
+          contact_id: string
+          id: string
+          organization_id: string
+          result: string
+        }
+        Insert: {
+          attempted_at?: string
+          caller_id?: string | null
+          company_id?: string
+          contact_id: string
+          id?: string
+          organization_id?: string
+          result?: string
+        }
+        Update: {
+          attempted_at?: string
+          caller_id?: string | null
+          company_id?: string
+          contact_id?: string
+          id?: string
+          organization_id?: string
+          result?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "call_attempts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      call_sessions: {
+        Row: {
+          caller_id: string | null
+          caller_name: string
+          company_id: string
+          company_name: string
+          contact_id: string
+          contact_name: string
+          created_at: string
+          duration_seconds: number | null
+          ended_at: string | null
+          ghl_synced: boolean
+          id: string
+          notes: string | null
+          organization_id: string
+          phone: string
+          result: string | null
+          started_at: string
+          voys_call_id: string | null
+        }
+        Insert: {
+          caller_id?: string | null
+          caller_name?: string
+          company_id?: string
+          company_name?: string
+          contact_id: string
+          contact_name?: string
+          created_at?: string
+          duration_seconds?: number | null
+          ended_at?: string | null
+          ghl_synced?: boolean
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          phone?: string
+          result?: string | null
+          started_at?: string
+          voys_call_id?: string | null
+        }
+        Update: {
+          caller_id?: string | null
+          caller_name?: string
+          company_id?: string
+          company_name?: string
+          contact_id?: string
+          contact_name?: string
+          created_at?: string
+          duration_seconds?: number | null
+          ended_at?: string | null
+          ghl_synced?: boolean
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          phone?: string
+          result?: string | null
+          started_at?: string
+          voys_call_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "call_sessions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      callbacks: {
+        Row: {
+          assigned_to: string | null
+          company_name: string
+          contact_id: string
+          contact_name: string
+          created_at: string
+          created_by: string | null
+          id: string
+          note: string
+          organization_id: string
+          scheduled_date: string
+          scheduled_time: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          company_name?: string
+          contact_id: string
+          contact_name?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string
+          organization_id?: string
+          scheduled_date: string
+          scheduled_time?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          company_name?: string
+          contact_id?: string
+          contact_name?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string
+          organization_id?: string
+          scheduled_date?: string
+          scheduled_time?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "callbacks_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dnc_list: {
+        Row: {
+          added_by: string | null
+          created_at: string
+          id: string
+          organization_id: string
+          phone: string
+          phone_norm: string
+          reason: string
+        }
+        Insert: {
+          added_by?: string | null
+          created_at?: string
+          id?: string
+          organization_id?: string
+          phone: string
+          phone_norm: string
+          reason?: string
+        }
+        Update: {
+          added_by?: string | null
+          created_at?: string
+          id?: string
+          organization_id?: string
+          phone?: string
+          phone_norm?: string
+          reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dnc_list_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       incoming_calls: {
         Row: {
           call_id: string | null
@@ -126,6 +326,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          auth_user_id: string | null
           avatar: string | null
           created_at: string
           device_id: string | null
@@ -137,6 +338,7 @@ export type Database = {
           voipzeker_extension: string | null
         }
         Insert: {
+          auth_user_id?: string | null
           avatar?: string | null
           created_at?: string
           device_id?: string | null
@@ -148,6 +350,7 @@ export type Database = {
           voipzeker_extension?: string | null
         }
         Update: {
+          auth_user_id?: string | null
           avatar?: string | null
           created_at?: string
           device_id?: string | null
@@ -164,6 +367,35 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          id: string
+          profile_id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          profile_id: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          profile_id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -229,7 +461,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      current_org_id: { Args: never; Returns: string }
+      current_profile_id: { Args: never; Returns: string }
+      is_org_admin: { Args: never; Returns: boolean }
+      safe_organizations: {
+        Args: never
+        Returns: {
+          has_ghl_key: boolean
+          id: string
+          name: string
+          voipzeker_connected: boolean
+          voipzeker_outbound_number: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

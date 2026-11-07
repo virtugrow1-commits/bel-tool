@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1794067897325,
+      "tag": "0000_secure_team_and_call_tracking",
+      "breakpoints": true
+    }
+  ]
+}
