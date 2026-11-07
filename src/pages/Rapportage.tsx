@@ -13,7 +13,7 @@ import { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { store } from '@/lib/beltool-store';
-import { USERS, type User } from '@/lib/beltool-data';
+import { useTeamProfiles } from '@/hooks/useTeamProfiles';
 import { initScores, type Scores, type ActivityLogEntry } from '@/lib/beltool-scoring';
 
 interface CallSession {
@@ -233,7 +233,7 @@ function ResultDistribution({ sessions }: { sessions: CallSession[] }) {
 }
 
 function TeamLeaderboard({ supabaseScores, localScores }: { supabaseScores: UserScore[] | null; localScores: Record<string, Scores> }) {
-  const managedUsers: User[] = store.get('managedUsers', USERS);
+  const { profiles: managedUsers } = useTeamProfiles();
 
   const rows = useMemo(() => {
     if (supabaseScores && supabaseScores.length > 0) {
