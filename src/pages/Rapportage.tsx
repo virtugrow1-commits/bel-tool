@@ -302,8 +302,8 @@ function ResultBadge({ result }: { result: string }) {
 
 export default function Rapportage() {
   const navigate = useNavigate();
-  const { user: currentUser } = useAuth();
-  const localScores: Record<string, Scores> = store.get('scores', {});
+  const { user: currentUser, loading: authLoading, login, resetPassword } = useAuth();
+  const localScores: Record<string, Scores> = currentUser ? store.get('scores', {}) : {};
   const orgId = currentUser?.organizationId || null;
 
   const [period, setPeriod] = useState<'today' | 'week' | 'month' | 'all'>('today');
@@ -381,6 +381,8 @@ export default function Rapportage() {
     { k: 'all',   l: 'Alles' },
   ] as const;
 
+  if (authLoading) return <div className="min-h-screen bg-background flex items-center justify-center">Laden...</div>;
+  if (!currentUser) return <LoginScreen onLogin={login} onResetPassword={resetPassword} />;
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Header */}

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import type { User } from '@/lib/beltool-data';
-import { store } from '@/lib/beltool-store';
+import { store, setStoreScope } from '@/lib/beltool-store';
 
 export function useAuth() {
   const [user,setUser]=useState<User | null>(null);
@@ -10,12 +10,12 @@ export function useAuth() {
   const [loading,setLoading]=useState(true);
   const loadUser=useCallback(async()=>{
     const {data:{user:identity},error}=await supabase.auth.getUser();
-    if(error || !identity){setUser(null);setLoading(false);return null;}
+    if(error || !identity){setStoreScope();setUser(null);setLoading(false);return null;}
     const {data:profile}=await supabase.from('profiles').select('*').eq('auth_user_id',identity.id).maybeSingle();
     const {data:grant}=await supabase.from('user_roles').select('role').eq('user_id',identity.id).maybeSingle();
     if(!profile?.organization_id || !grant){setUser(null);setLoading(false);return null;}
     const resolved: User={id:profile.id,name:profile.name,email:profile.email,role:grant.role as User['role'],avatar:profile.avatar || profile.name.slice(0,2),deviceId:profile.device_id || '',voipzekerExtension:profile.voipzeker_extension || '',organizationId:profile.organization_id};
-    setUser(resolved);setLoading(false);return resolved;
+    setStoreScope(profile.organization_id);setUser(resolved);setLoading(false);return resolved;
   },[]);
   useEffect(()=>{
     store.del('user');store.del('managedUsers');store.del('apiKey');
@@ -23,7 +23,7 @@ export function useAuth() {
     const {data:{subscription}}=supabase.auth.onAuthStateChange((_event,next)=>{
       if(!alive)return;
       setSession(next);
-      if(!next){setUser(null);setLoading(false);return;}
+      if(!next){setStoreScope();setUser(null);setLoading(false);return;}
       setLoading(true);
       // Avoid nested Auth API calls while the session listener holds its lock.
       setTimeout(()=>{if(alive)void loadUser();},0);

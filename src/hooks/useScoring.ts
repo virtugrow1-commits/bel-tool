@@ -4,7 +4,7 @@
  * Local state drives instant UI updates. After each score event we upsert into
  * user_scores so the leaderboard works cross-device and survives browser clears.
  */
-import { useState, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { store } from '@/lib/beltool-store';
 import { initScores, fmtTime, type Scores } from '@/lib/beltool-scoring';
@@ -47,6 +47,7 @@ export function useScoring(user: User | null, organizationId?: string) {
   });
 
   const contactRef = useRef({ name: '', contactId: '', companyId: '' });
+  useEffect(() => { setAllScores(user ? store.get('scores', {}) : {}); }, [user?.organizationId]);
 
   const setContactInfo = useCallback((name: string, contactId: string | null, companyId: string | null) => {
     contactRef.current = { name, contactId: contactId || '', companyId: companyId || '' };
