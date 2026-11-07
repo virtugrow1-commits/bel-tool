@@ -87,6 +87,7 @@ function mapOpportunitiesToCompanies(opportunities: Array<{
       role: '',
       phone: c.phone || '',
       email: c.email || '',
+      country: c.country || '',
       opportunityId: opp.id || '',
     });
   }
