@@ -1,4 +1,5 @@
 import { useAuth } from '@/hooks/useAuth';
+import { LoginScreen } from '@/components/beltool/LoginScreen';
 /**
  * Rapportage — volledig herbouwd met:
  * • Supabase call_sessions voor echte gespreksduur en resultaten

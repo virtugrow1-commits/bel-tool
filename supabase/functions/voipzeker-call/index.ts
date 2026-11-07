@@ -1,7 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
-import { authorize, AccessError } from '../_shared/auth.ts';
+import { authorize, AccessError, serviceClient } from '../_shared/auth.ts';
 
 const BASE = 'https://api.voipzeker.nl/unite/v1';
 
@@ -12,10 +12,7 @@ const json = (body: unknown, status = 200) =>
   });
 
 function admin() {
-  return createClient(
-    Deno.env.get('SUPABASE_URL')!,
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-  );
+  return serviceClient();
 }
 
 interface VzResponse {
@@ -171,6 +168,9 @@ Deno.serve(async (req) => {
     }
 
     const call_number = normalizePhone(phone);
+    const { data: blocked, error: dncError } = await admin().from('dnc_list').select('id').eq('organization_id', organizationId).eq('phone_norm',call_number).maybeSingle();
+    if (dncError) return json({error:'DNC-controle mislukt'},500);
+    if (blocked) return json({error:'Dit nummer staat op de DNC-lijst'},403);
     const { http, body: res } = await vzAuthed('callnumber', { username, call_number }, organizationId);
 
     console.log('[voipzeker-call]', JSON.stringify({ username, call_number, http, errorCode: res?.errorCode, message: res?.message }));
