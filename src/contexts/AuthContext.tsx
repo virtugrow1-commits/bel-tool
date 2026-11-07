@@ -19,6 +19,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const generation = useRef(0);
   const bootstrapExpired = useRef(false);
+  const loadStartedAt = useRef(Date.now());
   const profileRequests = useRef(new Map<string, Promise<User | null>>());
 
   // Session identity is only a query key. Protected profile/role RLS and edge
@@ -44,12 +45,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let alive = true;
     let receivedEvent = false;
     bootstrapExpired.current = false;
+    loadStartedAt.current = Date.now();
     const timer = setTimeout(() => {
       if (!alive) return;
       bootstrapExpired.current = true;
       generation.current++;
       setSession(null); setUser(null); setStoreScope(); setLoading(false);
-    }, AUTH_LOAD_TIMEOUT_MS);
+    }, Math.max(0, AUTH_LOAD_TIMEOUT_MS - (Date.now() - loadStartedAt.current)));
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, next) => {
       if (!alive || bootstrapExpired.current) return;
       receivedEvent = true;
@@ -90,6 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (email: string, password: string) => {
     bootstrapExpired.current = false;
+    loadStartedAt.current = Date.now();
     const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
     if (error || !data.session) { setLoading(false); return { error: 'E-mailadres of wachtwoord is onjuist.' }; }
     setSession(data.session);
