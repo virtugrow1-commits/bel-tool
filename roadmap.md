@@ -9,3 +9,5 @@
 - [x] Centralize session management, bound loading to eight seconds, and verify login, five reloads and simultaneous tabs without publishing; no direct auth-user requests or lock errors. Preview/network timing varies (0.7–6.4 seconds), so consistent 2–3-second loading is not verified.
 - [x] Add explicit provider session headers and singleflight refresh for rejected staff requests; 15 session/security tests pass; no security or calling-flow changes and no publication.
 - [ ] Verify live 401 recovery end-to-end: blocked by hosted auth request timeouts; valid-session getCalendars returned 200 before the timeout, but browser recovery is not confirmed.
+- [x] Diagnose slow connection: Cloud health probes repeatedly time out, with no confirmed resource exhaustion; release first-page contacts without waiting for summaries/background loads. Loading and auth tests pass; security and calling flow unchanged.
+- [ ] Measure real-user loading speed after Cloud connectivity recovers; hosted auth/database timeouts currently prevent an authenticated browser check.
