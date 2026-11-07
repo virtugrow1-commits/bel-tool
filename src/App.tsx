@@ -24,6 +24,8 @@ function LoadingFallback() {
   );
 }
 
+const linkType = new URLSearchParams(window.location.hash.slice(1)).get('type');
+if (window.location.pathname === '/reset-password' && (linkType === 'recovery' || linkType === 'invite')) sessionStorage.setItem('password-link', 'pending');
 const queryClient = new QueryClient();
 
 const App = () => (

@@ -12,7 +12,7 @@ export default function ResetPassword() {
   const [busy,setBusy]=useState(false);
   useEffect(()=>{
     const type=new URLSearchParams(window.location.hash.slice(1)).get('type');
-    const fromLink=type==='recovery' || type==='invite';
+    const fromLink=type==='recovery' || type==='invite' || sessionStorage.getItem('password-link')==='pending';
     const {data:{subscription}}=supabase.auth.onAuthStateChange((event,session)=>{
       if(event==='PASSWORD_RECOVERY' || (fromLink && session)) setAllowed(true);
     });
@@ -26,7 +26,7 @@ export default function ResetPassword() {
     const {error}=await supabase.auth.updateUser({password});
     setBusy(false);
     if(error){setMessage('Wachtwoord opslaan mislukt. Kies een sterker wachtwoord of vraag een nieuwe link aan.');return;}
-    await supabase.auth.signOut();navigate('/');
+    sessionStorage.removeItem('password-link');await supabase.auth.signOut();navigate('/');
   };
   return <main className="min-h-screen bg-background flex items-center justify-center px-4">
     <form className="w-full max-w-sm space-y-4" onSubmit={e=>{e.preventDefault();void save();}}>
