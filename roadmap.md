@@ -2,3 +2,7 @@
 - [x] Protect organization secrets and administrative changes; bind edge requests to authenticated organization.
 - [x] Apply organization-scoped tracking schema and policies; preserve profile identities and regenerate types.
 - [x] Verify security boundaries and Willem access; document remaining administrator actions.
+- [ ] Restore constrained public survey/booking with validated CliqMakers-only API and IP limit.
+- [ ] Persist call outcomes, attempts, DNC and callbacks with visible errors and CLIQ activity notes.
+- [ ] Read reports and leaderboard from durable organization data; remove legacy frontend telephony.
+- [ ] Verify staff and public flows without real phone calls; report external blockers.
