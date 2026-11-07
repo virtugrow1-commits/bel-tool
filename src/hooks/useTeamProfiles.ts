@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { USERS, type User } from '@/lib/beltool-data';
 import { useAuth } from '@/hooks/useAuth';
+import { invokeAuthenticated } from '@/lib/authenticated-functions';
 
 /**
  * Fetches team profiles from Supabase.
@@ -60,7 +61,7 @@ export function useTeamProfiles(organizationId?: string) {
     name: string; email: string; role: User['role']; avatar?: string;
     voipzekerExtension?: string; organizationId?: string;
   }) => {
-    const { data, error } = await supabase.functions.invoke('team-admin', { body: { action:'invite', ...input, organizationId: input.organizationId || organizationId } });
+    const { data, error } = await invokeAuthenticated('team-admin', { body: { action:'invite', ...input, organizationId: input.organizationId || organizationId } });
     if (error || data?.error) throw new Error(data?.error || 'Uitnodiging versturen mislukt');
     await fetchProfiles();
   }, [fetchProfiles, organizationId]);
@@ -68,7 +69,7 @@ export function useTeamProfiles(organizationId?: string) {
   const updateProfile = useCallback(async (id: string, input: Partial<{
     name: string; email: string; role: User['role']; avatar: string; voipzekerExtension: string;
   }>) => {
-    const { data, error } = await supabase.functions.invoke('team-admin', { body: { action:'update', profileId:id, ...input } });
+    const { data, error } = await invokeAuthenticated('team-admin', { body: { action:'update', profileId:id, ...input } });
     if (error || data?.error) throw new Error(data?.error || 'Medewerker opslaan mislukt');
     await fetchProfiles();
   }, [fetchProfiles]);

@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 import { useAdvisors } from '@/hooks/useAdvisors';
 import { useOrganizations } from '@/hooks/useOrganizations';
 import { useTeamProfiles } from '@/hooks/useTeamProfiles';
-import { supabase } from '@/integrations/supabase/client';
+import { invokeAuthenticated } from '@/lib/authenticated-functions';
 import type { SelectOption } from '@/types/beltool';
 
 const DEFAULT_CUSTOM_FIELDS = [
@@ -66,7 +66,7 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
   const MAX_TEAM = 5;
 
   const callVz = async (action: string, extra: Record<string, unknown> = {}) => {
-    const { data, error } = await supabase.functions.invoke('voipzeker-call', {
+    const { data, error } = await invokeAuthenticated('voipzeker-call', {
       body: { action, organizationId: user?.organizationId, ...extra },
     });
     if (error) {

@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { invokeAuthenticated } from '@/lib/authenticated-functions';
 import { withRetry, isRetryableError } from '@/lib/retry';
 
 /** Module-level organization ID — set by BelTool on login */
@@ -45,11 +45,12 @@ async function callCliq(action: string, params: Record<string, unknown> = {}) {
   const orgPayload = _currentOrgId ? { organizationId: _currentOrgId } : {};
   return withRetry(
     async () => {
-      const { data, error } = await supabase.functions.invoke('ghl-proxy', {
+      const { data, error } = await invokeAuthenticated('ghl-proxy', {
         body: { action, ...orgPayload, ...params },
       });
       if (error) {
-        const msg = error.message || '';
+        let msg = error.message || '';
+        try { const detail = await error.context?.clone().json(); if (detail?.error) msg = detail.error; } catch { /* retain transport error */ }
         throw new Error(`CLIQ ${action} failed: ${msg}`);
       }
       if (data?.error) {

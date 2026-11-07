@@ -7,3 +7,4 @@
 - [x] Read reports and leaderboard from durable organization data; remove legacy frontend telephony.
 - [x] Verify persisted staff results, callback, reporting, public survey and booking availability without real calls; document incomplete final booking and unconfigured VoIPzeker.
 - [x] Centralize session management, bound loading to eight seconds, and verify login, five reloads and simultaneous tabs without publishing; no direct auth-user requests or lock errors. Preview/network timing varies (0.7–6.4 seconds), so consistent 2–3-second loading is not verified.
+- [ ] Recover rejected staff sessions centrally and verify CLIQ requests without changing security, calling flow or publishing.

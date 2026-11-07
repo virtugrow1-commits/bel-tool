@@ -1,6 +1,7 @@
 # Architecture rules
 - Use hosted email/password Auth and link immutable legacy profile IDs through auth_user_id; never trust cached user objects for access.
 - Mount one AuthProvider for session bootstrap and profile hydration; consumers use its context, and synchronous auth listeners never perform database/auth calls, preventing session-lock deadlocks. Server JWT validation and protected RLS remain authoritative.
+- Staff function requests use the provider's current session with explicit bearer headers and singleflight refresh; retry only rejected 401 requests once, never replay ambiguous call failures.
 - Authorize roles from protected user_roles and determine organizations from the authenticated profile on the server; client IDs never confer authority.
 - Expose only safe_organizations to browsers; all organization settings and invitations go through authenticated admin edge functions.
 - Tracking tables default organization_id from the authenticated profile and enforce same-organization RLS; profile identifiers remain compatible with existing scores and callback ownership.
