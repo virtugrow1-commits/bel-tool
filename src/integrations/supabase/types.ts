@@ -20,27 +20,33 @@ export type Database = {
           caller_id: string | null
           company_id: string
           contact_id: string
+          duration_seconds: number
           id: string
           organization_id: string
           result: string
+          session_id: string | null
         }
         Insert: {
           attempted_at?: string
           caller_id?: string | null
           company_id?: string
           contact_id: string
+          duration_seconds?: number
           id?: string
           organization_id?: string
           result?: string
+          session_id?: string | null
         }
         Update: {
           attempted_at?: string
           caller_id?: string | null
           company_id?: string
           contact_id?: string
+          duration_seconds?: number
           id?: string
           organization_id?: string
           result?: string
+          session_id?: string | null
         }
         Relationships: [
           {
@@ -48,6 +54,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "call_attempts_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "call_sessions"
             referencedColumns: ["id"]
           },
         ]
@@ -68,8 +81,11 @@ export type Database = {
           notes: string | null
           organization_id: string
           phone: string
+          request_id: string | null
           result: string | null
+          source: string
           started_at: string
+          sync_error: string | null
           voys_call_id: string | null
         }
         Insert: {
@@ -87,8 +103,11 @@ export type Database = {
           notes?: string | null
           organization_id?: string
           phone?: string
+          request_id?: string | null
           result?: string | null
+          source?: string
           started_at?: string
+          sync_error?: string | null
           voys_call_id?: string | null
         }
         Update: {
@@ -106,8 +125,11 @@ export type Database = {
           notes?: string | null
           organization_id?: string
           phone?: string
+          request_id?: string | null
           result?: string | null
+          source?: string
           started_at?: string
+          sync_error?: string | null
           voys_call_id?: string | null
         }
         Relationships: [
@@ -371,6 +393,53 @@ export type Database = {
           },
         ]
       }
+      public_ip_windows: {
+        Row: {
+          ip_hash: string
+          requests: number
+          window_start: string
+        }
+        Insert: {
+          ip_hash: string
+          requests?: number
+          window_start?: string
+        }
+        Update: {
+          ip_hash?: string
+          requests?: number
+          window_start?: string
+        }
+        Relationships: []
+      }
+      public_surveys: {
+        Row: {
+          answers: Json
+          id: string
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          answers?: Json
+          id: string
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          answers?: Json
+          id?: string
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "public_surveys_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
@@ -461,6 +530,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      consume_public_request: { Args: { p_hash: string }; Returns: boolean }
       current_org_id: { Args: never; Returns: string }
       current_profile_id: { Args: never; Returns: string }
       is_org_admin: { Args: never; Returns: boolean }
@@ -473,6 +543,21 @@ export type Database = {
           voipzeker_connected: boolean
           voipzeker_outbound_number: string
         }[]
+      }
+      save_call_result: {
+        Args: {
+          p_callback?: Json
+          p_company: string
+          p_company_name: string
+          p_contact: string
+          p_contact_name: string
+          p_duration: number
+          p_notes: string
+          p_phone: string
+          p_request: string
+          p_result: string
+        }
+        Returns: string
       }
     }
     Enums: {
