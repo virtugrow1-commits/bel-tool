@@ -258,20 +258,15 @@ export function useLeads(user: User | null) {
         const stId = resolveStageId(stageFilter, stages);
         const defaultStage: CompanyStage = stageFilter === 'all' ? 'nieuw' : stageFilter;
 
-        const [, , bgCompanies] = await Promise.all([
-          loadOpportunities(info.pipelineId, stId, undefined, undefined, defaultStage, stages),
-          loadStageCounts(info.pipelineId, stages),
-          loadBackgroundStages(info.pipelineId, stages, stId),
-        ]);
-
-        // Merge background-stage leads into companies (avoid duplicates)
-        if (bgCompanies.length > 0) {
+        await loadOpportunities(info.pipelineId, stId, undefined, undefined, defaultStage, stages);
+        // Release the contact list first; summaries must not gate calling.
+        void loadStageCounts(info.pipelineId, stages).catch(console.warn);
+        void loadBackgroundStages(info.pipelineId, stages, stId).then(bgCompanies => {
           setCompanies(prev => {
             const existingIds = new Set(prev.map(c => c.id));
-            const newOnes = bgCompanies.filter(c => !existingIds.has(c.id));
-            return newOnes.length > 0 ? [...prev, ...newOnes] : prev;
+            return [...prev, ...bgCompanies.filter(c => !existingIds.has(c.id))];
           });
-        }
+        }).catch(console.warn);
       } catch (err: any) {
         console.warn('CLIQ pipeline load failed:', err.message);
         setCliqError(err.message);
@@ -302,14 +297,13 @@ export function useLeads(user: User | null) {
     (async () => {
       try {
         await loadOpportunities(pipelineInfo.pipelineId, stId, undefined, undefined, defaultStage);
-        const bgCompanies = await loadBackgroundStages(pipelineInfo.pipelineId, stageMapRef.current, stId);
-        if (bgCompanies.length > 0) {
+        void loadBackgroundStages(pipelineInfo.pipelineId, stageMapRef.current, stId).then(bgCompanies => {
           setCompanies(prev => {
             const existingIds = new Set(prev.map(c => c.id));
             const newOnes = bgCompanies.filter(c => !existingIds.has(c.id));
             return newOnes.length > 0 ? [...prev, ...newOnes] : prev;
           });
-        }
+        }).catch(console.warn);
       } catch (err: any) {
         console.warn('CLIQ stage load failed:', err.message);
         setCliqError(err.message);
@@ -327,18 +321,15 @@ export function useLeads(user: User | null) {
       const { info, stages } = await loadPipeline();
       const stId = resolveStageId(stageFilter, stages);
       const defaultStage: CompanyStage = stageFilter === 'all' ? 'nieuw' : stageFilter;
-      const [, , bgCompanies] = await Promise.all([
-        loadOpportunities(info.pipelineId, stId, undefined, undefined, defaultStage, stages),
-        loadStageCounts(info.pipelineId, stages),
-        loadBackgroundStages(info.pipelineId, stages, stId),
-      ]);
-      if (bgCompanies.length > 0) {
+      await loadOpportunities(info.pipelineId, stId, undefined, undefined, defaultStage, stages);
+      void loadStageCounts(info.pipelineId, stages).catch(console.warn);
+      void loadBackgroundStages(info.pipelineId, stages, stId).then(bgCompanies => {
         setCompanies(prev => {
           const existingIds = new Set(prev.map(c => c.id));
           const newOnes = bgCompanies.filter(c => !existingIds.has(c.id));
           return newOnes.length > 0 ? [...prev, ...newOnes] : prev;
         });
-      }
+      }).catch(console.warn);
     } catch (err: any) {
       setCliqError(err.message);
       throw err;
