@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { lazy, Suspense } from "react";
 import Index from "./pages/Index";
+import { AuthProvider } from '@/contexts/AuthContext';
 
 const ProspectSurvey = lazy(() => import("./pages/ProspectSurvey"));
 const SurveyResults = lazy(() => import("./pages/SurveyResults"));
@@ -30,6 +31,7 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
+    <AuthProvider>
     <TooltipProvider>
       <Toaster />
       <Sonner />
@@ -47,6 +49,7 @@ const App = () => (
         </Suspense>
       </BrowserRouter>
     </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 

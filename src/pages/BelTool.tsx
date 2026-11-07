@@ -52,7 +52,7 @@ function normalizeEmail(email?: string) {
 
 export default function BelTool() {
   // --- Core hooks ---
-  const { user, login, logout, resetPassword, loading: authLoading } = useAuth();
+  const { user, session, login, logout, resetPassword, loading: authLoading } = useAuth();
   const { toast, flash } = useFlash();
   const darkMode = useDarkMode();
   const navigate = useNavigate();
@@ -74,7 +74,7 @@ export default function BelTool() {
   // Load smart-queue attempt cache from Supabase on login
   useEffect(() => {
     if (user) {
-      loadAttemptCache().catch(console.warn);
+      loadAttemptCache(session).catch(console.warn);
     }
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 

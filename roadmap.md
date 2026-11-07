@@ -6,3 +6,4 @@
 - [x] Persist call outcomes, attempts, DNC and callbacks with visible errors and CLIQ activity notes.
 - [x] Read reports and leaderboard from durable organization data; remove legacy frontend telephony.
 - [x] Verify persisted staff results, callback, reporting, public survey and booking availability without real calls; document incomplete final booking and unconfigured VoIPzeker.
+- [ ] Centralize session management, bound loading to eight seconds, and verify login, five reloads and simultaneous tabs without publishing.
