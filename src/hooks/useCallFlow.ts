@@ -142,7 +142,7 @@ export function useCallFlow({
     callDurationRef.current = 0;
     stopPolling();
     const p = pollRef.current;
-    p.stopped = false; p.answered = false; p.until = Date.now() + 3 * 60 * 1000;
+    p.stopped = false; p.answered = false; p.until = Date.now() + 3 * 60 * 1000; // ringing window; extended once answered
     const tick = async () => {
       if (p.stopped || Date.now() > p.until) { p.stopped = true; return; }
       // Paused while the tab is hidden to spare the VoIPzeker limit (30/min)
@@ -159,12 +159,12 @@ export function useCallFlow({
             p.answered = true;
             callStartRef.current = Date.now();
             setCallState('active');
-            p.stopped = true; // stop polling once answered; ending is done manually
-            return;
+            p.until = Date.now() + 4 * 60 * 60 * 1000;
           }
           if (step === 'ended') { p.stopped = true; hangupRef.current(); return; }
         }
       } catch { delay = 5000; }
+      if (p.answered) delay = Math.max(delay, 5000); // slower while active, until ended
       if (!p.stopped) p.timer = setTimeout(tick, delay);
     };
     p.timer = setTimeout(tick, 1500);
@@ -174,7 +174,7 @@ export function useCallFlow({
   const confirmConnected = useCallback(() => {
     setCallState('active');
     setPhase('intro');
-    stopPolling(); // manual fallback: answered, stop polling
+    pollRef.current.answered = true; // manual fallback; keep polling (5s) to detect the end
     callStartRef.current = callStartRef.current || Date.now();
 
     if (activeCompId) {
