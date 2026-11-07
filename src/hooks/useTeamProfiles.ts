@@ -1,16 +1,19 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { USERS, type User } from '@/lib/beltool-data';
+import { useAuth } from '@/hooks/useAuth';
 
 /**
  * Fetches team profiles from Supabase.
  * Falls back to hardcoded USERS if the profiles table is empty or unavailable.
  */
 export function useTeamProfiles(organizationId?: string) {
+  const { user } = useAuth();
   const [profiles, setProfiles] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchProfiles = useCallback(async () => {
+    if (!user) { setProfiles([]); setLoading(false); return; }
     setLoading(true);
     try {
       let query = (supabase as any)
@@ -47,12 +50,10 @@ export function useTeamProfiles(organizationId?: string) {
     } finally {
       setLoading(false);
     }
-  }, [organizationId]);
+  }, [organizationId, user]);
 
   useEffect(() => {
     void fetchProfiles();
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => { setTimeout(() => void fetchProfiles(), 0); });
-    return () => subscription.unsubscribe();
   }, [fetchProfiles]);
 
   const createProfile = useCallback(async (input: {

@@ -11,6 +11,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { store } from '@/lib/beltool-store';
 import type { CallbackEntry } from '@/types/beltool';
+import { useAuth } from '@/hooks/useAuth';
 
 function rowToEntry(row: Record<string, unknown>): CallbackEntry {
   return {
@@ -42,6 +43,7 @@ function entryToRow(cb: Omit<CallbackEntry, 'id' | 'userId'>, userId?: string) {
 let _localSeq = Date.now();
 
 export function useCallbacks(currentUserId?: string) {
+  const { session } = useAuth();
   const [callbacks, setCallbacks] = useState<CallbackEntry[]>(() =>
     []
   );
@@ -61,7 +63,6 @@ export function useCallbacks(currentUserId?: string) {
 
     (async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
         if (!session) return;
 
         const { data, error } = await (supabase as any)
@@ -80,7 +81,7 @@ export function useCallbacks(currentUserId?: string) {
         console.warn('[Callbacks] Supabase load failed, using localStorage:', err);
       }
     })();
-  }, [currentUserId]);
+  }, [currentUserId, session?.user.id]);
 
   // Realtime subscription for cross-device sync
   useEffect(() => {

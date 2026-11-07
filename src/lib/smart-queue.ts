@@ -12,6 +12,7 @@ import type { Company } from '@/types/beltool';
 import type { CallbackEntry } from '@/types/beltool';
 import { store } from '@/lib/beltool-store';
 import { supabase } from '@/integrations/supabase/client';
+import type { Session } from '@supabase/supabase-js';
 
 export interface CallAttempt {
   contactId:  string;
@@ -25,10 +26,9 @@ const _cache = new Map<string, number>(); // contactId → attempt count
 let   _cacheReady = false;
 
 /** Load attempt counts from Supabase into the in-memory cache. */
-export async function loadAttemptCache(): Promise<void> {
+export async function loadAttemptCache(session: Session | null): Promise<void> {
   _cache.clear();
   try {
-    const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       // Fall back to localStorage counts
       const local: CallAttempt[] = store.get('callAttempts', []);
@@ -97,13 +97,13 @@ export async function recordAttempt(
   companyId: string,
   result: string,
   callerId?: string,
+  session?: Session | null,
 ): Promise<void> {
   // Optimistic cache update
   _cache.set(contactId, (_cache.get(contactId) || 0) + 1);
 
   // Supabase insert (fire and forget)
   try {
-    const { data: { session } } = await supabase.auth.getSession();
     if (session) {
       await (supabase as any).from('call_attempts').insert({
         contact_id:   contactId,

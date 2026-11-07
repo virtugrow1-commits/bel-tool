@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function ResetPassword() {
   const navigate=useNavigate();
+  const { session } = useAuth();
   const [allowed,setAllowed]=useState(false);
   const [password,setPassword]=useState('');
   const [confirm,setConfirm]=useState('');
@@ -13,12 +15,8 @@ export default function ResetPassword() {
   useEffect(()=>{
     const type=new URLSearchParams(window.location.hash.slice(1)).get('type');
     const fromLink=type==='recovery' || type==='invite' || sessionStorage.getItem('password-link')==='pending';
-    const {data:{subscription}}=supabase.auth.onAuthStateChange((event,session)=>{
-      if(event==='PASSWORD_RECOVERY' || (fromLink && session)) setAllowed(true);
-    });
-    void supabase.auth.getSession().then(({data})=>{if(fromLink && data.session)setAllowed(true);});
-    return ()=>subscription.unsubscribe();
-  },[]);
+    setAllowed(Boolean(fromLink && session));
+  },[session]);
   const save=async()=>{
     if(!allowed)return;
     if(password.length<8 || password!==confirm){setMessage('Gebruik minimaal 8 tekens en twee gelijke wachtwoorden.');return;}

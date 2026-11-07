@@ -1,6 +1,7 @@
 import { summarizeResults } from '@/lib/result-summary';
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 export interface LeaderboardRow {
   userId: string;
@@ -29,11 +30,13 @@ export interface TeamRow {
 const TODAY = new Date().toISOString().split('T')[0];
 
 export function useLeaderboardData() {
+  const { user } = useAuth();
   const [individuals, setIndividuals] = useState<LeaderboardRow[]>([]);
   const [teams, setTeams] = useState<TeamRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetch = useCallback(async () => {
+    if (!user) { setIndividuals([]); setTeams([]); setLoading(false); return; }
     setLoading(true);
     try {
       // Fetch today's scores with profile + org info
@@ -106,9 +109,9 @@ export function useLeaderboardData() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user]);
 
-  useEffect(() => { void fetch(); const {data:{subscription}}=supabase.auth.onAuthStateChange(()=>setTimeout(()=>void fetch(),0));return ()=>subscription.unsubscribe(); }, [fetch]);
+  useEffect(() => { void fetch(); }, [fetch]);
 
   return { individuals, teams, loading, refresh: fetch };
 }
