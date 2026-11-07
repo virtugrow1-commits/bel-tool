@@ -11,3 +11,10 @@
 - [ ] Verify live 401 recovery end-to-end: blocked by hosted auth request timeouts; valid-session getCalendars returned 200 before the timeout, but browser recovery is not confirmed.
 - [x] Diagnose slow connection: Cloud health probes repeatedly time out, with no confirmed resource exhaustion; release first-page contacts without waiting for summaries/background loads. Loading and auth tests pass; security and calling flow unchanged.
 - [ ] Measure real-user loading speed after Cloud connectivity recovers; hosted auth/database timeouts currently prevent an authenticated browser check.
+## Verbeterronde (code-review)
+- [ ] Real VoIPzeker call status (status action, pre-call offline check, polling → active/ended, duration from answer)
+- [ ] Shared phone normalization (NL/BE, 0031/0032) in frontend + edge functions + DNC
+- [ ] Organization settings in database (admin-only edge function); remove managedUsers/apiKey from localStorage
+- [ ] Single source of truth for call_attempts (no double insert), organization_id always set
+- [ ] Telefonie explanation text
+- [ ] Console/button sweep: Agenda, Callbacks, Leaderboard, Rapportage, Enquête inzendingen, Exporteer, WhatsApp
