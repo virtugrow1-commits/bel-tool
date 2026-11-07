@@ -89,40 +89,8 @@ export function shouldPark(contactId: string): boolean {
   return getAttemptCount(contactId) >= 5;
 }
 
-/**
- * Record a call attempt in Supabase (non-blocking) and update the in-memory cache.
- */
-export async function recordAttempt(
-  contactId: string,
-  companyId: string,
-  result: string,
-  callerId?: string,
-  session?: Session | null,
-): Promise<void> {
-  // Optimistic cache update
-  _cache.set(contactId, (_cache.get(contactId) || 0) + 1);
-
-  // Supabase insert (fire and forget)
-  try {
-    if (session) {
-      await (supabase as any).from('call_attempts').insert({
-        contact_id:   contactId,
-        company_id:   companyId,
-        result,
-        caller_id:    callerId || session.user.id,
-        attempted_at: new Date().toISOString(),
-      });
-      return;
-    }
-  } catch (err) {
-    console.warn('[SmartQueue] Supabase insert failed:', err);
-  }
-
-  // localStorage fallback
-  const all: CallAttempt[] = store.get('callAttempts', []);
-  all.push({ contactId, companyId, timestamp: new Date().toISOString(), result });
-  store.set('callAttempts', all.slice(-500));
-}
+// Call attempts are written only by the save_call_result database function
+// (via the call-result edge function) — one source of truth, no client inserts.
 
 const STAGE_PRIORITY: Record<string, number> = {
   terugbellenGepland: 1,

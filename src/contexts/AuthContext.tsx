@@ -43,6 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     store.del('user'); store.del('managedUsers'); store.del('apiKey');
+    try { Object.keys(localStorage).filter(k => /^cq_.*(managedUsers|apiKey)$/.test(k)).forEach(k => localStorage.removeItem(k)); } catch { /* storage unavailable */ }
     let alive = true;
     let receivedEvent = false;
     bootstrapExpired.current = false;
