@@ -898,7 +898,7 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
               disabled={!newUser.name.trim() || !newUser.email.trim() || teamProfiles.length >= MAX_TEAM}
               className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-[12px] font-semibold active:scale-[0.97] transition-transform disabled:opacity-40"
             >
-              Medewerker toevoegen
+              Medewerker uitnodigen
             </Button>
           </div>
         </div>

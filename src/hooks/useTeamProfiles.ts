@@ -50,7 +50,9 @@ export function useTeamProfiles(organizationId?: string) {
   }, [organizationId]);
 
   useEffect(() => {
-    fetchProfiles();
+    void fetchProfiles();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => { setTimeout(() => void fetchProfiles(), 0); });
+    return () => subscription.unsubscribe();
   }, [fetchProfiles]);
 
   const createProfile = useCallback(async (input: {
