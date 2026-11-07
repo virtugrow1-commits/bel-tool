@@ -1,0 +1,4 @@
+- [ ] Replace passwordless local login with invitation-only email/password authentication and recovery.
+- [ ] Protect organization secrets and administrative changes; bind edge requests to authenticated organization.
+- [ ] Apply organization-scoped tracking schema and policies; preserve profile identities and regenerate types.
+- [ ] Verify security boundaries and Willem access; document remaining administrator actions.
