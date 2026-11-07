@@ -13,8 +13,6 @@ export interface BelToolContextValue {
   setAllScores: React.Dispatch<React.SetStateAction<Record<string, Scores>>>;
   webhooks: Webhook[];
   setWebhooks: React.Dispatch<React.SetStateAction<Webhook[]>>;
-  apiKey: string;
-  setApiKey: React.Dispatch<React.SetStateAction<string>>;
   surveyConfig: SurveyConfig;
   setSurveyConfig: React.Dispatch<React.SetStateAction<SurveyConfig>>;
   cliqConfig: CliqConfig;

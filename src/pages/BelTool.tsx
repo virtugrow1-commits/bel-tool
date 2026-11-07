@@ -58,7 +58,7 @@ export default function BelTool() {
   const navigate = useNavigate();
   const { isMobile, sidebarOpen, toggleSidebar, closeSidebar, closeOnAction } = useMobileSidebar();
   const settings = useSettings();
-  const { t, lang, setLang, managedUsers, updateManagedUsers } = settings;
+  const { t, lang, setLang } = settings;
 
   const scoring = useScoring(user, user?.organizationId);
   const { scores, convRate, addScore, allScores, setAllScores, setContactInfo } = scoring;
@@ -294,7 +294,6 @@ export default function BelTool() {
   const ctx = {
     lang, setLang, user, t, allScores, setAllScores,
     webhooks: settings.webhooks, setWebhooks: settings.setWebhooks,
-    apiKey: settings.apiKey, setApiKey: settings.setApiKey,
     surveyConfig: settings.surveyConfig, setSurveyConfig: settings.setSurveyConfig,
     cliqConfig: settings.cliqConfig, setCliqConfig: settings.setCliqConfig,
     organization: currentOrg,
@@ -319,8 +318,6 @@ export default function BelTool() {
             open={settings.showSettings}
             onClose={() => settings.setShowSettings(false)}
             onSyncLeads={reloadLeads}
-            managedUsers={managedUsers}
-            onUpdateUsers={updateManagedUsers}
           />
           <Leaderboard open={settings.showLeaderboard} onClose={() => settings.setShowLeaderboard(false)} />
           <AgendaView open={settings.showAgenda} onClose={() => settings.setShowAgenda(false)} appointments={settings.appts} />
