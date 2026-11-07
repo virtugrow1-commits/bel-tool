@@ -2,6 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { authorize, AccessError, serviceClient } from '../_shared/auth.ts';
+import { normalizePhone } from '../_shared/phone.ts';
 
 const BASE = 'https://api.voipzeker.nl/unite/v1';
 
@@ -80,13 +81,41 @@ async function vzAuthed(path: string, params: Record<string, string>, organizati
   return res;
 }
 
-/** Normalize phone to E.164 */
-function normalizePhone(phone: string): string {
-  let n = phone.replace(/[\s\-()\.]/g, '');
-  if (n.startsWith('06')) n = '+316' + n.substring(2);
-  else if (n.startsWith('0')) n = '+31' + n.substring(1);
-  else if (!n.startsWith('+')) n = '+31' + n;
-  return n;
+/** Cache extension username → VoIPzeker id per organization */
+const extIdCache = new Map<string, { id: string; expires: number }>();
+async function extensionId(organizationId: string, username: string): Promise<string> {
+  const key = `${organizationId}:${username}`;
+  const hit = extIdCache.get(key);
+  if (hit && hit.expires > Date.now()) return hit.id;
+  const { body: res } = await vzAuthed('listextensions', { pagelimit: '0' }, organizationId);
+  const items = (res?.data as { items?: Record<string, unknown>[] } | undefined)?.items || [];
+  const wanted = username.toLowerCase();
+  const match = items.find((e) => [e.username, e.extno, e.extno_format].some((v) => String(v ?? '').toLowerCase() === wanted));
+  if (!match?.id) throw new Error('Jouw toestel is niet gevonden bij VoIPzeker — controleer je extensie bij Instellingen.');
+  extIdCache.set(key, { id: String(match.id), expires: Date.now() + 10 * 60 * 1000 });
+  return String(match.id);
+}
+
+/** 0=never registered 1=idle 2=offline 3=incoming ringing 4=outgoing ringing 5=outgoing answered 6=incoming answered */
+async function extensionStatus(organizationId: string, username: string): Promise<number> {
+  const id = await extensionId(organizationId, username);
+  const { http, body: res } = await vzAuthed('listextensionsstatus', { 'extensionids[]': id }, organizationId);
+  if (http === 429) throw new Error('RATE_LIMIT');
+  if (!res?.status) throw new Error(res?.message || `Status ophalen mislukt (${http})`);
+  // Shape: { data: { items: { "<extensionId>": <code> }, status_list: {...} } }
+  const items = ((res.data as { items?: Record<string, unknown> } | undefined)?.items) || {};
+  const code = Number(items[id] ?? Object.values(items)[0]);
+  if (!Number.isFinite(code)) throw new Error('Onbekende toestelstatus');
+  return code;
+}
+
+async function resolveUsername(organizationId: string, ext: unknown): Promise<string> {
+  let username = String(ext || '').trim();
+  if (!username) {
+    const { data } = await admin().from('organizations').select('voipzeker_outbound_number').eq('id', organizationId).maybeSingle();
+    username = String(data?.voipzeker_outbound_number || '').trim();
+  }
+  return username;
 }
 
 Deno.serve(async (req) => {
@@ -95,7 +124,7 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json();
     const { action } = body;
-    if (!['provision','extensions','ping','call'].includes(action)) return json({error:'Ongeldige actie'},400);
+    if (!['provision','extensions','ping','call','status'].includes(action)) return json({error:'Ongeldige actie'},400);
     const { organizationId, profile } = await authorize(req, body.organizationId, ['provision','extensions','ping'].includes(action));
 
     // ── PROVISION: invitation ID → logintoken ──
@@ -150,24 +179,34 @@ Deno.serve(async (req) => {
       });
     }
 
+    // ── STATUS: own extension state (for live call tracking) ──
+    if (action === 'status') {
+      const username = await resolveUsername(organizationId, profile.voipzeker_extension);
+      if (!username) return json({ success: false, error: 'Geen toestel ingesteld' }, 400);
+      try { return json({ success: true, status: await extensionStatus(organizationId, username) }); }
+      catch (e) {
+        if (e instanceof Error && e.message === 'RATE_LIMIT') return json({ success: false, rateLimited: true, error: 'Te veel verzoeken' }, 429);
+        throw e;
+      }
+    }
+
     // ── CALL (default) ──
     const { phone, extension } = body as { phone?: string; extension?: string };
     if (typeof phone !== 'string' || !/^[+0-9 ().-]{6,30}$/.test(phone)) return json({ success: false, error: 'Telefoonnummer is verplicht' }, 400);
 
-    let username = String(profile.voipzeker_extension || '').trim(); // Client cannot dial from a colleague's extension.
-    if (!username && organizationId) {
-      const { data } = await admin()
-        .from('organizations')
-        .select('voipzeker_outbound_number')
-        .eq('id', organizationId)
-        .maybeSingle();
-      username = String(data?.voipzeker_outbound_number || '').trim();
-    }
+    const username = await resolveUsername(organizationId, profile.voipzeker_extension); // Never a colleague's extension.
     if (!username) {
       return json({ success: false, error: 'Geen toestel (extensie) ingesteld voor deze gebruiker — stel dit in bij Instellingen.' }, 400);
     }
 
-    const call_number = normalizePhone(phone);
+    const call_number = normalizePhone(phone, typeof body.country === 'string' ? body.country : null);
+    // Pre-call check: never dial when the caller's own device is offline/unregistered.
+    try {
+      const st = await extensionStatus(organizationId, username);
+      if (st === 0 || st === 2) return json({ success: false, offline: true, error: 'Je toestel is offline – open de Unite Phone-app (of je softphone) en probeer opnieuw' }, 409);
+    } catch (e) {
+      if (!(e instanceof Error && e.message === 'RATE_LIMIT')) console.warn('[voipzeker-call] status check skipped');
+    }
     const { data: blocked, error: dncError } = await admin().from('dnc_list').select('id').eq('organization_id', organizationId).eq('phone_norm',call_number).maybeSingle();
     if (dncError) return json({error:'DNC-controle mislukt'},500);
     if (blocked) return json({error:'Dit nummer staat op de DNC-lijst'},403);

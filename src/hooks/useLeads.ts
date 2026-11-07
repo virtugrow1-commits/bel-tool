@@ -44,7 +44,7 @@ const CLIQ_NAME_TO_STAGE: Record<string, CompanyStage> = {
 
 function mapOpportunitiesToCompanies(opportunities: Array<{
   id?: string;
-  contact?: { id: string; name?: string; companyName?: string; phone?: string; email?: string; tags?: string[] };
+  contact?: { id: string; name?: string; companyName?: string; phone?: string; email?: string; country?: string; tags?: string[] };
   contactId?: string;
   pipelineStageId?: string;
 }>, stageMap: Record<string, string>, defaultStage: CompanyStage = 'nieuw'): Company[] {
@@ -87,6 +87,7 @@ function mapOpportunitiesToCompanies(opportunities: Array<{
       role: '',
       phone: c.phone || '',
       email: c.email || '',
+      country: c.country || '',
       opportunityId: opp.id || '',
     });
   }

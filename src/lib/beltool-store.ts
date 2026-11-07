@@ -1,6 +1,6 @@
 // Personal application caches never serve as identity or cross-tenant data.
 let scope: string | null = null;
-const personalKeys = new Set(['scores','leadCompanies','callbacks','callAttempts','appointments','managedUsers']);
+const personalKeys = new Set(['scores','leadCompanies','callbacks','callAttempts','appointments']);
 export function setStoreScope(organizationId?: string) { scope = organizationId || null; }
 function storageKey(key: string) { return personalKeys.has(key) ? (scope ? `cq_${scope}_${key}` : null) : 'cq_' + key; }
 export const store = {

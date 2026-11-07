@@ -1,17 +1,14 @@
 import { useState, useEffect } from 'react';
 import { cliq } from '@/lib/beltool-ghl';
 import { ADVISORS, type Advisor } from '@/lib/beltool-data';
-import { store } from '@/lib/beltool-store';
 
 /**
  * Loads advisors from GHL users, falls back to hardcoded ADVISORS.
  * Caches the result in localStorage to avoid repeated API calls.
  */
 export function useAdvisors(organizationId?: string) {
-  const [advisors, setAdvisors] = useState<Advisor[]>(() => {
-    const cached = store.get<Advisor[] | null>('ghlAdvisors', null);
-    return cached && cached.length > 0 ? cached : ADVISORS;
-  });
+  // Advisors come from the organization's CLIQ users (shared for everyone in the org).
+  const [advisors, setAdvisors] = useState<Advisor[]>(ADVISORS);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -38,7 +35,6 @@ export function useAdvisors(organizationId?: string) {
 
           if (mapped.length > 0) {
             setAdvisors(mapped);
-            store.set('ghlAdvisors', mapped);
           }
         }
       } catch {
@@ -68,7 +64,6 @@ export function useAdvisors(organizationId?: string) {
 
       if (mapped.length > 0) {
         setAdvisors(mapped);
-        store.set('ghlAdvisors', mapped);
       }
     } catch {
       // Keep existing

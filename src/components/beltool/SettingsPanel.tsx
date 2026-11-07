@@ -34,14 +34,12 @@ const DEFAULT_PIPELINE_STAGES = [
   { name: 'Geen Gehoor', key: 'geenGehoor', color: '#6B7280' },
 ];
 
-export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpdateUsers }: {
+export function SettingsPanel({ open, onClose, onSyncLeads }: {
   open: boolean;
   onClose: () => void;
   onSyncLeads: () => Promise<void>;
-  managedUsers: User[];
-  onUpdateUsers: (users: User[]) => void;
 }) {
-  const { lang, setLang, user, allScores, setAllScores, webhooks, setWebhooks, apiKey, setApiKey, t, surveyConfig, setSurveyConfig, cliqConfig, setCliqConfig } = useBelTool();
+  const { lang, setLang, user, allScores, setAllScores, webhooks, setWebhooks, t, surveyConfig, setSurveyConfig, cliqConfig, setCliqConfig } = useBelTool();
   const { advisors, loading: advisorsLoading, refresh: refreshAdvisors } = useAdvisors(user?.organizationId);
   const { organizations, createOrg, updateOrg } = useOrganizations();
   const [newOrgName, setNewOrgName] = useState('');
@@ -536,8 +534,6 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
       {/* API TAB */}
       {tab === 'api' && (
         <div>
-          <div className="text-[11px] text-muted-foreground mb-1">API Key</div>
-          <input value={apiKey} onChange={e => { setApiKey(e.target.value); }} placeholder="cliq-api-key-..." className={cn(inputCls, 'mb-3.5')} />
           <div className="text-[11px] text-muted-foreground mb-1.5">Webhooks</div>
           {webhooks.map((wh, i) => (
             <div key={i} className="flex gap-1.5 mb-1 items-center">
@@ -603,6 +599,7 @@ export function SettingsPanel({ open, onClose, onSyncLeads, managedUsers, onUpda
           <div className="bg-primary/[0.06] border border-primary/15 rounded-xl p-4">
             <h3 className="text-sm font-bold text-primary mb-2">📞 VoIPzeker koppeling</h3>
             <p className="text-muted-foreground text-sm">Koppel de organisatie één keer met een koppelcode (invitation ID) uit het VoIPzeker Unite-portaal. Daarna kun je per medewerker een toestel (extensie) instellen.</p>
+            <p className="text-muted-foreground text-sm mt-2">Bij bellen gaat eerst jouw eigen toestel over; neem op en daarna wordt het contact gebeld. Automatisch opnemen stel je in op je toestel/softphone.</p>
           </div>
 
           {user?.role === 'admin' && (

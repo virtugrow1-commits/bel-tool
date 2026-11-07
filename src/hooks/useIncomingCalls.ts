@@ -20,11 +20,8 @@ interface UseIncomingCallsOptions {
   flash: (msg: string, type?: string) => void;
 }
 
-function normalizePhone(phone: string): string {
-  let normalized = phone.replace(/[\s\-\(\)]/g, '');
-  if (normalized.startsWith('+31')) normalized = '0' + normalized.substring(3);
-  return normalized;
-}
+import { normalizePhone as toE164 } from '@/lib/phone';
+const normalizePhone = (phone: string) => toE164(phone);
 
 function findContactByPhone(companies: Company[], callerNumber: string): { contact?: CompanyContact; company?: Company } {
   const normalized = normalizePhone(callerNumber);

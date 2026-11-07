@@ -128,7 +128,7 @@ export function CallDisplay({ callState, contact, company, onHangup, onConfirmCo
               <div className="flex items-center gap-1.5">
                 <div className="w-2 h-2 rounded-full bg-warning animate-pulse" />
                 <span className="text-xs font-semibold text-warning">
-                  {callState === 'dialing' ? 'Verbinden...' : 'Gaat over...'}
+                  {callState === 'dialing' ? 'Verbinden...' : 'Neem op in je app...'}
                 </span>
               </div>
             )}

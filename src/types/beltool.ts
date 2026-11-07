@@ -5,6 +5,8 @@ export interface CompanyContact {
   role: string;
   phone: string;
   email: string;
+  /** Country code/name from CLIQ (used for phone normalisation; defaults to NL). */
+  country?: string;
   linkedin?: string;
   notes?: string;
   opportunityId?: string;

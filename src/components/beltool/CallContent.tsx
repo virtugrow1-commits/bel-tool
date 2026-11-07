@@ -348,6 +348,7 @@ export function CallContent({
              leadName={`${activeContact.firstName} ${activeContact.lastName}`}
              extension={resolvedExtension}
              organizationId={organization?.id}
+             country={activeContact.country}
              onCallStarted={(callId) => { onStartDialing(callId); }}
            />
           {callState !== 'idle' && callState !== 'ended' && (
@@ -356,7 +357,7 @@ export function CallContent({
               callState === 'active' ? 'bg-success/10 text-success border-success/20' : 'bg-warning/10 text-warning border-warning/20'
             )}>
               <div className={cn('w-2 h-2 rounded-full animate-pulse', callState === 'active' ? 'bg-success' : 'bg-warning')} />
-              {callState === 'dialing' ? 'Verbinden...' : callState === 'ringing' ? 'Gaat over...' : 'In gesprek'}
+              {callState === 'dialing' ? 'Verbinden...' : callState === 'ringing' ? 'Neem op in je app...' : 'In gesprek'}
             </div>
           )}
         </div>
