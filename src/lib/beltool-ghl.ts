@@ -255,10 +255,6 @@ export const cliq = {
     return callCliq('searchOpportunities', { pipelineId, stageId, limit, startAfter, startAfterId });
   },
 
-  async triggerCall(contactId: string) {
-    return callCliq('triggerCall', { contactId });
-  },
-
   async removeTag(contactId: string, tags: string[]) {
     return callCliq('removeTag', { contactId, tags });
   },

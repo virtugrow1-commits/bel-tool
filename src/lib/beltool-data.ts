@@ -12,9 +12,6 @@ export interface Organization {
   booking_link?: string;
   brand_name?: string;
   whatsapp_templates?: Record<string, string>;
-  voys_email?: string;
-  voys_device_id?: string;
-  voys_outbound_number?: string;
   voipzeker_invitation_id?: string;
   voipzeker_outbound_number?: string;
 }
