@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { supabase } from '@/integrations/supabase/client';
+import { publicBooking } from '@/lib/public-booking';
+import { z } from 'zod';
 
 /* ─── Types ─────────────────────────────────────────────────────────────────── */
 interface Answers {
@@ -123,7 +124,7 @@ function CheckButton({
 /* ─── Main component ─────────────────────────────────────────────────────────── */
 export default function ProspectSurvey() {
   const { id } = useParams<{ id: string }>();
-  const contactId = isValidContactId(id) ? id!.trim() : null;
+  const contactId = id && /^[a-zA-Z0-9_-]{15,100}$/.test(id) ? id.trim() : null;
 
   const [answers,       setAnswers]       = useState<Answers>(EMPTY_ANSWERS);
   const [step,          setStep]          = useState(0);
@@ -133,51 +134,16 @@ export default function ProspectSurvey() {
   // uit GHL overneemt en de lead niets opnieuw hoeft in te vullen.
   const [bookingContactId, setBookingContactId] = useState<string | null>(contactId);
 
-  // ── Load contact from GHL on mount ─────────────────────────────────────────
-  useEffect(() => {
-    if (!contactId) {
+  const [loadError,setLoadError]=useState('');
+  useEffect(()=>{
+    if(!contactId){setLoadError('Ongeldige enquêtelink');setStatus('error');return;}
+    publicBooking('survey',{id:contactId}).then(data=>{
+      const c=data.contact;
+      setAnswers({...EMPTY_ANSWERS,...(data.answers || {}),naam:c.name,email:c.email,telefoon:c.phone,bedrijf:c.companyName});
+      if(c.name && c.email){setContactLoaded(true);setStep(1);}
       setStatus('active');
-      return;
-    }
-
-    supabase.functions
-      .invoke('ghl-proxy', { body: { action: 'getContact', contactId } })
-      .then(({ data, error }) => {
-        if (!error && data?.contact) {
-          const c = data.contact;
-
-          // GHL returns firstName + lastName separately. Build full name.
-          const fullName = (
-            c.name ||
-            [c.firstName, c.lastName].filter(Boolean).join(' ').trim() ||
-            c.contactName ||
-            ''
-          );
-
-          setAnswers(prev => ({
-            ...prev,
-            naam:     fullName,
-            email:    c.email    || '',
-            telefoon: c.phone    || '',
-            bedrijf:  c.companyName || c.company || '',
-          }));
-
-          if (fullName) {
-            setContactLoaded(true);
-            // Skip stap 0 automatisch als naam én email al bekend zijn vanuit GHL
-            if (fullName && c.email) {
-              setStep(1);
-            }
-          }
-        }
-      })
-      .catch(() => {
-        // GHL unreachable — let user fill in manually
-      })
-      .finally(() => {
-        setStatus('active');
-      });
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    }).catch(e=>{setLoadError(e.message);setStatus('error');});
+  },[contactId]);
 
   // ── Updaters ────────────────────────────────────────────────────────────────
   const update = useCallback(<K extends keyof Answers>(key: K, value: Answers[K]) => {
@@ -208,165 +174,18 @@ export default function ProspectSurvey() {
   // ── Submit ──────────────────────────────────────────────────────────────────
   const submit = async () => {
     setStatus('submitting');
-
     try {
-      const allTaken = answers.taken
-        .concat(answers.takenOverig ? [answers.takenOverig] : [])
-        .join(', ');
-
-      let ghlContactId = contactId;
-
-      // 1. Verify contact exists in GHL
-      if (ghlContactId) {
-        try {
-          const { data, error } = await supabase.functions.invoke('ghl-proxy', {
-            body: { action: 'getContact', contactId: ghlContactId },
-          });
-          if (error || !data?.contact) {
-            console.warn('[Enquête] Contact niet gevonden in GHL, aanmaken als nieuw contact');
-            ghlContactId = null;
-          }
-        } catch {
-          ghlContactId = null;
-        }
-      }
-
-      // 2. Create contact if needed
-      if (!ghlContactId) {
-        try {
-          const { data } = await supabase.functions.invoke('ghl-proxy', {
-            body: {
-              action:      'createContact',
-              name:        answers.naam,
-              email:       answers.email,
-              phone:       answers.telefoon,
-              companyName: answers.bedrijf,
-              tags:        ['enquete-digitaal-ingevuld', 'beltool-lead'],
-              source:      'Bel-Tool Enquête (digitaal)',
-            },
-          });
-          if (data?.contact?.id) ghlContactId = data.contact.id;
-        } catch (err) {
-          console.error('[Enquête] createContact mislukt:', err);
-        }
-      }
-
-      // Onthoud de contact-id voor de boekingsknop (prefill op de afspraakpagina)
-      if (ghlContactId) setBookingContactId(ghlContactId);
-
-      // 3. Save to GHL (alle calls parallel, niet-blocking)
-      if (ghlContactId) {
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        tomorrow.setHours(9, 0, 0, 0);
-
-        const noteBody = [
-          `📋 Digitale Enquête Ingevuld`,
-          `👤 ${answers.naam} — ${answers.bedrijf}`,
-          `📧 ${answers.email}  📞 ${answers.telefoon}`,
-          `⏱️ Uren/week: ${answers.uren}`,
-          `🔄 Taken: ${allTaken || '-'}`,
-          `📈 Groeifase: ${answers.groei}`,
-          `🤖 AI status: ${answers.ai}`,
-          `🕐 ${new Date().toLocaleString('nl-NL')}`,
-        ].join('\n');
-
-        // Fire all GHL updates in parallel
-        await Promise.allSettled([
-          // Note
-          supabase.functions.invoke('ghl-proxy', {
-            body: { action: 'createNote', contactId: ghlContactId, body: noteBody },
-          }),
-          // Task
-          supabase.functions.invoke('ghl-proxy', {
-            body: {
-              action:     'createTask',
-              contactId:  ghlContactId,
-              title:      `📞 Terugbellen: ${answers.naam} (${answers.bedrijf}) — enquête ingevuld`,
-              body:       `Enquête digitaal ingevuld.\n\n⏱️ ${answers.uren}/week aan: ${allTaken}\n📈 ${answers.groei}\n🤖 ${answers.ai}\n\n📧 ${answers.email}\n📞 ${answers.telefoon}`,
-              dueDate:    tomorrow.toISOString(),
-            },
-          }),
-          // Custom fields
-          supabase.functions.invoke('ghl-proxy', {
-            body: {
-              action:       'saveCustomFields',
-              contactId:    ghlContactId,
-              customFields: [
-                { id: 'beltool_uren_per_week', field_value: answers.uren },
-                { id: 'beltool_taken',         field_value: allTaken },
-                { id: 'beltool_groeifase',     field_value: answers.groei },
-                { id: 'beltool_ai_status',     field_value: answers.ai },
-              ].filter(f => f.field_value),
-            },
-          }),
-          // Update contact info
-          supabase.functions.invoke('ghl-proxy', {
-            body: {
-              action:      'updateContact',
-              contactId:   ghlContactId,
-              name:        answers.naam,
-              companyName: answers.bedrijf,
-              ...(isValidEmail(answers.email) ? { email: answers.email } : {}),
-            },
-          }),
-          // Tag
-          supabase.functions.invoke('ghl-proxy', {
-            body: { action: 'addTag', contactId: ghlContactId, tags: ['enquete-digitaal-ingevuld'] },
-          }),
-          // Move opportunity to Enquête Voltooid
-          (async () => {
-            const { data: pd } = await supabase.functions.invoke('ghl-proxy', {
-              body: { action: 'getPipelines' },
-            });
-            const pipeline = (pd?.pipelines || []).find((p: { name: string }) =>
-              p.name.toLowerCase().includes('bellen'),
-            );
-            const stage = pipeline?.stages?.find((s: { name: string }) =>
-              s.name.toLowerCase().includes('enquête voltooid') ||
-              s.name.toLowerCase().includes('enquete voltooid'),
-            );
-            if (pipeline && stage) {
-              await supabase.functions.invoke('ghl-proxy', {
-                body: {
-                  action:     'upsertOpportunity',
-                  contactId:  ghlContactId,
-                  pipelineId: pipeline.id,
-                  stageId:    stage.id,
-                  name:       `${answers.naam} — ${answers.bedrijf || 'Lead'}`,
-                },
-              });
-            }
-          })(),
-        ]);
-      }
-
-      // 4. Local backup
-      const { saveSurvey, createEmptySurvey } = await import('@/lib/survey-store');
-      saveSurvey(createEmptySurvey({
-        id:                 ghlContactId || contactId || crypto.randomUUID(),
-        contactName:        answers.naam,
-        contactEmail:       answers.email,
-        contactPhone:       answers.telefoon,
-        companyName:        answers.bedrijf,
-        hoursLostPerWeek:   answers.uren,
-        repetitiveTasks:    answers.taken.join(', '),
-        currentPhase:       answers.groei === 'Klaar voor groei' ? 'klaar-voor-groei' : 'bijbenen',
-        aiStatus:           answers.ai === 'Al mee bezig' ? 'al-bezig' : 'komt-niet-aan-toe',
-        status:             'ingevuld',
-      }));
-
-      setStatus('done');
-    } catch (err) {
-      console.error('[Enquête] submit mislukt:', err);
-      setStatus('error');
-    }
+      z.object({naam:z.string().trim().min(1).max(150),email:z.string().email().max(255),telefoon:z.string().max(30),bedrijf:z.string().max(150),uren:z.string().min(1),taken:z.array(z.string().max(100)).max(10),takenOverig:z.string().max(500),groei:z.string().min(1),ai:z.string().min(1)}).parse(answers);
+      const result=await publicBooking('saveSurvey',{id:contactId,answers});
+      setBookingContactId(result.contactId);setStatus('done');
+    } catch(e) {setLoadError(e instanceof Error?e.message:'Enquête opslaan mislukt');setStatus('error');}
   };
 
   // ── Step definitions ────────────────────────────────────────────────────────
   // Stap 0 is altijd aanwezig maar wordt overgeslagen als GHL data compleet is.
   // We tonen TOTAL_STEPS - (contactLoaded ? 1 : 0) in de progressbar
   // zodat de balk klopt.
+  if(loadError && status==='error') return <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4"><p role="alert" className="text-destructive">{loadError}</p><button onClick={()=>{setLoadError('');setStatus('active');}}>Opnieuw proberen</button></div>;
   const TOTAL_STEPS  = 5;
   const displayTotal = contactLoaded ? TOTAL_STEPS - 1 : TOTAL_STEPS;
   const displayStep  = contactLoaded ? Math.max(0, step - 1) : step;
@@ -399,6 +218,7 @@ export default function ProspectSurvey() {
             </div>
             <input
               type={f.type}
+              maxLength={f.key === 'email' ? 255 : f.key === 'telefoon' ? 30 : 150}
               value={answers[f.key]}
               onChange={e => update(f.key, e.target.value)}
               placeholder={f.placeholder}
