@@ -178,5 +178,6 @@ export function useCallbacks(currentUserId?: string) {
     completeCallback,
     dismissPopup,
     clearPopup, refresh,
+    loaded: useSupabase,
   };
 }

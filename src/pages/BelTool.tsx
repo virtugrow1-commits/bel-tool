@@ -179,13 +179,15 @@ export default function BelTool() {
   // Auto-create callbacks for "Enquête Voltooid" leads (only once per contact)
   const autoCallbackCreatedRef = useRef<Set<string>>(new Set());
   useEffect(() => {
+    // Wait until existing callbacks are loaded, otherwise every page load creates duplicates
+    if (!callbacksHook.loaded) return;
     const enqueteLeads = companies.filter(c => c.stage === 'enqueteTel');
     for (const comp of enqueteLeads) {
       const ct = comp.contacts[0];
       if (!ct) continue;
       // Skip if already created in this session
       if (autoCallbackCreatedRef.current.has(ct.id)) continue;
-      const alreadyHasCallback = callbacks.some(cb => cb.contactId === ct.id && cb.status === 'scheduled');
+      const alreadyHasCallback = callbacks.some(cb => cb.contactId === ct.id && (cb.status === 'scheduled' || cb.note?.startsWith('📋 Enquête digitaal')));
       if (!alreadyHasCallback) {
         autoCallbackCreatedRef.current.add(ct.id);
         const tomorrow = new Date();
@@ -199,10 +201,10 @@ export default function BelTool() {
           time: '09:00',
           note: '📋 Enquête digitaal ingevuld — terugbellen voor adviesgesprek',
           status: 'scheduled',
-        }, user?.id);
+        }, user?.id).catch(() => {});
       }
     }
-  }, [companies, callbacks, rawSaveCallback, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [companies, callbacks, callbacksHook.loaded, rawSaveCallback, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Keep scoring ref in sync
   useEffect(() => {
