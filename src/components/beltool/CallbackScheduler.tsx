@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { Button } from '@/components/ui/button';
 import { Modal } from './Modal';
 import { useBelTool } from '@/contexts/BelToolContext';
 import type { CompanyContact, Company } from '@/types/beltool';
@@ -9,7 +10,7 @@ interface CallbackSchedulerProps {
   onClose: () => void;
   contact: CompanyContact;
   company: Company | null;
-  onSave: (cb: { contactId: string; contactName: string; companyName: string; date: string; time: string; note: string; status: 'scheduled' }) => void;
+  onSave: (cb: { contactId: string; contactName: string; companyName: string; date: string; time: string; note: string; status: 'scheduled' }) => Promise<void>;
 }
 
 export function CallbackScheduler({ open, onClose, contact, company, onSave }: CallbackSchedulerProps) {
@@ -17,6 +18,8 @@ export function CallbackScheduler({ open, onClose, contact, company, onSave }: C
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [note, setNote] = useState('');
+  const [error,setError]=useState('');
+  const [saving,setSaving]=useState(false);
 
   const todayStr = new Date().toISOString().split('T')[0];
 
@@ -82,22 +85,24 @@ export function CallbackScheduler({ open, onClose, contact, company, onSave }: C
         rows={2}
         className="w-full px-3 py-2.5 rounded-lg border border-border bg-foreground/[0.03] text-foreground text-[13px] outline-none resize-y leading-relaxed mb-4"
       />
-      <button
-        onClick={() => {
+      {error && <p role="alert" className="text-destructive text-sm mb-3">{error}</p>}
+      <Button disabled={saving || !date || !time}
+        onClick={async () => {
           if (!date || !time) return;
-          onSave({
+          setSaving(true);setError('');
+          try{await onSave({
             contactId: contact.id,
             contactName: `${contact.firstName} ${contact.lastName}`,
             companyName: company?.name || '',
             date, time, note,
             status: 'scheduled',
           });
-          onClose();
+          onClose();}catch(e){setError(e instanceof Error?e.message:'Opslaan mislukt');}finally{setSaving(false);}
         }}
         className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground text-[13px] font-semibold active:scale-[0.97] transition-transform"
       >
         {t.callbackConfirm}
-      </button>
+      </Button>
     </Modal>
   );
 }

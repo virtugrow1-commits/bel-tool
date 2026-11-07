@@ -192,7 +192,7 @@ interface CallContentProps {
   answers: SurveyAnswers;
   setAnswers: React.Dispatch<React.SetStateAction<SurveyAnswers>>;
   taskString: string;
-  onEndCall: (phase: CallPhase, stage: Company['stage']) => void;
+  onEndCall: (phase: CallPhase, stage: Company['stage'], result?:string) => Promise<boolean>;
   onNextContact: () => void;
   showToast: (msg: string, type?: string) => void;
   updateStage: (compId: string, stage: Company['stage']) => void;
@@ -264,13 +264,14 @@ function BigOption({ selected, icon, title, subtitle, onClick }: { selected: boo
 
 export function CallContent({
   activeContact, activeComp, phase, callState, setPhase, answers, setAnswers, taskString,
-  onEndCall, onNextContact, showToast, updateStage, addScore,
+  onEndCall: persistEndCall, onNextContact, showToast, updateStage, addScore,
   activeCallId,
   bookDate, setBookDate, bookTime, setBookTime, bookAdvisor, setBookAdvisor,
   scores, onShowCallback, onStartDialing, onHangup, onConfirmConnected, activeCompId, onShowDetail,
   notes, onNotesChange, dailyTargets, onShowWhatsApp, advisors, onAppointmentBooked,
 }: CallContentProps) {
   const { t, surveyConfig, user, organization } = useBelTool();
+  const onEndCall=(phase:CallPhase,stage:Company['stage'],result?:string)=>persistEndCall(phase,stage,result);
   const [locationType, setLocationType] = useState<LocationType>('');
   const [customAddress, setCustomAddress] = useState('');
   const [selectedCalId, setSelectedCalId] = useState('');
@@ -416,8 +417,10 @@ export function CallContent({
               <ActionBtn variant="warning" onClick={onShowCallback}>{t.callback}</ActionBtn>
               <ActionBtn variant="muted" onClick={() => { setShowVoicemail(true); }}>{t.noAnswerAction}</ActionBtn>
               <ActionBtn variant="danger" onClick={() => { onNotesChange(notes ? notes + '\n🚫 Niet geïnteresseerd' : '🚫 Niet geïnteresseerd'); onEndCall('lost', 'nietInteressant'); addScore('afgevallen'); }}>{t.notInterested}</ActionBtn>
+              <ActionBtn variant="muted" onClick={()=>void onEndCall('noanswer','bellen','bereikt')}>Bereikt</ActionBtn>
+              <ActionBtn variant="danger" onClick={()=>void onEndCall('lost','nietInteressant','nietBellen')}>Niet bellen</ActionBtn>
               {user?.role === 'admin' && (
-                <ActionBtn variant="ghost" onClick={() => { onEndCall('idle' as any, 'nieuw'); showToast('Lead gereset', 'info'); }}>✕ Annuleren</ActionBtn>
+                <ActionBtn variant="ghost" onClick={() => { onNextContact(); showToast('Lead gereset', 'info'); }}>✕ Annuleren</ActionBtn>
               )}
             </div>
 
@@ -428,7 +431,7 @@ export function CallContent({
                   contactName={activeContact.firstName}
                   companyName={activeComp.name}
                   callerName={user?.name || 'Beller'}
-                  onDone={() => { setShowVoicemail(false); onNotesChange(notes ? notes + '\n📩 VM ingesproken' : '📩 VM ingesproken'); onEndCall('noanswer', 'geenGehoor'); addScore('geenGehoor'); showToast('VM ingesproken + geen gehoor genoteerd'); }}
+                  onDone={() => { setShowVoicemail(false); onNotesChange(notes ? notes + '\n📩 VM ingesproken' : '📩 VM ingesproken'); onEndCall('noanswer', 'geenGehoor','voicemail'); addScore('geenGehoor'); showToast('VM ingesproken + geen gehoor genoteerd'); }}
                   onSkip={() => { setShowVoicemail(false); onNotesChange(notes ? notes + '\n📵 Geen gehoor' : '📵 Geen gehoor'); onEndCall('noanswer', 'geenGehoor'); addScore('geenGehoor'); showToast(t.noAnswerNoted); }}
                 />
               </div>
@@ -570,7 +573,7 @@ export function CallContent({
                   onCustomChange={setCustomAddress}
                   companyAddress={activeComp.address || ''}
                 />
-                <ActionBtn wide onClick={() => {
+                <ActionBtn wide onClick={async () => {
                   if (!bookDate || !bookTime) { showToast(t.pickDateTime, 'err'); return; }
                   if (!bookAdvisor) { showToast(t.selectAdvisor, 'err'); return; }
                   if (!locationType) { showToast('Selecteer een locatie', 'err'); return; }
@@ -583,18 +586,10 @@ export function CallContent({
                   const appointmentTitle = activeComp.name ? `Adviesgesprek — ${activeComp.name}` : `Adviesgesprek — ${activeContact.firstName} ${activeContact.lastName}`;
                   const adv = advisors.find(a => a.id === bookAdvisor);
 
-                  // Fire all GHL sync in parallel, don't block the UI
-                  Promise.all([
-                    cliq.bookAppointment(activeContact.id, bookDate, bookTime, bookAdvisor, calId, locationStr, appointmentTitle)
-                      .catch(err => { console.error('Appointment error:', err); showToast('⚠️ Afspraak kon niet in GHL worden aangemaakt: ' + err.message, 'err'); }),
-                    cliq.createTask(activeContact.id, `Adviesgesprek ${activeContact.firstName} ${activeContact.lastName}`, {
-                      body: `Afspraak op ${fmtDate(bookDate)} om ${bookTime}\n📍 ${locationStr}\n👤 Adviseur: ${adv?.name || bookAdvisor}`,
-                      dueDate: `${bookDate}T${bookTime}:00`,
-                      assignedTo: bookAdvisor,
-                    }).catch(console.error),
-                  ]);
-
-                  onEndCall('done', 'afspraak');
+                  try {
+                    await cliq.bookAppointment(activeContact.id, bookDate, bookTime, bookAdvisor, calId, locationStr, appointmentTitle);
+                    if(!await onEndCall('done','afspraak'))return;
+                  } catch(e){showToast(e instanceof Error?e.message:'Afspraak opslaan mislukt','err');return;}
                   addScore('afspraak');
                   if (onAppointmentBooked) {
                     onAppointmentBooked({
