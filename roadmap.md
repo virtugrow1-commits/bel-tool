@@ -6,4 +6,4 @@
 - [x] Persist call outcomes, attempts, DNC and callbacks with visible errors and CLIQ activity notes.
 - [x] Read reports and leaderboard from durable organization data; remove legacy frontend telephony.
 - [x] Verify persisted staff results, callback, reporting, public survey and booking availability without real calls; document incomplete final booking and unconfigured VoIPzeker.
-- [x] Centralize session management, bound loading to eight seconds, and verify login, five reloads and simultaneous tabs without publishing (cold preview loads 3–4 seconds; warm/two-tab loads under one second).
+- [x] Centralize session management, bound loading to eight seconds, and verify login, five reloads and simultaneous tabs without publishing; no direct auth-user requests or lock errors. Preview/network timing varies (0.7–6.4 seconds), so consistent 2–3-second loading is not verified.
