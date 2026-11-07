@@ -99,7 +99,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (email: string, password: string) => {
     bootstrapExpired.current = false;
     loadStartedAt.current = Date.now();
-    const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
+    const slow = new Promise<'slow'>((resolve) => setTimeout(() => resolve('slow'), 10000));
+    const result = await Promise.race([supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password }), slow]);
+    if (result === 'slow') { setLoading(false); return { error: 'De server reageert traag. Probeer het over een moment opnieuw.' }; }
+    const { data, error } = result;
     if (error || !data.session) { setLoading(false); return { error: 'E-mailadres of wachtwoord is onjuist.' }; }
     setFunctionSession(data.session);
     setSession(data.session);
