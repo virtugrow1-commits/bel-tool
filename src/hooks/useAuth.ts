@@ -32,7 +32,6 @@ export function useAuth() {
     return ()=>{alive=false;subscription.unsubscribe();};
   },[loadUser]);
   const login=useCallback(async(email:string,password:string)=>{
-    setLoading(true);
     const {error}=await supabase.auth.signInWithPassword({email:email.trim().toLowerCase(),password});
     if(error){setLoading(false);return {error:'E-mailadres of wachtwoord is onjuist.'};}
     const employee=await loadUser();
