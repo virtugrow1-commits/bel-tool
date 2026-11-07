@@ -15,15 +15,7 @@ export function Leaderboard({ open, onClose }: { open: boolean; onClose: () => v
   const [tab, setTab] = useState<Tab>('team');
 
   // Merge local scores with DB data for current-session accuracy
-  const localRows = profiles.map(u => {
-    const s = allScores[u.id] || initScores();
-    return {
-      ...u,
-      ...s,
-      orgName: u.organizationName || 'CliqMakers',
-      conv: s.gebeld > 0 ? Math.round(((s.enquetes + s.afspraken) / s.gebeld) * 100) : 0,
-    };
-  }).sort((a, b) => (b.enquetes + b.afspraken) - (a.enquetes + a.afspraken));
+  const localRows = individuals.map(r=>({id:r.userId,name:r.userName,gebeld:r.gebeld,enquetes:r.enquetes,afspraken:r.afspraken,conv:r.conv,orgName:r.orgName}));
 
   const teamHeaders = [t.rank, 'Organisatie', t.calls, t.surveys, t.appointments, t.conversion, 'Bellers'];
   const indivHeaders = [t.rank, t.name, 'Organisatie', t.calls, t.surveys, t.appointments, t.conversion];

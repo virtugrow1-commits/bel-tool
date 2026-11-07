@@ -23,3 +23,13 @@
 2. Invite up to four colleagues in Settings → Gebruikersbeheer with their own email, role and VoIPzeker extension. End-to-end invitation delivery for a colleague and a caller-role hosted session remain unverified; caller restrictions are implemented centrally and covered by rule tests.
 3. Rotate existing CLIQ/Voys/VoIPzeker tokens at their providers because organizations previously exposed them publicly; save replacement CLIQ keys through admin Settings and reconnect VoIPzeker. No real call was placed.
 4. Public survey and booking integration is now blocked by the required authenticated staff proxy. A separately constrained public endpoint is needed in a later step; do not reopen the staff proxy or organization tables. Public page rendering remains available, but external contact prefill, submission and appointment creation are not operational for signed-out visitors.
+
+## Step 2 results
+
+- Restricted public-booking deployed: server-selected CliqMakers, validated action schemas, same-location contact checks and hashed IP counters. Staff endpoints remain authenticated.
+- Staff outcomes use transactional session/attempt storage, request-id retry protection, callbacks and DNC, followed by CLIQ note/tag synchronization. Save errors block advancing and offer retry.
+- Reports and leaderboards aggregate persisted own-organization sessions. Legacy Voys endpoints return 410 and frontend legacy provider fields were removed.
+- Verified: test contact loaded in staff UI, reached outcome saved through UI; callback saved with 42-second duration, both sessions and attempts persisted, retry created no duplicate callback; CLIQ synchronization succeeded. Reporting displayed both results. Signed-out survey completed and persisted; booking prefill, live slots and confirmation screen verified. Unsupported public actions and organization override rejected. Four unit tests passed.
+- Not fully verified: final external appointment creation was not submitted, DNC outcome and all remaining result buttons were not exercised end-to-end, callback form completion and standalone leaderboard were not browser-tested. Browser session restoration intermittently produced Auth lock warnings; no access bypass was observed.
+- VoIPzeker ping reports not connected. Administrator must connect VoIPzeker and assign employee extensions before real outbound calls can be checked. No real phone call was placed.
+- Publish updated pages. CLIQ Adviesgesprekken calendar currently returns free slots. Existing security handover invitation/token-rotation actions still apply; public integration is no longer blocked as described in Step 1.

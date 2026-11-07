@@ -1,3 +1,4 @@
+import { summarizeResults } from '@/lib/result-summary';
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -37,9 +38,9 @@ export function useLeaderboardData() {
     try {
       // Fetch today's scores with profile + org info
       const { data: scores, error: scoresErr } = await (supabase as any)
-        .from('user_scores')
-        .select('*')
-        .eq('score_date', TODAY);
+        .from('call_sessions')
+        .select('caller_id,caller_name,result,source,organization_id')
+        .gte('started_at', new Date().toISOString().slice(0,10)+'T00:00:00+01:00');
 
       const { data: profiles, error: profilesErr } = await (supabase as any)
         .from('profiles')
@@ -57,22 +58,12 @@ export function useLeaderboardData() {
       const orgMap = new Map((orgs || []).map((o: any) => [o.id, o]));
       const profileMap = new Map((profiles || []).map((p: any) => [p.id, p]));
 
-      // Build individual rows
-      const indivRows: LeaderboardRow[] = (scores || []).map((s: any) => {
-        const profile = profileMap.get(s.user_id) as any;
-        const org = profile ? orgMap.get(profile.organization_id) as any : null;
-        return {
-          userId: s.user_id,
-          userName: profile?.name || s.user_id,
-          orgId: org?.id || '',
-          orgName: org?.name || 'Onbekend',
-          gebeld: s.gebeld || 0,
-          enquetes: s.enquetes || 0,
-          afspraken: s.afspraken || 0,
-          verstuurd: s.verstuurd || 0,
-          conv: s.gebeld > 0 ? Math.round(((s.enquetes + s.afspraken) / s.gebeld) * 100) : 0,
-        };
-      }).sort((a: LeaderboardRow, b: LeaderboardRow) => (b.enquetes + b.afspraken) - (a.enquetes + a.afspraken));
+      const grouped=new Map<string,any[]>();
+      for(const row of scores || []){if(!row.caller_id)continue;grouped.set(row.caller_id,[...(grouped.get(row.caller_id)||[]),row]);}
+      const indivRows:LeaderboardRow[]=Array.from(grouped.entries()).map(([userId,rows])=>{
+        const totals=summarizeResults(rows);const org=orgMap.get(rows[0].organization_id) as any;
+        return {userId,userName:rows[0].caller_name,orgId:org?.id || '',orgName:org?.name || '',...totals,conv:totals.gebeld?Math.round((totals.enquetes+totals.afspraken)/totals.gebeld*100):0};
+      });
 
       setIndividuals(indivRows);
 
@@ -117,7 +108,7 @@ export function useLeaderboardData() {
     }
   }, []);
 
-  useEffect(() => { fetch(); }, [fetch]);
+  useEffect(() => { void fetch(); const {data:{subscription}}=supabase.auth.onAuthStateChange(()=>setTimeout(()=>void fetch(),0));return ()=>subscription.unsubscribe(); }, [fetch]);
 
   return { individuals, teams, loading, refresh: fetch };
 }

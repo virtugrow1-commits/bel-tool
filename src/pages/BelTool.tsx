@@ -1,9 +1,9 @@
+import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useLeads } from '@/hooks/useLeads';
 import { useCallFlow } from '@/hooks/useCallFlow';
 import { useCallbacks } from '@/hooks/useCallbacks';
 import { useScoring } from '@/hooks/useScoring';
-import { useIncomingCalls } from '@/hooks/useIncomingCalls';
 import { useAppointmentNotifier } from '@/hooks/useAppointmentNotifier';
 import { useSettings } from '@/hooks/useSettings';
 import { useFlash } from '@/hooks/useFlash';
@@ -31,7 +31,6 @@ import { ContactDetailPanel } from '@/components/beltool/ContactDetailPanel';
 import { ErrorBoundary } from '@/components/beltool/ErrorBoundary';
 import { ToastBanner } from '@/components/beltool/ToastBanner';
 import { CallbackPopup } from '@/components/beltool/CallbackPopup';
-import { IncomingCallPopup } from '@/components/beltool/IncomingCallPopup';
 import { ShortcutsHelp } from '@/components/beltool/ShortcutsHelp';
 import { CliqErrorBanner } from '@/components/beltool/CliqErrorBanner';
 import { MobileHeader } from '@/components/beltool/MobileHeader';
@@ -41,7 +40,7 @@ import { WhatsAppComposer } from '@/components/beltool/WhatsAppComposer';
 import { useSoundEffects } from '@/hooks/useSoundEffects';
 import { useAdvisors } from '@/hooks/useAdvisors';
 import { useOrganizations } from '@/hooks/useOrganizations';
-import { recordAttempt, smartSort, getAttemptCount, loadAttemptCache } from '@/lib/smart-queue';
+import { smartSort, getAttemptCount, loadAttemptCache } from '@/lib/smart-queue';
 
 
 function normalizeEmail(email?: string) {
@@ -210,15 +209,6 @@ export default function BelTool() {
     setContactInfo(contactName, activeContactId, activeCompId);
   }, [contactName, activeContactId, activeCompId, setContactInfo]);
 
-  // Incoming calls
-  const { incomingCall, answerCall, dismissCall } = useIncomingCalls({
-    user,
-    companies,
-    activeCallId,
-    setCallState,
-    flash,
-  });
-
   // Realtime: afspraken geboekt via publieke pagina → update bel-tool live
   useAppointmentNotifier({
     user,
@@ -242,32 +232,12 @@ export default function BelTool() {
   });
 
   // Wrapped callback actions
-  const handleSaveCallback = (cb: Omit<import('@/types/beltool').CallbackEntry, 'id' | 'userId'>) => {
-    rawSaveCallback(cb, user?.id);
-    if (activeCompId) updateCompStage(activeCompId, 'terugbellenGepland');
-    addScoreWithSfx('callback');
-    flash(t.callbackSaved, 'info');
-    callFlow.resetCallState();
+  const handleSaveCallback = async (cb:Omit<import('@/types/beltool').CallbackEntry,'id'|'userId'>) => {
+    const ok=await endCall('noanswer','terugbellenGepland',answers,notes,activeContact,activeComp,user?.name,{date:cb.date,time:cb.time,note:cb.note});
+    if(!ok)throw new Error('Terugbelafspraak kon niet volledig worden opgeslagen');
+    await callbacksHook.refresh();addScoreWithSfx('callback');flash(t.callbackSaved,'info');
   };
-
-  // Enhanced addScore with sound effects + call attempt recording
-  const addScoreWithSfx = (type: string) => {
-    addScore(type);
-    sfx.playForResult(type, scores.reeks + 1);
-
-    // Record call attempt for smart queue
-    if (activeContactId && activeCompId && ['gebeld', 'geenGehoor', 'afgevallen', 'enquete', 'afspraak', 'verstuurd', 'callback'].includes(type)) {
-      recordAttempt(activeContactId, activeCompId, type);
-
-      // After 3x geen gehoor: trigger drip sequence
-      if (type === 'geenGehoor') {
-        const geenGehoorCount = getAttemptCount(activeContactId);
-        if (geenGehoorCount >= 3) {
-          cliq.addTag(activeContactId, ['beltool-drip-noanswer']).catch(() => {});
-        }
-      }
-    }
-  };
+  const addScoreWithSfx=(type:string)=>{addScore(type);sfx.playForResult(type,scores.reeks+1);};
 
   const handleCompleteCallback = async (cbId: number) => {
     const cb = await rawCompleteCallback(cbId);
@@ -276,18 +246,6 @@ export default function BelTool() {
       const comp = companies.find(c => c.contacts.some(ct => ct.id === cb.contactId));
       const ct = comp?.contacts.find(c => c.id === cb.contactId);
       if (comp && ct) selectContact(comp, ct);
-    }
-  };
-
-  const handleAnswerIncoming = async () => {
-    const call = await answerCall();
-    if (call?.contactId && call?.companyId) {
-      const comp = companies.find(c => c.id === call.companyId);
-      const ct = comp?.contacts.find(c => c.id === call.contactId);
-      if (comp && ct) {
-        selectContact(comp, ct);
-        setCallState('active');
-      }
     }
   };
 
@@ -348,6 +306,7 @@ export default function BelTool() {
         <div className={cn('flex h-screen overflow-hidden bg-background text-foreground', isMobile && 'flex-col')}>
 
           <ToastBanner toast={toast} />
+          {(callFlow.saveError || callFlow.saving) && <div role="alert" className="fixed top-3 left-1/2 -translate-x-1/2 z-[100] bg-card border border-destructive p-3 rounded-lg shadow-lg text-sm">{callFlow.saving?'Gesprek opslaan…':callFlow.saveError}{callFlow.saveError && <Button variant="outline" onClick={()=>void callFlow.retrySave()}>Opnieuw opslaan</Button>}</div>}
           <CallbackPopup
             popup={callbackPopup}
             onDismiss={dismissPopup}
@@ -535,7 +494,7 @@ export default function BelTool() {
                     activeContact={activeContact} activeComp={activeComp}
                     phase={phase} callState={callState} setPhase={setPhase}
                     answers={answers} setAnswers={setAnswers} taskString={taskString}
-                    onEndCall={(ph, stage) => endCall(ph, stage, answers, notes, activeContact, activeComp, user?.name)}
+                    onEndCall={(ph, stage, result) => endCall(ph, stage, answers, notes, activeContact, activeComp, user?.name,undefined,result)}
                     onNextContact={handleNextContact}
                     showToast={flash} updateStage={updateCompStage} addScore={addScoreWithSfx}
                     activeCallId={activeCallId}
@@ -573,7 +532,7 @@ export default function BelTool() {
                     onUpdateCompany={handleUpdateCompany}
                     onClose={() => setShowDetail(false)}
                     onDeleteContact={() => {
-                      removeCompany(activeCompId!);
+                      if(activeCompId)removeCompany(activeCompId);
                       callFlow.resetCallState();
                       flash('Contact verwijderd uit lijst', 'info');
                     }}

@@ -1,3 +1,4 @@
+import { summarizeResults } from '@/lib/result-summary';
 import { useAuth } from '@/hooks/useAuth';
 import { LoginScreen } from '@/components/beltool/LoginScreen';
 /**
@@ -24,6 +25,8 @@ interface CallSession {
   contact_name: string;
   company_name: string;
   notes: string | null;
+  caller_id?:string;
+  source?:string;
 }
 
 interface UserScore {
@@ -52,7 +55,7 @@ const RESULT_COLOR: Record<string, string> = {
 const RESULT_LABEL: Record<string, string> = {
   afspraak: 'Afspraak', enqueteTel: 'Enquête', enqueteVerstuurd: 'Verstuurd',
   geenGehoor: 'Geen gehoor', terugbellenGepland: 'Terugbellen',
-  nietInteressant: 'Afgevallen', anderMoment: 'Ander moment',
+  nietInteressant: 'Geen interesse', anderMoment: 'Ander moment', bereikt:'Bereikt', voicemail:'Voicemail', nietBellen:'Niet bellen',
 };
 
 function StatCard({ label, value, sub, color }: { label: string; value: string | number; sub?: string; color: string }) {
@@ -304,13 +307,14 @@ function ResultBadge({ result }: { result: string }) {
 export default function Rapportage() {
   const navigate = useNavigate();
   const { user: currentUser, loading: authLoading, login, resetPassword } = useAuth();
-  const localScores: Record<string, Scores> = currentUser ? store.get('scores', {}) : {};
+  const localScores: Record<string, Scores> = {};
   const orgId = currentUser?.organizationId || null;
 
   const [period, setPeriod] = useState<'today' | 'week' | 'month' | 'all'>('today');
   const [sessions, setSessions] = useState<CallSession[]>([]);
   const [dbScores, setDbScores] = useState<UserScore[] | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError,setLoadError]=useState('');
 
   // Date range based on period
   const dateFrom = useMemo(() => {
@@ -322,54 +326,22 @@ export default function Rapportage() {
     return d.toISOString();
   }, [period]);
 
-  // Load from Supabase
-  useEffect(() => {
-    setLoading(true);
-    let sessionQuery = (supabase as any)
-      .from('call_sessions')
-      .select('id, started_at, duration_seconds, result, caller_name, contact_name, company_name, notes')
-      .order('started_at', { ascending: false })
-      .limit(500);
-    if (dateFrom) sessionQuery = sessionQuery.gte('started_at', dateFrom);
-
-    let scoreQuery = (supabase as any)
-      .from('user_scores')
-      .select('*')
-      .order('score_date', { ascending: false });
-    if (orgId) scoreQuery = scoreQuery.eq('organization_id', orgId);
-    if (period === 'today') scoreQuery = scoreQuery.eq('score_date', new Date().toISOString().split('T')[0]);
-
-    Promise.all([sessionQuery, scoreQuery])
-      .then(([{ data: s }, { data: sc }]) => {
-        setSessions(s || []);
-        setDbScores(sc && sc.length > 0 ? sc : null);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [dateFrom, period, orgId]);
-
-  // Aggregated totals from sessions (Supabase) or localStorage
-  const totals = useMemo(() => {
-    if (sessions.length > 0) {
-      return {
-        gebeld:     sessions.length,
-        enquetes:   sessions.filter(s => ['enqueteTel','enqueteVerstuurd'].includes(s.result || '')).length,
-        afspraken:  sessions.filter(s => s.result === 'afspraak').length,
-        verstuurd:  sessions.filter(s => s.result === 'enqueteVerstuurd').length,
-        afgevallen: sessions.filter(s => s.result === 'nietInteressant').length,
-        geenGehoor: sessions.filter(s => s.result === 'geenGehoor').length,
-        callbacks:  sessions.filter(s => s.result === 'terugbellenGepland').length,
-      };
-    }
-    // Fallback to localStorage aggregation
-    const t = initScores();
-    Object.values(localScores).forEach(s => {
-      t.gebeld += s.gebeld; t.enquetes += s.enquetes; t.afspraken += s.afspraken;
-      t.verstuurd += s.verstuurd; t.afgevallen += s.afgevallen; t.geenGehoor += s.geenGehoor;
-      t.callbacks += s.callbacks || 0;
+  useEffect(()=>{
+    if(!orgId)return;
+    setLoading(true);setLoadError('');
+    let query=supabase.from('call_sessions').select('*').eq('organization_id',orgId).order('started_at',{ascending:false}).limit(2000);
+    if(dateFrom)query=query.gte('started_at',dateFrom);
+    void query.then(({data,error})=>{
+      if(error){setLoadError('Rapportage ophalen mislukt');setSessions([]);setDbScores([]);}
+      else{
+        setSessions(data || []);
+        const grouped=new Map<string,any[]>();for(const row of data || []){if(row.caller_id){const id=row.caller_name===currentUser?.name ? currentUser.id : row.caller_id;grouped.set(id,[...(grouped.get(id)||[]),row]);}}
+        setDbScores(Array.from(grouped.entries()).map(([id,rows])=>{const totals=summarizeResults(rows);return {user_id:id,score_date:'',...totals,geen_gehoor:totals.geenGehoor,best_reeks:0};}));
+      }
+      setLoading(false);
     });
-    return t;
-  }, [sessions, localScores]);
+  },[dateFrom,period,orgId]);
+  const totals=useMemo(()=>summarizeResults(sessions),[sessions]);
 
   const convRate = totals.gebeld > 0
     ? Math.round(((totals.enquetes + totals.afspraken) / totals.gebeld) * 100)
@@ -396,7 +368,7 @@ export default function Rapportage() {
           <div className="flex-1">
             <div className="text-[16px] font-bold tracking-tight">Rapportage</div>
             <div className="text-[11px] text-muted-foreground">
-              {sessions.length > 0 ? `${sessions.length} gesprekken uit Supabase` : 'Lokale data'}
+              {`${sessions.length} opgeslagen gesprekken`}
             </div>
           </div>
           {/* Period filter */}
@@ -422,6 +394,7 @@ export default function Rapportage() {
           <div className="text-center text-muted-foreground/50 py-8">Data laden uit Supabase...</div>
         )}
 
+        {loadError && <p role="alert" className="text-destructive">{loadError}</p>}
         {/* KPI Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <StatCard label="Gebeld"    value={totals.gebeld}    color="hsl(222 66% 15%)" />

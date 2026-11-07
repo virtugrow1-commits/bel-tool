@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { supabase } from '@/integrations/supabase/client';
+import { publicBooking } from '@/lib/public-booking';
+import { z } from 'zod';
 import { format, addDays, isBefore, startOfDay, parse } from 'date-fns';
 import { nl } from 'date-fns/locale';
 import { Calendar as CalendarIcon, Clock, User, CheckCircle2, Loader2, ArrowLeft, ArrowRight } from 'lucide-react';
@@ -28,12 +29,11 @@ interface ContactForm {
 const EMPTY_CONTACT: ContactForm = { naam: '', email: '', telefoon: '', bedrijf: '', opmerking: '' };
 
 /* ─── Helper: call GHL proxy ─── */
-async function callGHL(action: string, params: Record<string, unknown> = {}) {
-  const { data, error } = await supabase.functions.invoke('ghl-proxy', {
-    body: { action, ...params },
-  });
-  if (error) throw new Error(`GHL ${action} failed: ${error.message}`);
-  return data;
+async function callGHL(action:string,params:Record<string,unknown>={}){
+  if(action==='getContact')return publicBooking('survey',{id:params.contactId});
+  if(action==='getCalendars')return publicBooking('calendars');
+  if(action==='getFreeSlots')return publicBooking('slots',{date:params.startDate});
+  throw new Error('Actie niet toegestaan');
 }
 
 /* ─── Amsterdam offset ─── */
@@ -89,6 +89,7 @@ export default function Afspraak() {
   const [loading, setLoading] = useState(false);
   const [loadingContact, setLoadingContact] = useState(!!contactIdParam && !hasUrlPrefill);
   const [error, setError] = useState('');
+  const [bookingRequestId]=useState(()=>crypto.randomUUID());
   const [calendarMonth, setCalendarMonth] = useState(() => {
     const now = new Date();
     return { year: now.getFullYear(), month: now.getMonth() };
@@ -148,7 +149,7 @@ export default function Afspraak() {
         const formatted = allSlots
           .map((s: string) => {
             const d = new Date(s);
-            return format(d, 'HH:mm');
+            return new Intl.DateTimeFormat('nl-NL',{timeZone:'Europe/Amsterdam',hour:'2-digit',minute:'2-digit'}).format(d);
           })
           .filter((t: string) => {
             if (!isToday) return true;
@@ -177,105 +178,15 @@ export default function Afspraak() {
   const today = startOfDay(new Date());
   const maxDate = addDays(today, 60);
 
-  const contactValid = contact.naam.trim() && contact.email.trim() && contact.telefoon.trim();
+  const contactValid = contact.naam.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email) && contact.telefoon.trim();
 
   async function handleBook() {
     setLoading(true);
     setError('');
     try {
-      // Use existing GHL contact or create new one
-      let contactId = ghlContactId;
-      if (!contactId) {
-        const contactResult = await callGHL('createContact', {
-          name: contact.naam,
-          email: contact.email,
-          phone: contact.telefoon,
-          companyName: contact.bedrijf,
-          tags: ['website-afspraak'],
-          source: 'Website Afspraak',
-        });
-        contactId = contactResult?.contact?.id || contactResult?.id;
-      }
-      if (!contactId) throw new Error('Kon contact niet aanmaken');
-
-      // Book appointment
-      const offset = getAmsterdamOffset(selectedDate);
-      const startTime = `${selectedDate}T${selectedTime}:00${offset}`;
-      const endTime = `${selectedDate}T${addMinutesToTime(selectedTime, 30)}:00${offset}`;
-
-      await callGHL('createAppointment', {
-        calendarId: selectedCalendar,
-        contactId,
-        startTime,
-        endTime,
-        title: `Adviesgesprek — ${contact.bedrijf || contact.naam}`,
-        notes: contact.opmerking || undefined,
-      });
-
-      const dateFormatted = format(parse(selectedDate, 'yyyy-MM-dd', new Date()), 'd MMMM yyyy', { locale: nl });
-
-      // Parallel GHL sync: note + tag + custom fields + pipeline stage
-      await Promise.allSettled([
-        // Note
-        callGHL('createNote', {
-          contactId,
-          body: `📅 Afspraak ingepland via website\n🗓️ ${dateFormatted} om ${selectedTime}\n📍 Google Meet\n💬 ${contact.opmerking || '-'}`,
-        }),
-        // Tags
-        callGHL('addTag', {
-          contactId,
-          tags: ['beltool-afspraak-gepland', 'appointment-booked'],
-        }),
-        // Custom fields
-        callGHL('saveCustomFields', {
-          contactId,
-          customFields: [
-            { id: 'beltool_appointment_status', field_value: 'booked' },
-            { id: 'beltool_appointment_date',   field_value: selectedDate },
-            { id: 'beltool_lead_status',         field_value: 'appointment_booked' },
-            { id: 'beltool_callback_required',   field_value: 'false' },
-          ],
-        }),
-        // Move opportunity to "Afspraak Gepland" pipeline stage
-        (async () => {
-          try {
-            const pd = await callGHL('getPipelines');
-            const pipeline = (pd?.pipelines || []).find((p: { name: string }) =>
-              p.name.toLowerCase().includes('bellen')
-            );
-            const stage = pipeline?.stages?.find((s: { name: string }) =>
-              s.name.toLowerCase().includes('afspraak') &&
-              (s.name.toLowerCase().includes('gepland') || s.name.toLowerCase().includes('geboekt'))
-            );
-            if (pipeline && stage) {
-              await callGHL('upsertOpportunity', {
-                contactId,
-                pipelineId: pipeline.id,
-                stageId:    stage.id,
-                name:       `${contact.bedrijf || contact.naam} — Afspraak`,
-              });
-            }
-          } catch (e) {
-            console.warn('[Afspraak] Pipeline update mislukt:', e);
-          }
-        })(),
-      ]);
-
-      // Write to call_sessions so bel-tool Realtime notifier fires
-      try {
-        await supabase.from('call_sessions' as any).insert({
-          contact_id:       contactId,
-          company_id:       '',
-          company_name:     contact.bedrijf || '',
-          contact_name:     contact.naam,
-          phone:            contact.telefoon || '',
-          caller_name:      'Zelfgeboekt (website)',
-          result:           'afspraak',
-          notes:            `Afspraak: ${selectedDate} ${selectedTime}`,
-          ghl_synced:       true,
-        });
-      } catch { /* non-critical */ }
-
+      z.object({naam:z.string().trim().min(1).max(150),email:z.string().email().max(255),telefoon:z.string().trim().min(1).max(30),bedrijf:z.string().max(150),opmerking:z.string().max(2000)}).parse(contact);
+      const start=`${selectedDate}T${selectedTime}:00${getAmsterdamOffset(selectedDate)}`;
+      await publicBooking('book',{...(ghlContactId?{contactId:ghlContactId}:{}),contact,start,requestId:bookingRequestId});
       setStep('done');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Er ging iets mis bij het boeken');

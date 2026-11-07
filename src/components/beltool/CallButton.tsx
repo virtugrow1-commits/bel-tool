@@ -1,5 +1,5 @@
 /**
- * CallButton — Initiates a Voys click-to-dial call.
+ * CallButton — Initiates a VoIPzeker click-to-call call.
  *
  * Improvements:
  *  • DNC (do-not-call) check before dialing
@@ -83,19 +83,6 @@ export function CallButton({ phoneNumber, leadId, leadName, extension, organizat
       if (!data?.success) throw new Error(data?.error || 'Onbekende fout van VoIPzeker');
 
       const callId = data?.callId || '';
-
-      // Register outgoing call for realtime status tracking
-      if (callId) {
-        await supabase.from('incoming_calls').insert({
-          caller_number: normalizeE164(phoneNumber),
-          call_id:       callId,
-          contact_id:    leadId,
-          status:        'ringing',
-          ...(organizationId ? { organization_id: organizationId } : {}),
-        } as any).then(({ error: insertErr }: any) => {
-          if (insertErr) console.warn('[CallButton] Could not register outgoing call:', insertErr);
-        });
-      }
 
       setState('success');
       onCallStarted?.(callId);

@@ -12,42 +12,7 @@ import { useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { Company, CompanyContact, CallPhase, CallState, SurveyAnswers } from '@/types/beltool';
 import { cliq } from '@/lib/beltool-ghl';
-
-/** Write a completed call to call_sessions for analytics + history */
-async function writeCallSession(params: {
-  contactId:       string;
-  companyId:       string;
-  companyName:     string;
-  contactName:     string;
-  phone:           string;
-  callerName:      string;
-  durationSeconds: number;
-  result:          string;
-  notes:           string;
-  voysCallId?:     string;
-}) {
-  try {
-    const { data: { session } } = await supabase.auth.getSession();
-    await (supabase as any).from('call_sessions').insert({
-      contact_id:       params.contactId,
-      company_id:       params.companyId,
-      company_name:     params.companyName,
-      contact_name:     params.contactName,
-      phone:            params.phone,
-      caller_id:        session?.user.id || null,
-      caller_name:      params.callerName,
-      started_at:       new Date(Date.now() - params.durationSeconds * 1000).toISOString(),
-      ended_at:         new Date().toISOString(),
-      duration_seconds: params.durationSeconds,
-      result:           params.result,
-      notes:            params.notes,
-      voys_call_id:     params.voysCallId || null,
-      ghl_synced:       true,
-    });
-  } catch (err) {
-    console.warn('[CallFlow] call_sessions write failed:', err);
-  }
-}
+import { saveCallResult } from '@/lib/call-results';
 
 const STAGE_TO_CLIQ: Record<string, string> = {
   nietInteressant:    'niet geïnteresseerd',
@@ -83,6 +48,11 @@ export function useCallFlow({
   const [activeCallId,    setActiveCallId]    = useState<string | null>(null);
   const [answers,         setAnswers]         = useState<SurveyAnswers>({ hours: '', tasks: [], tasksOther: '', growth: '', ai: '' });
   const [notes,           setNotes]           = useState('');
+  const [saveError,setSaveError]=useState('');
+  const [saving,setSaving]=useState(false);
+  const requestRef=useRef(crypto.randomUUID());
+  const retryRef=useRef<(() => Promise<boolean>) | null>(null);
+  const savingRef=useRef(false);
   const [bookDate,        setBookDate]        = useState('');
   const [bookTime,        setBookTime]        = useState('');
   const [bookAdvisor,     setBookAdvisor]     = useState('');
@@ -104,6 +74,7 @@ export function useCallFlow({
 
   // ── selectContact ──────────────────────────────────────────────────────────
   const selectContact = useCallback((comp: Company, contact: CompanyContact) => {
+    requestRef.current=crypto.randomUUID();setSaveError('');retryRef.current=null;
     setActiveCompId(comp.id);
     setActiveContactId(contact.id);
     setPhase('intro');
@@ -199,130 +170,30 @@ export function useCallFlow({
   }, [activeCallId, activeContactId, organizationId]);
 
   // ── endCall ────────────────────────────────────────────────────────────────
-  const endCall = useCallback((
-    ph:             CallPhase,
-    stage:          Company['stage'],
-    currentAnswers: SurveyAnswers,
-    currentNotes:   string,
-    activeContact:  CompanyContact | null,
-    activeComp:     Company | null,
-    callerName?:    string,
-  ) => {
-    if (!activeCompId) {
-      hangup();
-      setPhase(ph);
-      return;
-    }
-
-    // Capture duration from ref (populated by hangup or by callStartRef)
-    const duration = callDurationRef.current > 0
-      ? callDurationRef.current
-      : callStartRef.current
-        ? Math.round((Date.now() - callStartRef.current) / 1000)
-        : 0;
-
-    updateCompStage(activeCompId, stage);
-
-    // Persist notes on the contact object
-    if (activeContact && currentNotes.trim()) {
-      updateContact(activeCompId, { ...activeContact, notes: currentNotes });
-    }
-
-    // ── GHL: move opportunity in pipeline ────────────────────────────────────
-    if (pipelineInfo && STAGE_TO_CLIQ[stage]) {
-      const targetStageId = stageMap[STAGE_TO_CLIQ[stage]];
-      if (targetStageId) {
-        const oppId = activeContact?.opportunityId;
-        cliq.upsertOpportunity(
-          activeContactId || '',
-          pipelineInfo.pipelineId,
-          targetStageId,
-          activeComp?.name || 'Lead',
-          oppId,
-        ).catch(err => console.error('[CallFlow] CLIQ opportunity update failed:', err));
-      } else {
-        console.warn(`[CallFlow] CLIQ stage not found for "${STAGE_TO_CLIQ[stage]}". Available:`, Object.keys(stageMap));
-      }
-    }
-
-    // ── GHL: structured call activity note ───────────────────────────────────
-    const durationStr = duration > 0
-      ? duration >= 60
-        ? `${Math.floor(duration / 60)}m ${duration % 60}s`
-        : `${duration}s`
-      : 'onbekend';
-
-    const resultEmoji: Record<string, string> = {
-      geenGehoor:         '📵',
-      afspraak:           '📅',
-      enqueteTel:         '✅',
-      enqueteVerstuurd:   '📨',
-      nietInteressant:    '🚫',
-      terugbellenGepland: '🔔',
-      anderMoment:        '⏳',
+  const endCall = useCallback(async (
+    ph:CallPhase,stage:Company['stage'],currentAnswers:SurveyAnswers,currentNotes:string,
+    activeContact:CompanyContact | null,activeComp:Company | null,callerName?:string,
+    callback?:{date:string;time:string;note:string}, resultOverride?:string,
+  ):Promise<boolean> => {
+    if(savingRef.current || !activeContact || !activeComp)return false;
+    const duration=callDurationRef.current || (callStartRef.current?Math.round((Date.now()-callStartRef.current)/1000):0);
+    const payload={requestId:requestRef.current,contactId:activeContact.id,companyId:activeComp.id,companyName:activeComp.name,contactName:`${activeContact.firstName} ${activeContact.lastName}`,phone:activeContact.phone,result:resultOverride || stage,durationSeconds:duration,notes:currentNotes,...(callback?{callback}:{})};
+    const persist=async():Promise<boolean>=>{
+      savingRef.current=true;setSaving(true);setSaveError('');
+      try{
+        await saveCallResult(payload);
+        updateCompStage(activeComp.id,stage);
+        updateContact(activeComp.id,{...activeContact,notes:currentNotes,surveyAnswers:currentAnswers});
+        await hangup();setPhase(ph);retryRef.current=null;return true;
+      }catch(e){setSaveError(e instanceof Error?e.message:'Gesprek opslaan mislukt');return false;}
+      finally{savingRef.current=false;setSaving(false);}
     };
+    retryRef.current=persist;
+    return persist();
+  },[updateCompStage,updateContact,hangup]);
+  const retrySave=useCallback(async()=>{if(retryRef.current)await retryRef.current();},[]);
 
-    const callNote = [
-      `${resultEmoji[stage] || '📞'} Belresultaat: ${STAGE_TO_CLIQ[stage] || stage}`,
-      `⏱️ Gespreksduur: ${durationStr}`,
-      callerName ? `👤 Beller: ${callerName}` : '',
-      currentNotes.trim() ? `📝 Notities: ${currentNotes.trim()}` : '',
-      `🕐 ${new Date().toLocaleString('nl-NL')}`,
-    ].filter(Boolean).join('\n');
-
-    if (activeContactId) {
-      cliq.createNote(activeContactId, callNote).catch(console.error);
-    }
-
-    // ── GHL: survey answers as custom fields ─────────────────────────────────
-    if (['done', 'sent'].includes(ph) && currentAnswers.hours && activeContactId) {
-      cliq.saveSurveyAnswers(activeContactId, currentAnswers).catch(console.error);
-      if (activeContact) {
-        updateContact(activeCompId, { ...activeContact, surveyAnswers: currentAnswers });
-      }
-    }
-
-    // ── GHL: workflow-trigger tags ────────────────────────────────────────────
-    const WORKFLOW_TAGS: Record<string, string[]> = {
-      nietInteressant:    ['beltool-afgevallen'],
-      geenGehoor:         ['beltool-geen-gehoor'],
-      terugbellenGepland: ['beltool-terugbellen'],
-      afspraak:           ['beltool-afspraak-gepland'],
-      enqueteVerstuurd:   ['beltool-enquete-verstuurd'],
-      enqueteTel:         ['beltool-enquete-voltooid'],
-      anderMoment:        ['beltool-ander-moment'],
-    };
-    const wfTags = WORKFLOW_TAGS[stage];
-    if (wfTags && activeContactId) {
-      cliq.removeTag(activeContactId, [
-        'beltool-geen-gehoor', 'beltool-terugbellen', 'beltool-ander-moment',
-        'beltool-in-gesprek',
-      ]).catch(() => {});
-      cliq.addTag(activeContactId, wfTags).catch(err => console.warn('[CallFlow] Workflow tag failed:', err));
-    }
-
-    // ── Supabase: write call session for analytics + contact history ──────────
-    if (activeContactId && activeComp) {
-      writeCallSession({
-        contactId:       activeContactId,
-        companyId:       activeCompId,
-        companyName:     activeComp?.name || '',
-        contactName:     activeContact ? `${activeContact.firstName} ${activeContact.lastName}` : '',
-        phone:           activeContact?.phone || '',
-        callerName:      callerName || '',
-        durationSeconds: duration,
-        result:          stage,
-        notes:           currentNotes,
-        voysCallId:      undefined,
-      });
-    }
-
-    // Hang up any active call
-    hangup();
-    setPhase(ph);
-  }, [activeCompId, activeContactId, pipelineInfo, stageMap, updateCompStage, updateContact, hangup]);
-
-  const nextContact = useCallback(() => resetCallState(), [resetCallState]);
+  const nextContact = useCallback(() => {if(!savingRef.current && !retryRef.current)resetCallState();}, [resetCallState]);
 
   const taskString = answers.tasks
     .concat(answers.tasksOther ? [answers.tasksOther] : [])
@@ -354,6 +225,6 @@ export function useCallFlow({
     endCall,
     nextContact,
     resetCallState,
-    callDurationRef,
+    callDurationRef, saveError, saving, retrySave,
   };
 }

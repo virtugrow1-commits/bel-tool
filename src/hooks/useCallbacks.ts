@@ -142,55 +142,19 @@ export function useCallbacks(currentUserId?: string) {
     return () => clearInterval(iv);
   }, [callbacks, dismissedIds, callbackPopup]);
 
-  const saveCallback = useCallback(async (
-    cb: Omit<CallbackEntry, 'id' | 'userId'>,
-    userId?: string
-  ): Promise<CallbackEntry[]> => {
-    if (useSupabase) {
-      try {
-        const { data, error } = await (supabase as any)
-          .from('callbacks')
-          .insert(entryToRow(cb, userId))
-          .select()
-          .single();
-
-        if (error) throw error;
-
-        const entry = rowToEntry(data);
-        const next = [...callbacks, entry];
-        setCallbacks(next);
-        store.set('callbacks', next);
-        return next;
-      } catch (err) {
-        console.warn('[Callbacks] Supabase insert failed, using localStorage:', err);
-      }
-    }
-
-    // localStorage fallback
-    const entry: CallbackEntry = { ...cb, id: ++_localSeq, userId };
-    const next = [...callbacks, entry];
-    setCallbacks(next);
-    store.set('callbacks', next);
-    return next;
-  }, [callbacks, useSupabase]);
-
-  const completeCallback = useCallback(async (cbId: number | string): Promise<CallbackEntry | undefined> => {
-    const found = callbacks.find(c => c.id === cbId);
-
-    if (useSupabase && found) {
-      try {
-        await (supabase as any).from('callbacks').update({ status: 'done' }).eq('id', String(cbId));
-      } catch (err) {
-        console.warn('[Callbacks] Supabase update failed:', err);
-      }
-    }
-
-    // Optimistic local update
-    const next = callbacks.map(cb => cb.id === cbId ? { ...cb, status: 'done' as const } : cb);
-    setCallbacks(next);
-    store.set('callbacks', next);
-    return found;
-  }, [callbacks, useSupabase]);
+  const saveCallback=useCallback(async(cb:Omit<CallbackEntry,'id'|'userId'>,userId?:string):Promise<CallbackEntry[]>=>{
+    if(!currentUserId)throw new Error('Log eerst in');
+    const {data,error}=await supabase.from('callbacks').insert(entryToRow(cb,userId)).select().single();
+    if(error || !data)throw new Error('Terugbelafspraak opslaan mislukt. Probeer opnieuw.');
+    const entry=rowToEntry(data);const next=[...callbacks,entry];setCallbacks(next);return next;
+  },[callbacks,currentUserId]);
+  const refresh=useCallback(async()=>{const {data,error}=await supabase.from('callbacks').select('*').order('scheduled_date');if(error)throw new Error('Terugbelafspraken ophalen mislukt');setCallbacks((data || []).map(rowToEntry));},[]);
+  const completeCallback=useCallback(async(cbId:number|string):Promise<CallbackEntry|undefined>=>{
+    const found=callbacks.find(c=>c.id===cbId);
+    const {error}=await supabase.from('callbacks').update({status:'done'}).eq('id',String(cbId));
+    if(error)throw new Error('Terugbelafspraak afronden mislukt');
+    setCallbacks(prev=>prev.map(c=>c.id===cbId?{...c,status:'done'}:c));return found;
+  },[callbacks]);
 
   const dismissPopup = useCallback(() => {
     if (callbackPopup) {
@@ -212,6 +176,6 @@ export function useCallbacks(currentUserId?: string) {
     saveCallback,
     completeCallback,
     dismissPopup,
-    clearPopup,
+    clearPopup, refresh,
   };
 }
